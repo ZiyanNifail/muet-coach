@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+supabase
+pydantic
+httpx
+groq
+apscheduler
+
+# AI pipeline — heavy, install separately if needed:
+# pip install openai-whisper torch --extra-index-url https://download.pytorch.org/whl/cpu
+# pip install mediapipe opencv-python-headless librosa
