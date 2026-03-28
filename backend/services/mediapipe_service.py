@@ -74,33 +74,36 @@ async def analyse_video(video_path: str) -> dict:
             "confidence_flags": {"face_ok": False, "pose_ok": False},
         }
 
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
     native_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-    sample_interval = max(1, int(round(native_fps / 5)))  # sample at 5 FPS
+    duration_secs = total_frames / native_fps
+
+    # Sample at 3 FPS, capped at 120 frames — seek directly to avoid decoding every frame
+    target_fps = 3.0
+    n_samples = max(10, min(120, int(duration_secs * target_fps)))
+    sample_positions = [int(i * total_frames / n_samples) for i in range(n_samples)]
 
     eye_contact_frames = 0
     posture_scores: list[float] = []
     face_detected = 0
     pose_detected = 0
     total_sampled = 0
-    frame_idx = 0
 
     with mp_face.FaceMesh(
-        static_image_mode=False,
+        static_image_mode=True,   # static_image_mode=True is faster when seeking
         max_num_faces=1,
         refine_landmarks=False,
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
     ) as face_mesh, mp_pose.Pose(
-        static_image_mode=False,
+        static_image_mode=True,
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
     ) as pose:
-        while True:
+        for frame_pos in sample_positions:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
             ret, frame = cap.read()
             if not ret:
-                break
-            if frame_idx % sample_interval != 0:
-                frame_idx += 1
                 continue
 
             total_sampled += 1
@@ -120,8 +123,6 @@ async def analyse_video(video_path: str) -> dict:
             if pose_results.pose_landmarks:
                 pose_detected += 1
                 posture_scores.append(_posture_score(pose_results.pose_landmarks))
-
-            frame_idx += 1
 
     cap.release()
 

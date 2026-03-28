@@ -14,6 +14,7 @@ export default function EducatorLayout({ children }: { children: React.ReactNode
     getAppUser().then((u) => {
       if (!u) { router.replace('/login'); return }
       if (u.role === 'student') { router.replace('/dashboard'); return }
+      // admin can also access educator portal
       setUser(u)
       setLoading(false)
     })

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import {
   ArrowLeft, Upload, FileText, X, CheckCircle, XCircle,
   PlusCircle, Users, ClipboardList, ExternalLink, Copy, Check,
+  Sparkles, ChevronDown, ChevronUp, AlertCircle,
 } from 'lucide-react'
 
 interface Member {
@@ -47,12 +48,31 @@ interface Course {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY
 
 type Tab = 'members' | 'assignments' | 'submissions'
 
+const PRESENTATION_TYPES = [
+  'Individual Academic Presentation',
+  'Group Presentation',
+  'MUET Part 1 (Individual)',
+  'Business Pitch',
+  'Research Presentation',
+  'General English Presentation',
+]
+
+const FOCUS_AREAS = [
+  'Content & Organisation',
+  'Language Accuracy',
+  'Vocabulary Range',
+  'Fluency & Delivery',
+  'Eye Contact & Body Language',
+  'Use of Visual Aids',
+  'Time Management',
+]
+
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
 
   const [course, setCourse] = useState<Course | null>(null)
   const [members, setMembers] = useState<Member[]>([])
@@ -74,6 +94,16 @@ export default function CourseDetailPage() {
   const [inviting, setInviting] = useState(false)
   const [inviteMsg, setInviteMsg] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+
+  // AI Rubric generation
+  const [showAiPanel, setShowAiPanel] = useState(false)
+  const [presentationType, setPresentationType] = useState(PRESENTATION_TYPES[0])
+  const [selectedFocus, setSelectedFocus] = useState<string[]>(['Content & Organisation', 'Language Accuracy', 'Fluency & Delivery', 'Eye Contact & Body Language'])
+  const [bandCount, setBandCount] = useState<4 | 5>(5)
+  const [generating, setGenerating] = useState(false)
+  const [generatedRubric, setGeneratedRubric] = useState<string | null>(null)
+  const [genError, setGenError] = useState<string | null>(null)
+  const [rubricCopied, setRubricCopied] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -154,6 +184,80 @@ export default function CourseDetailPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  function toggleFocus(area: string) {
+    setSelectedFocus((prev) =>
+      prev.includes(area) ? prev.filter((a) => a !== area) : [...prev, area]
+    )
+  }
+
+  async function generateRubric() {
+    if (!GROQ_API_KEY) {
+      setGenError('Groq API key not configured. Add NEXT_PUBLIC_GROQ_API_KEY to frontend/.env.local')
+      return
+    }
+    if (selectedFocus.length === 0) {
+      setGenError('Select at least one focus area.')
+      return
+    }
+
+    setGenerating(true)
+    setGenError(null)
+    setGeneratedRubric(null)
+
+    const focusList = selectedFocus.join(', ')
+    const prompt = `You are an experienced language assessment expert. Generate a detailed presentation rubric for the following course.
+
+Course Name: ${course?.name}
+Subject Code: ${course?.subject_code}
+Description: ${course?.description || 'N/A'}
+Presentation Type: ${presentationType}
+Assessment Criteria (focus areas): ${focusList}
+Number of Band Levels: ${bandCount}
+
+Instructions:
+- Create one rubric table per criterion listed in the focus areas
+- Each criterion should have ${bandCount} band descriptors with clear, measurable indicators
+- Use MUET-style band scoring (Band 1 = weakest, Band ${bandCount} = strongest)
+- Keep language clear and suitable for undergraduate students
+- Include a weightage % for each criterion (all must sum to 100%)
+- At the end, add a short "How to use this rubric" note for students
+
+Format the output in clean, structured plain text. Use clear headings and separators.`
+
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.4,
+          max_tokens: 2500,
+        }),
+      })
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error?.message || `Groq API error ${res.status}`)
+      }
+      const data = await res.json()
+      setGeneratedRubric(data.choices[0]?.message?.content ?? 'No content returned.')
+    } catch (err: unknown) {
+      setGenError(err instanceof Error ? err.message : 'Failed to generate rubric.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  function copyRubric() {
+    if (!generatedRubric) return
+    navigator.clipboard.writeText(generatedRubric)
+    setRubricCopied(true)
+    setTimeout(() => setRubricCopied(false), 2000)
+  }
+
   const pending = members.filter((m) => m.status === 'pending')
   const approved = members.filter((m) => m.status === 'approved')
 
@@ -170,13 +274,13 @@ export default function CourseDetailPage() {
       {/* Header */}
       <div className="flex items-start gap-4">
         <Link href="/educator/dashboard">
-          <button className="mt-1 text-[#55556a] hover:text-[#8888a0] transition-colors">
+          <button className="mt-1 text-[#6b6050] hover:text-[#c08830] transition-colors">
             <ArrowLeft size={18} />
           </button>
         </Link>
         <div className="flex-1 min-w-0">
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
-            COURSE · {course.subject_code}
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b6050', marginBottom: 4 }}>
+            COURSE · <span style={{ color: '#f59e0b' }}>{course.subject_code}</span>
           </div>
           <h1 className="text-2xl font-semibold text-[#e8e8f0]">{course.name}</h1>
           {course.description && <p className="text-[#8888a0] text-sm mt-1">{course.description}</p>}
@@ -192,26 +296,27 @@ export default function CourseDetailPage() {
       {/* Invite code + rubric strip */}
       <div className="grid grid-cols-2 gap-4">
         {/* Invite code */}
-        <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a' }}>INVITE CODE</div>
+        <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(14,9,4,0.50)', borderColor: 'rgba(245,158,11,0.10)' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b6050' }}>INVITE CODE</div>
           <div className="flex items-center gap-3">
-            <code className="font-mono text-lg font-semibold text-[#f59e0b]">{course.invite_code}</code>
-            <button onClick={copyInviteCode} className="text-[#55556a] hover:text-[#8888a0] transition-colors">
+            <code className="font-mono text-xl font-bold text-[#f59e0b]">{course.invite_code}</code>
+            <button onClick={copyInviteCode} className="transition-colors" style={{ color: '#6b6050' }}>
               {copied ? <Check size={14} style={{ color: '#22c55e' }} /> : <Copy size={14} />}
             </button>
           </div>
-          <p className="text-[#3a3a52] text-xs">Share this code with students to let them request to join.</p>
+          <p className="text-xs" style={{ color: '#4a4035' }}>Share this code with students — they enter it in My Courses to request to join.</p>
         </div>
 
         {/* Rubric PDF */}
-        <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a' }}>RUBRIC PDF</div>
+        <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(14,9,4,0.50)', borderColor: 'rgba(245,158,11,0.10)' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b6050' }}>RUBRIC PDF</div>
           {course.rubric_path ? (
             <div className="flex items-center gap-2">
               <FileText size={16} style={{ color: '#22c55e' }} />
               <span className="text-sm text-[#22c55e]">Rubric uploaded</span>
               <button
-                className="text-xs text-[#55556a] hover:text-[#8888a0] underline ml-2"
+                className="text-xs underline ml-2"
+                style={{ color: '#6b6050' }}
                 onClick={() => { setCourse((c) => c ? { ...c, rubric_path: null } : c); setRubricFile(null) }}
               >Replace</button>
             </div>
@@ -224,7 +329,8 @@ export default function CourseDetailPage() {
           ) : (
             <button
               onClick={() => rubricInputRef.current?.click()}
-              className="flex items-center gap-2 text-sm text-[#55556a] hover:text-[#8888a0] transition-colors"
+              className="flex items-center gap-2 text-sm transition-colors"
+              style={{ color: '#6b6050' }}
             >
               <Upload size={14} />
               Upload rubric PDF (max 20 MB)
@@ -241,6 +347,160 @@ export default function CourseDetailPage() {
             <p className={`text-xs ${rubricMsg.includes('success') ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>{rubricMsg}</p>
           )}
         </div>
+      </div>
+
+      {/* AI Rubric Generator */}
+      <div
+        className="rounded-xl border overflow-hidden"
+        style={{ background: 'rgba(14,9,4,0.50)', borderColor: showAiPanel ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.10)' }}
+      >
+        {/* Header toggle */}
+        <button
+          className="w-full flex items-center justify-between px-5 py-4 transition-colors"
+          style={{ background: showAiPanel ? 'rgba(245,158,11,0.06)' : 'transparent' }}
+          onClick={() => setShowAiPanel((v) => !v)}
+        >
+          <div className="flex items-center gap-2.5">
+            <Sparkles size={15} style={{ color: '#f59e0b' }} />
+            <span className="text-sm font-semibold" style={{ color: '#e8c870' }}>Generate Rubric with AI</span>
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded font-bold"
+              style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}
+            >
+              Powered by Groq
+            </span>
+          </div>
+          {showAiPanel ? <ChevronUp size={14} style={{ color: '#6b6050' }} /> : <ChevronDown size={14} style={{ color: '#6b6050' }} />}
+        </button>
+
+        {showAiPanel && (
+          <div className="flex flex-col gap-5 px-5 pb-5 pt-1" style={{ borderTop: '1px solid rgba(245,158,11,0.08)' }}>
+            <p className="text-xs" style={{ color: '#6b6050' }}>
+              The AI will generate a structured presentation rubric based on your course details and the options you select below.
+              Requires <code className="font-mono" style={{ color: '#f59e0b' }}>NEXT_PUBLIC_GROQ_API_KEY</code> in your <code className="font-mono" style={{ color: '#f59e0b' }}>.env.local</code>.
+            </p>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Presentation type */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold" style={{ color: '#8888a0' }}>Presentation Type</label>
+                <select
+                  value={presentationType}
+                  onChange={(e) => setPresentationType(e.target.value)}
+                  className="rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    borderColor: 'rgba(245,158,11,0.15)',
+                    color: '#e8e8f0',
+                    colorScheme: 'dark',
+                  }}
+                >
+                  {PRESENTATION_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Band count */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold" style={{ color: '#8888a0' }}>Band Levels</label>
+                <select
+                  value={String(bandCount)}
+                  onChange={(e) => setBandCount(Number(e.target.value) as 4 | 5)}
+                  className="rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    borderColor: 'rgba(245,158,11,0.15)',
+                    color: '#e8e8f0',
+                    colorScheme: 'dark',
+                  }}
+                >
+                  <option value="4">4 Bands (1–4)</option>
+                  <option value="5">5 Bands (1–5, MUET-style)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Focus areas */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold" style={{ color: '#8888a0' }}>
+                Assessment Criteria <span style={{ color: '#4a4035' }}>(select all that apply)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {FOCUS_AREAS.map((area) => {
+                  const active = selectedFocus.includes(area)
+                  return (
+                    <button
+                      key={area}
+                      type="button"
+                      onClick={() => toggleFocus(area)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      style={{
+                        background: active ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)',
+                        borderWidth: 1,
+                        borderStyle: 'solid',
+                        borderColor: active ? 'rgba(245,158,11,0.30)' : 'rgba(255,255,255,0.06)',
+                        color: active ? '#f59e0b' : '#55556a',
+                      }}
+                    >
+                      {active && <span className="mr-1">✓</span>}
+                      {area}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {genError && (
+              <div className="flex items-start gap-2 rounded-lg border px-3 py-2.5"
+                style={{ background: 'rgba(239,68,68,0.06)', borderColor: 'rgba(239,68,68,0.2)' }}>
+                <AlertCircle size={13} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
+                <p className="text-xs text-[#ef4444]">{genError}</p>
+              </div>
+            )}
+
+            <Button
+              onClick={generateRubric}
+              disabled={generating || selectedFocus.length === 0}
+            >
+              <Sparkles size={13} className="mr-2" />
+              {generating ? 'Generating...' : 'Generate Rubric'}
+            </Button>
+
+            {generatedRubric && (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold" style={{ color: '#22c55e' }}>
+                    ✓ Rubric generated
+                  </span>
+                  <button
+                    onClick={copyRubric}
+                    className="flex items-center gap-1.5 text-xs transition-colors"
+                    style={{ color: rubricCopied ? '#22c55e' : '#6b6050' }}
+                  >
+                    {rubricCopied ? <Check size={12} /> : <Copy size={12} />}
+                    {rubricCopied ? 'Copied!' : 'Copy to clipboard'}
+                  </button>
+                </div>
+                <textarea
+                  readOnly
+                  value={generatedRubric}
+                  rows={20}
+                  className="w-full rounded-lg border px-4 py-3 text-xs font-mono outline-none resize-y"
+                  style={{
+                    background: 'rgba(0,0,0,0.3)',
+                    borderColor: 'rgba(245,158,11,0.15)',
+                    color: '#c0b890',
+                    lineHeight: 1.7,
+                  }}
+                />
+                <p className="text-xs" style={{ color: '#4a4035' }}>
+                  Tip: Copy the rubric and paste it into a Word document to format and save as PDF, then upload it above.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -268,8 +528,11 @@ export default function CourseDetailPage() {
       {tab === 'members' && (
         <div className="flex flex-col gap-4">
           {/* Invite by email */}
-          <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a' }}>INVITE BY EMAIL</div>
+          <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(14,9,4,0.50)', borderColor: 'rgba(245,158,11,0.10)' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b6050' }}>INVITE BY EMAIL</div>
+            <p className="text-xs" style={{ color: '#4a4035' }}>
+              Enter the email of a registered student to add them directly. They will appear as a pending request.
+            </p>
             <div className="flex gap-3">
               <input
                 type="email"
@@ -277,7 +540,9 @@ export default function CourseDetailPage() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 className="flex-1 rounded-lg border px-3.5 py-2 text-sm text-[#e8e8f0] outline-none placeholder:text-[#3a3a52]"
-                style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}
+                style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(245,158,11,0.15)' }}
+                onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.15)')}
                 onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
               />
               <Button variant="secondary" onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
@@ -319,17 +584,19 @@ export default function CourseDetailPage() {
 
           {/* Approved members */}
           <div className="flex flex-col gap-2">
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b6050' }}>
               ENROLLED STUDENTS ({approved.length})
             </div>
             {approved.length === 0 ? (
-              <div className="flex items-center justify-center h-24 rounded-xl border" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                <p className="text-[#3a3a52] text-sm">No approved students yet.</p>
+              <div className="flex flex-col items-center justify-center h-24 rounded-xl border gap-2"
+                style={{ borderColor: 'rgba(245,158,11,0.08)' }}>
+                <Users size={20} style={{ color: '#4a4035', opacity: 0.5 }} />
+                <p className="text-xs" style={{ color: '#4a4035' }}>No enrolled students yet. Share the invite code above.</p>
               </div>
             ) : (
               approved.map((m) => (
                 <div key={m.id} className="flex items-center gap-4 rounded-lg border px-4 py-3"
-                  style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                  style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
                   <Users size={14} style={{ color: '#55556a', flexShrink: 0 }} />
                   <span className="text-sm text-[#e8e8f0] flex-1">{m.users?.full_name}</span>
                   <span className="text-xs text-[#55556a]">{m.users?.email}</span>
@@ -354,14 +621,15 @@ export default function CourseDetailPage() {
             </Link>
           </div>
           {assignments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 rounded-xl border gap-3" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <ClipboardList size={24} style={{ color: '#55556a', opacity: 0.5 }} />
-              <p className="text-[#3a3a52] text-sm">No assignments yet.</p>
+            <div className="flex flex-col items-center justify-center h-32 rounded-xl border gap-3"
+              style={{ borderColor: 'rgba(245,158,11,0.08)' }}>
+              <ClipboardList size={24} style={{ color: '#4a4035', opacity: 0.5 }} />
+              <p className="text-xs" style={{ color: '#4a4035' }}>No assignments yet. Create one to get started.</p>
             </div>
           ) : (
             assignments.map((a) => (
               <div key={a.id} className="flex items-start gap-4 rounded-xl border p-4"
-                style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                style={{ background: 'rgba(14,9,4,0.50)', borderColor: 'rgba(245,158,11,0.08)' }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-semibold text-[#e8e8f0]">{a.title}</span>
@@ -385,15 +653,15 @@ export default function CourseDetailPage() {
         <div className="flex flex-col gap-3">
           <span className="text-[#55556a] text-sm">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</span>
           {submissions.length === 0 ? (
-            <div className="flex items-center justify-center h-32 rounded-xl border" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <p className="text-[#3a3a52] text-sm">No submissions yet.</p>
+            <div className="flex items-center justify-center h-32 rounded-xl border" style={{ borderColor: 'rgba(245,158,11,0.08)' }}>
+              <p className="text-xs" style={{ color: '#4a4035' }}>No submissions yet.</p>
             </div>
           ) : (
             submissions.map((s) => {
               const r = Array.isArray(s.feedback_reports) ? s.feedback_reports[0] : s.feedback_reports
               return (
                 <div key={s.id} className="flex items-center gap-4 rounded-xl border p-4"
-                  style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                  style={{ background: 'rgba(14,9,4,0.50)', borderColor: 'rgba(245,158,11,0.08)' }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-[#e8e8f0]">{s.users?.full_name}</span>

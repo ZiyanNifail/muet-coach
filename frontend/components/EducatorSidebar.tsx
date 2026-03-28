@@ -11,6 +11,7 @@ import {
   BarChart2,
   ClipboardList,
   GraduationCap,
+  Shield,
 } from 'lucide-react'
 
 const nav = [
@@ -21,19 +22,29 @@ const nav = [
     ],
   },
   {
-    section: 'TEACHING',
+    section: 'COURSES',
     items: [
       { label: 'My Courses', href: '/educator/dashboard', icon: BookOpen },
-      { label: 'New Course', href: '/educator/courses/new', icon: PlusCircle },
-      { label: 'Assignments', href: '/educator/submissions', icon: ClipboardList },
+      { label: 'Create Course', href: '/educator/courses/new', icon: PlusCircle },
+    ],
+  },
+  {
+    section: 'MANAGE',
+    items: [
       { label: 'All Submissions', href: '/educator/submissions', icon: FileCheck },
+      { label: 'Students', href: '/educator/students', icon: GraduationCap },
     ],
   },
   {
     section: 'INSIGHTS',
     items: [
-      { label: 'Class Analytics', href: '/educator/analytics', icon: BarChart2 },
-      { label: 'Students', href: '/educator/students', icon: GraduationCap },
+      { label: 'Analytics', href: '/educator/analytics', icon: BarChart2 },
+    ],
+  },
+  {
+    section: 'ADMIN',
+    items: [
+      { label: 'Educator Approvals', href: '/admin', icon: Shield },
     ],
   },
 ]
@@ -48,34 +59,42 @@ export function EducatorSidebar() {
 
   return (
     <aside
-      className="flex flex-col py-5 gap-5 overflow-y-auto"
+      className="flex flex-col py-5 gap-4 overflow-y-auto"
       style={{
-        width: 224,
-        minWidth: 224,
-        background: 'rgba(8,8,14,0.70)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(245,158,11,0.10)',
+        width: 232,
+        minWidth: 232,
+        background: 'rgba(12,8,4,0.80)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderRight: '1px solid rgba(245,158,11,0.14)',
       }}
     >
       {/* Portal identity */}
-      <div className="px-4 pb-1 flex flex-col gap-0.5">
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(245,158,11,0.4)' }}>
+      <div className="px-4 pb-1 flex flex-col gap-1">
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(245,158,11,0.45)' }}>
           PreCoach
         </span>
-        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.04em', color: '#f59e0b' }}>
-          Educator Portal
-        </span>
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.03em', color: '#f59e0b' }}>
+            Educator Portal
+          </span>
+          <span
+            className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+            style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', letterSpacing: '0.06em' }}
+          >
+            EDU
+          </span>
+        </div>
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: 'rgba(245,158,11,0.08)', margin: '0 16px' }} />
+      <div style={{ height: 1, background: 'rgba(245,158,11,0.10)', margin: '0 16px' }} />
 
       {nav.map((group) => (
         <div key={group.section}>
           <div
             className="px-4 mb-1.5"
-            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(245,158,11,0.3)' }}
+            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(245,158,11,0.28)' }}
           >
             {group.section}
           </div>
@@ -90,11 +109,12 @@ export function EducatorSidebar() {
                   className={clsx(
                     'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all no-underline',
                     active
-                      ? 'bg-[rgba(245,158,11,0.12)] text-[#f59e0b]'
-                      : 'text-[#55556a] hover:bg-[rgba(245,158,11,0.06)] hover:text-[#8888a0]',
+                      ? 'text-[#f59e0b]'
+                      : 'text-[#6b6050] hover:text-[#a89070]',
                   )}
+                  style={active ? { background: 'rgba(245,158,11,0.12)', boxShadow: 'inset 0 0 0 1px rgba(245,158,11,0.10)' } : {}}
                 >
-                  <Icon size={14} strokeWidth={1.75} style={{ color: active ? '#f59e0b' : undefined }} />
+                  <Icon size={14} strokeWidth={1.75} style={{ color: active ? '#f59e0b' : undefined, opacity: active ? 1 : 0.6 }} />
                   {item.label}
                 </Link>
               )
@@ -104,10 +124,11 @@ export function EducatorSidebar() {
       ))}
 
       {/* Bottom: switch to student view */}
-      <div className="mt-auto px-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+      <div className="mt-auto px-4 pt-4" style={{ borderTop: '1px solid rgba(245,158,11,0.06)' }}>
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 text-[12px] text-[#3a3a52] hover:text-[#55556a] transition-colors no-underline"
+          className="flex items-center gap-2 text-[12px] transition-colors no-underline"
+          style={{ color: 'rgba(245,158,11,0.25)' }}
         >
           <Users size={12} />
           Switch to Student View

@@ -30,6 +30,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState('')
   const [warning, setWarning] = useState<{ message: string; isRed?: boolean } | null>(null)
+  const [speechAvailable, setSpeechAvailable] = useState<boolean | null>(null)
 
   function showWarning(w: { message: string; isRed?: boolean }) {
     setWarning(w)
@@ -37,63 +38,111 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
     warningTimerRef.current = setTimeout(() => setWarning(null), 4000)
   }
 
-  // T2.05E — Guided mode real-time analysis via Web Speech API + video frame check
+  // T2.05E — Guided mode real-time analysis via Web Speech API + periodic gaze reminder
   useEffect(() => {
     if (mode !== 'guided' || status !== 'recording') return
 
     // ── Speech recognition (WPM + filler detection) ──────────────────────────
-    const SpeechRec = (window as typeof window & { SpeechRecognition?: new () => SpeechRecognition; webkitSpeechRecognition?: new () => SpeechRecognition }).SpeechRecognition
-      || (window as typeof window & { webkitSpeechRecognition?: new () => SpeechRecognition }).webkitSpeechRecognition
+    const SpeechRec =
+      (window as typeof window & { SpeechRecognition?: new () => SpeechRecognition }).SpeechRecognition ||
+      (window as typeof window & { webkitSpeechRecognition?: new () => SpeechRecognition }).webkitSpeechRecognition
 
-    if (SpeechRec) {
-      const recognition = new SpeechRec()
+    if (!SpeechRec) {
+      setSpeechAvailable(false)
+      return
+    }
+
+    let started = false
+    let wpmCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+    function startRecognition(lang: string) {
+      const recognition = new SpeechRec!()
       recognition.continuous = true
       recognition.interimResults = true
-      recognition.lang = 'en-MY'
+      recognition.lang = lang
       recognitionRef.current = recognition
 
-      let wpmCheckTimer: ReturnType<typeof setTimeout> | null = null
+      recognition.onstart = () => {
+        started = true
+        setSpeechAvailable(true)
+      }
 
       recognition.onresult = (event) => {
         const now = Date.now()
-        // Collect words from new results
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript.toLowerCase().trim()
-          if (!transcript) continue
+          const t = event.results[i][0].transcript.toLowerCase().trim()
+          if (!t) continue
 
           // Filler detection
-          if (FILLERS.some((f) => transcript.includes(f))) {
+          if (FILLERS.some((f) => t.split(/\s+/).includes(f))) {
             showWarning({ message: 'Watch your filler words (um, uh, like)', isRed: false })
           }
 
-          // Count words for WPM
-          const words = transcript.split(/\s+/).filter(Boolean)
+          // Collect word timestamps for WPM
+          const words = t.split(/\s+/).filter(Boolean)
           words.forEach(() => wordTimesRef.current.push(now))
         }
 
-        // Schedule WPM evaluation 500ms after last speech event
+        // WPM check 500ms after last speech event
         if (wpmCheckTimer) clearTimeout(wpmCheckTimer)
         wpmCheckTimer = setTimeout(() => {
-          const cutoff = Date.now() - 15000 // last 15 seconds
-          wordTimesRef.current = wordTimesRef.current.filter((t) => t > cutoff)
+          const cutoff = Date.now() - 15000
+          wordTimesRef.current = wordTimesRef.current.filter((ts) => ts > cutoff)
           const wpm = Math.round((wordTimesRef.current.length / 15) * 60)
           if (wpm > 0 && wpm < 90) showWarning({ message: 'Speaking too slowly — pick up the pace', isRed: false })
           if (wpm > 160) showWarning({ message: 'Speaking too fast — aim for 130–150 WPM', isRed: false })
         }, 500)
       }
 
-      recognition.onerror = () => { /* silently ignore — mic already captured by MediaRecorder */ }
+      recognition.onerror = (e) => {
+        const err = (e as SpeechRecognitionErrorEvent).error
+        if (!started && lang === 'en-MY' && (err === 'language-not-supported' || err === 'network')) {
+          // Retry with en-US
+          try { recognition.stop() } catch {}
+          startRecognition('en-US')
+          return
+        }
+        if (err === 'not-allowed' || err === 'audio-capture') {
+          setSpeechAvailable(false)
+        }
+        // For 'no-speech' or 'aborted' — restart recognition to keep it continuous
+        if (err === 'no-speech' || err === 'aborted') {
+          try { recognition.start() } catch {}
+        }
+      }
 
-      try { recognition.start() } catch { /* browser may not support or deny */ }
+      recognition.onend = () => {
+        // Auto-restart if still recording (recognition stops after silence)
+        if (recognitionRef.current === recognition) {
+          try { recognition.start() } catch {}
+        }
+      }
+
+      try {
+        recognition.start()
+      } catch {
+        setSpeechAvailable(false)
+      }
     }
 
-    // ── Face presence check (video frame sampling) ────────────────────────────
+    startRecognition('en-MY')
+
+    // ── Gaze & camera reminders (every 30s) ───────────────────────────────────
+    // Give a periodic reminder to maintain eye contact since we can't do
+    // real-time gaze detection without MediaPipe in-browser.
+    let gazeReminderCount = 0
+    const GAZE_REMINDERS = [
+      'Maintain eye contact — look at the camera',
+      'Remember to look directly at the camera',
+      'Keep steady eye contact with your audience',
+    ]
     faceCheckRef.current = setInterval(() => {
       const video = videoRef.current
       if (!video) return
+
+      // Pixel coverage check — detect if camera is blocked
       const canvas = document.createElement('canvas')
-      canvas.width = 80
-      canvas.height = 60
+      canvas.width = 80; canvas.height = 60
       const ctx = canvas.getContext('2d')
       if (!ctx) return
       try {
@@ -101,15 +150,22 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
         const { data } = ctx.getImageData(0, 0, 80, 60)
         let nonBlack = 0
         for (let i = 0; i < data.length; i += 4) {
-          if (data[i] > 25 || data[i + 1] > 25 || data[i + 2] > 25) nonBlack++
+          if (data[i] > 30 || data[i + 1] > 30 || data[i + 2] > 30) nonBlack++
         }
         const coverage = nonBlack / (80 * 60)
-        if (coverage < 0.08) showWarning({ message: 'Move closer to the camera', isRed: true })
-        else if (coverage < 0.2) showWarning({ message: 'Look toward the camera', isRed: false })
-      } catch { /* cross-origin or other errors */ }
-    }, 8000) // check every 8 seconds
+        if (coverage < 0.05) {
+          showWarning({ message: 'Camera blocked — make sure camera is unobstructed', isRed: true })
+          return
+        }
+      } catch { /* ignore */ }
+
+      // Periodic eye-contact reminder
+      showWarning({ message: GAZE_REMINDERS[gazeReminderCount % GAZE_REMINDERS.length], isRed: false })
+      gazeReminderCount++
+    }, 30000) // every 30 seconds
 
     return () => {
+      if (wpmCheckTimer) clearTimeout(wpmCheckTimer)
       try { recognitionRef.current?.stop() } catch {}
       recognitionRef.current = null
       if (faceCheckRef.current) clearInterval(faceCheckRef.current)
@@ -276,8 +332,14 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
               {statusLabel}
             </span>
             {mode === 'guided' && status === 'recording' && (
-              <span style={{ fontSize: 9, color: '#22c55e', letterSpacing: '0.1em', textTransform: 'uppercase', marginLeft: 4 }}>
-                · REAL-TIME COACHING
+              <span style={{
+                fontSize: 9,
+                color: speechAvailable === false ? '#f59e0b' : '#22c55e',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                marginLeft: 4,
+              }}>
+                · {speechAvailable === false ? 'COACHING LIMITED (speech API unavailable)' : 'REAL-TIME COACHING'}
               </span>
             )}
             {mode === 'exam' && (

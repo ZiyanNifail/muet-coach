@@ -97,16 +97,17 @@ class CreateCourseBody(BaseModel):
 @router.post("/")
 async def create_course(body: CreateCourseBody):
     invite_code = _gen_invite_code(body.subject_code)
-    # Retry if collision (unlikely)
-    for _ in range(3):
+    try:
         course = db_create_course(
             body.educator_id, body.name, body.subject_code,
             body.description or "", invite_code,
         )
-        if course:
-            return {"course": course}
-        invite_code = _gen_invite_code(body.subject_code)
-    raise HTTPException(500, "Failed to create course — database error.")
+    except Exception as exc:
+        logger.error("create_course error: %s", exc)
+        raise HTTPException(500, f"Failed to create course: {exc}")
+    if not course:
+        raise HTTPException(500, "Failed to create course — insert returned no data.")
+    return {"course": course}
 
 
 # ── Educator: analytics ───────────────────────────────────────────────────────

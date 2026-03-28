@@ -18,6 +18,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         router.replace('/login')
         return
       }
+      if (u.role === 'educator') {
+        router.replace('/educator/dashboard')
+        return
+      }
       setUser(u)
       setShowConsent(!u.consent_given)
       setLoading(false)

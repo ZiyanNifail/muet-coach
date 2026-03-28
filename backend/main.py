@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -80,3 +83,17 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+@app.get("/api/health/db")
+async def health_db():
+    """Diagnostic endpoint — checks Supabase connectivity."""
+    from services.supabase_client import test_connection
+    ok, message = test_connection()
+    if ok:
+        return {"status": "ok", "message": message}
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=503,
+        content={"status": "error", "message": message},
+    )

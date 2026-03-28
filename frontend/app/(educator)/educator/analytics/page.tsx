@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { BarChart2, Users, BookOpen, FileCheck, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react'
+import { BarChart2, Users, BookOpen, FileCheck, TrendingUp, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 
 interface CourseStats {
@@ -89,14 +90,21 @@ export default function AnalyticsPage() {
     <div className="p-6 flex flex-col gap-6 max-w-5xl">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
-            INSIGHTS
+        <div className="flex items-start gap-3">
+          <Link href="/educator/dashboard">
+            <button className="mt-1 text-[#6b6050] hover:text-[#c08830] transition-colors">
+              <ArrowLeft size={18} />
+            </button>
+          </Link>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b6050', marginBottom: 4 }}>
+              INSIGHTS
+            </div>
+            <h1 className="text-2xl font-semibold text-[#e8e8f0]">Class Analytics</h1>
+            <p className="text-[#8888a0] text-sm mt-1">
+              Aggregated student performance across all your courses.
+            </p>
           </div>
-          <h1 className="text-2xl font-semibold text-[#e8e8f0]">Class Analytics</h1>
-          <p className="text-[#8888a0] text-sm mt-1">
-            Aggregated student performance across all your courses.
-          </p>
         </div>
         <button
           onClick={load}

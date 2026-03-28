@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { signIn } from '@/lib/auth'
+import { signIn, getAppUser } from '@/lib/auth'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -19,7 +19,12 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await signIn(email, password)
-      router.push('/dashboard')
+      const user = await getAppUser()
+      if (user?.role === 'educator') {
+        router.push('/educator/dashboard')
+      } else {
+        router.push('/dashboard')
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Invalid email or password')
     } finally {

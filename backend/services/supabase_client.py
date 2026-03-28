@@ -3,13 +3,17 @@ Supabase client using the service role key (bypasses RLS).
 Used only by the backend AI pipeline — never exposed to the frontend.
 """
 import os
+import logging
 from functools import lru_cache
+
+logger = logging.getLogger(__name__)
 
 try:
     from supabase import create_client, Client
     _SUPABASE_AVAILABLE = True
 except ImportError:
     _SUPABASE_AVAILABLE = False
+    logger.warning("supabase package not installed — run: pip install supabase")
 
 
 @lru_cache(maxsize=1)
@@ -19,26 +23,68 @@ def get_supabase() -> "Client | None":
     url = os.getenv("SUPABASE_URL", "")
     key = os.getenv("SUPABASE_SERVICE_KEY", "")
     if not url or not key or key == "your-service-role-key":
+        logger.error(
+            "Supabase not configured — set SUPABASE_URL and SUPABASE_SERVICE_KEY "
+            "in backend/.env. Get the service_role JWT from: "
+            "Supabase Dashboard → Project Settings → API → service_role (secret key)"
+        )
         return None
-    return create_client(url, key)
+    try:
+        return create_client(url, key)
+    except Exception as exc:
+        logger.error(
+            "Supabase client creation failed: %s\n"
+            "  >> SUPABASE_SERVICE_KEY must be the service_role JWT from\n"
+            "     Supabase Dashboard > Project Settings > API > service_role\n"
+            "  >> It should start with 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'",
+            exc,
+        )
+        return None
+
+
+def test_connection() -> tuple[bool, str]:
+    """Test Supabase connectivity. Returns (ok, message)."""
+    sb = get_supabase()
+    if sb is None:
+        return False, (
+            "Supabase client could not be created. "
+            "Go to Supabase Dashboard > Project Settings > API > "
+            "copy the service_role (secret) key and paste it as "
+            "SUPABASE_SERVICE_KEY in backend/.env"
+        )
+    try:
+        sb.table("users").select("id").limit(1).execute()
+        return True, "Supabase connected successfully."
+    except Exception as exc:
+        return False, f"Supabase query failed: {exc}"
 
 
 async def db_update_presentation(presentation_id: str, data: dict) -> None:
     sb = get_supabase()
     if sb is None:
+        logger.warning("db_update_presentation: Supabase unavailable — status not saved for %s", presentation_id)
         return
-    sb.table("presentations").update(data).eq("id", presentation_id).execute()
+    try:
+        sb.table("presentations").update(data).eq("id", presentation_id).execute()
+    except Exception as exc:
+        logger.error("db_update_presentation failed for %s: %s", presentation_id, exc)
 
 
 async def db_insert_report(report: dict) -> str | None:
     """Insert feedback_reports row; returns the new row id."""
     sb = get_supabase()
     if sb is None:
+        logger.warning("db_insert_report: Supabase unavailable — report not saved for presentation %s", report.get("presentation_id"))
         return None
-    res = sb.table("feedback_reports").insert(report).execute()
-    if res.data:
-        return res.data[0]["id"]
-    return None
+    try:
+        res = sb.table("feedback_reports").insert(report).execute()
+        if res.data:
+            return res.data[0]["id"]
+        logger.warning("db_insert_report: insert returned no data for presentation %s", report.get("presentation_id"))
+        return None
+    except Exception as exc:
+        logger.error("db_insert_report failed: %s", exc)
+        return None
 
 
 async def db_insert_session_history(student_id: str, report_id: str) -> None:
@@ -133,18 +179,15 @@ def db_create_course(educator_id: str, name: str, subject_code: str,
                      description: str, invite_code: str) -> dict | None:
     sb = get_supabase()
     if sb is None:
-        return None
-    try:
-        res = sb.table("courses").insert({
-            "educator_id": educator_id,
-            "name": name,
-            "subject_code": subject_code,
-            "description": description,
-            "invite_code": invite_code,
-        }).execute()
-        return res.data[0] if res.data else None
-    except Exception:
-        return None
+        raise RuntimeError("Supabase unavailable — check SUPABASE_URL and SUPABASE_SERVICE_KEY in backend/.env")
+    res = sb.table("courses").insert({
+        "educator_id": educator_id,
+        "name": name,
+        "subject_code": subject_code,
+        "description": description,
+        "invite_code": invite_code,
+    }).execute()
+    return res.data[0] if res.data else None
 
 
 def db_get_course(course_id: str) -> dict | None:
