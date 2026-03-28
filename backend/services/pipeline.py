@@ -85,11 +85,13 @@ async def run_pipeline(
         lexical_diversity = compute_lexical_diversity(transcript)
 
         # ── T2.16  CEFR band (rule-based) ────────────────────────────────────
+        # Pass None through for N/A metrics — cefr_evaluator skips them
+        # rather than defaulting to 0 (CRIT-04 fix).
         rule_band = compute_band_score(
             wpm_avg=wpm_avg,
-            eye_contact_pct=eye_contact_pct or 0.0,
+            eye_contact_pct=eye_contact_pct,
             filler_density=filler_density,
-            posture_score=posture_score or 0.0,
+            posture_score=posture_score,
             lexical_diversity=lexical_diversity,
         )
 

@@ -277,3 +277,64 @@ async def create_assignment(course_id: str, body: CreateAssignmentBody):
 async def list_submissions(course_id: str):
     submissions = db_get_course_submissions(course_id)
     return {"submissions": submissions}
+
+
+# ── Educator: AI rubric generation (CRIT-01 fix — server-side Groq call) ──────
+
+class GenerateRubricBody(BaseModel):
+    course_name: str = ""
+    subject_code: str = ""
+    description: str = ""
+    presentation_type: str = "General English Presentation"
+    focus_areas: list[str] = []
+    band_count: int = 5
+
+
+@router.post("/{course_id}/generate-rubric")
+async def generate_rubric(course_id: str, body: GenerateRubricBody):
+    """
+    Generate a presentation rubric using Groq/Llama 3.3 70B.
+    Runs server-side so the GROQ_API_KEY stays in the backend environment.
+    """
+    import os
+    api_key = os.getenv("GROQ_API_KEY", "")
+    if not api_key or api_key == "your-groq-api-key":
+        raise HTTPException(503, "Groq API key not configured on the server.")
+
+    if not body.focus_areas:
+        raise HTTPException(400, "Select at least one focus area.")
+
+    focus_list = ", ".join(body.focus_areas)
+    prompt = (
+        f"You are an experienced language assessment expert. "
+        f"Generate a detailed presentation rubric for the following course.\n\n"
+        f"Course Name: {body.course_name}\n"
+        f"Subject Code: {body.subject_code}\n"
+        f"Description: {body.description or 'N/A'}\n"
+        f"Presentation Type: {body.presentation_type}\n"
+        f"Assessment Criteria (focus areas): {focus_list}\n"
+        f"Number of Band Levels: {body.band_count}\n\n"
+        f"Instructions:\n"
+        f"- Create one rubric table per criterion listed in the focus areas\n"
+        f"- Each criterion should have {body.band_count} band descriptors with clear, measurable indicators\n"
+        f"- Use MUET-style band scoring (Band 1 = weakest, Band {body.band_count} = strongest)\n"
+        f"- Keep language clear and suitable for undergraduate students\n"
+        f"- Include a weightage % for each criterion (all must sum to 100%)\n"
+        f"- At the end, add a short 'How to use this rubric' note for students\n\n"
+        f"Format the output in clean, structured plain text. Use clear headings and separators."
+    )
+
+    try:
+        from groq import Groq
+        client = Groq(api_key=api_key)
+        chat = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            max_tokens=2500,
+        )
+        rubric_text = chat.choices[0].message.content or ""
+        return {"rubric": rubric_text}
+    except Exception as exc:
+        logger.warning("Groq rubric generation failed: %s", exc)
+        raise HTTPException(502, f"Rubric generation failed: {exc}")

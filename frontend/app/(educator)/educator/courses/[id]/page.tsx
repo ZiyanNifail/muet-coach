@@ -48,7 +48,6 @@ interface Course {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY
 
 type Tab = 'members' | 'assignments' | 'submissions'
 
@@ -191,10 +190,6 @@ export default function CourseDetailPage() {
   }
 
   async function generateRubric() {
-    if (!GROQ_API_KEY) {
-      setGenError('Groq API key not configured. Add NEXT_PUBLIC_GROQ_API_KEY to frontend/.env.local')
-      return
-    }
     if (selectedFocus.length === 0) {
       setGenError('Select at least one focus area.')
       return
@@ -204,46 +199,25 @@ export default function CourseDetailPage() {
     setGenError(null)
     setGeneratedRubric(null)
 
-    const focusList = selectedFocus.join(', ')
-    const prompt = `You are an experienced language assessment expert. Generate a detailed presentation rubric for the following course.
-
-Course Name: ${course?.name}
-Subject Code: ${course?.subject_code}
-Description: ${course?.description || 'N/A'}
-Presentation Type: ${presentationType}
-Assessment Criteria (focus areas): ${focusList}
-Number of Band Levels: ${bandCount}
-
-Instructions:
-- Create one rubric table per criterion listed in the focus areas
-- Each criterion should have ${bandCount} band descriptors with clear, measurable indicators
-- Use MUET-style band scoring (Band 1 = weakest, Band ${bandCount} = strongest)
-- Keep language clear and suitable for undergraduate students
-- Include a weightage % for each criterion (all must sum to 100%)
-- At the end, add a short "How to use this rubric" note for students
-
-Format the output in clean, structured plain text. Use clear headings and separators.`
-
     try {
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const res = await fetch(`${API_URL}/api/courses/${id}/generate-rubric`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.4,
-          max_tokens: 2500,
+          course_name: course?.name ?? '',
+          subject_code: course?.subject_code ?? '',
+          description: course?.description ?? '',
+          presentation_type: presentationType,
+          focus_areas: selectedFocus,
+          band_count: bandCount,
         }),
       })
       if (!res.ok) {
         const errData = await res.json()
-        throw new Error(errData.error?.message || `Groq API error ${res.status}`)
+        throw new Error(errData.detail || `Server error ${res.status}`)
       }
       const data = await res.json()
-      setGeneratedRubric(data.choices[0]?.message?.content ?? 'No content returned.')
+      setGeneratedRubric(data.rubric ?? 'No content returned.')
     } catch (err: unknown) {
       setGenError(err instanceof Error ? err.message : 'Failed to generate rubric.')
     } finally {
@@ -377,7 +351,6 @@ Format the output in clean, structured plain text. Use clear headings and separa
           <div className="flex flex-col gap-5 px-5 pb-5 pt-1" style={{ borderTop: '1px solid rgba(245,158,11,0.08)' }}>
             <p className="text-xs" style={{ color: '#6b6050' }}>
               The AI will generate a structured presentation rubric based on your course details and the options you select below.
-              Requires <code className="font-mono" style={{ color: '#f59e0b' }}>NEXT_PUBLIC_GROQ_API_KEY</code> in your <code className="font-mono" style={{ color: '#f59e0b' }}>.env.local</code>.
             </p>
 
             <div className="grid grid-cols-2 gap-4">

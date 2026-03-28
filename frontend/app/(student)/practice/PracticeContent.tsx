@@ -243,14 +243,16 @@ export function PracticeContent() {
     if (!checkBandwidth()) setLowBandwidth(true)
 
     let studentId = 'anonymous'
+    let authToken = ''
     try {
       const { createClient } = await import('@supabase/supabase-js')
       const sb = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       )
-      const { data: { user } } = await sb.auth.getUser()
-      if (user) studentId = user.id
+      const { data: { session } } = await sb.auth.getSession()
+      if (session?.user) studentId = session.user.id
+      if (session?.access_token) authToken = session.access_token
     } catch {}
 
     const delays = [5000, 10000, 20000]
@@ -275,6 +277,7 @@ export function PracticeContent() {
           `${API_URL}/api/presentations/upload`,
           formData,
           (pct) => setUploadProgress(pct),
+          authToken,
         )
         presentationId = result.presentation_id
         break
@@ -436,10 +439,12 @@ function uploadWithProgress(
   url: string,
   formData: FormData,
   onProgress: (pct: number) => void,
+  authToken?: string,
 ): Promise<{ presentation_id: string; status: string }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('POST', url)
+    if (authToken) xhr.setRequestHeader('Authorization', `Bearer ${authToken}`)
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
     })

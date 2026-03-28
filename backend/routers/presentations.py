@@ -12,7 +12,7 @@ import os
 import uuid
 import logging
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, Header
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -45,11 +45,29 @@ async def upload_presentation(
     brainstorm_notes: Optional[str] = Form(None),
     duration_secs: Optional[float] = Form(None),
     slides: Optional[UploadFile] = File(None),
+    authorization: Optional[str] = Header(None),
 ):
     # ── Validate content type ────────────────────────────────────────────────
     ct = (video.content_type or "").split(";")[0].strip()
     if ct not in ALLOWED_TYPES:
         raise HTTPException(400, f"Unsupported file type: {ct}. Must be video/webm or video/mp4.")
+
+    # ── CRIT-03 fix: validate student_id against JWT when token is present ───
+    # If a Supabase JWT is provided, extract the real user ID from it and use
+    # that instead of the caller-supplied form field, preventing session
+    # attribution fraud (one user uploading as another user's ID).
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+        try:
+            sb_client = get_supabase()
+            if sb_client is not None:
+                user_response = sb_client.auth.get_user(token)
+                if user_response and user_response.user:
+                    token_user_id = user_response.user.id
+                    # Override form student_id with the verified token user ID
+                    student_id = token_user_id
+        except Exception as _exc:
+            logger.warning("JWT validation on upload skipped (non-fatal): %s", _exc)
 
     presentation_id = str(uuid.uuid4())
 

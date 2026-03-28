@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { CheckCircle, XCircle, Clock, RefreshCw } from 'lucide-react'
@@ -15,6 +16,20 @@ interface Approval {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  try {
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+    const { data: { session } } = await sb.auth.getSession()
+    if (session?.access_token) {
+      return { Authorization: `Bearer ${session.access_token}` }
+    }
+  } catch { /* fall through */ }
+  return {}
+}
+
 export default function AdminPage() {
   const [approvals, setApprovals] = useState<Approval[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,7 +40,13 @@ export default function AdminPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${API_URL}/api/admin/educator-approvals`)
+      const headers = await getAuthHeaders()
+      const res = await fetch(`${API_URL}/api/admin/educator-approvals`, { headers })
+      if (res.status === 401 || res.status === 403) {
+        setError('Access denied — admin role required.')
+        setLoading(false)
+        return
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setApprovals(data.approvals || [])
@@ -41,9 +62,10 @@ export default function AdminPage() {
   async function handleAction(approvalId: string, action: 'approve' | 'reject') {
     setActionId(approvalId)
     try {
+      const headers = await getAuthHeaders()
       const res = await fetch(
         `${API_URL}/api/admin/educator-approvals/${approvalId}/${action}`,
-        { method: 'POST' },
+        { method: 'POST', headers },
       )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setApprovals((prev) => prev.filter((a) => a.id !== approvalId))
