@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { signIn, getAppUser } from '@/lib/auth'
+import { signIn, signOut, getAppUser, getEducatorApprovalStatus } from '@/lib/auth'
 import { ShieldCheck, X } from 'lucide-react'
 
 export default function LoginPage() {
@@ -29,6 +29,16 @@ export default function LoginPage() {
       await signIn(email, password)
       const user = await getAppUser()
       if (user?.role === 'educator') {
+        const approvalStatus = await getEducatorApprovalStatus(user.id)
+        if (approvalStatus !== 'approved') {
+          await signOut()
+          setError(
+            approvalStatus === 'rejected'
+              ? 'Your educator registration was rejected. Contact the administrator.'
+              : 'Your educator account is awaiting admin approval. Please check back later.'
+          )
+          return
+        }
         router.push('/educator/dashboard')
       } else {
         router.push('/dashboard')

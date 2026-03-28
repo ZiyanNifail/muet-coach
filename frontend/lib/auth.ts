@@ -61,6 +61,17 @@ export async function getAppUser(): Promise<AppUser | null> {
   return data as AppUser
 }
 
+export async function getEducatorApprovalStatus(
+  userId: string
+): Promise<'pending' | 'approved' | 'rejected' | null> {
+  const { data } = await supabase
+    .from('educator_approvals')
+    .select('status')
+    .eq('educator_id', userId)
+    .maybeSingle()
+  return (data?.status as 'pending' | 'approved' | 'rejected') ?? null
+}
+
 export async function giveConsent(userId: string) {
   await supabase
     .from('users')

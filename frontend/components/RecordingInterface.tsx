@@ -11,6 +11,8 @@ interface RecordingInterfaceProps {
 }
 
 const FILLERS = ['um', 'uh', 'ah', 'er', 'like', 'you know']
+// Max characters kept in the rolling subtitle before trimming from the left
+const SUBTITLE_MAX_CHARS = 80
 
 export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: RecordingInterfaceProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -25,12 +27,16 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const wordTimesRef = useRef<number[]>([])
   const faceCheckRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Subtitle state
+  const finalBufferRef = useRef('')        // accumulated final text
+  const subtitleClearRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [status, setStatus] = useState<'initialising' | 'recording' | 'paused' | 'done'>('initialising')
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState('')
   const [warning, setWarning] = useState<{ message: string; isRed?: boolean } | null>(null)
   const [speechAvailable, setSpeechAvailable] = useState<boolean | null>(null)
+  const [subtitle, setSubtitle] = useState<{ text: string; isFinal: boolean } | null>(null)
 
   function showWarning(w: { message: string; isRed?: boolean }) {
     setWarning(w)
@@ -38,11 +44,11 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
     warningTimerRef.current = setTimeout(() => setWarning(null), 4000)
   }
 
-  // T2.05E — Guided mode real-time analysis via Web Speech API + periodic gaze reminder
+  // Speech recognition — runs in ALL modes for live subtitles.
+  // Guided mode additionally uses it for WPM / filler warnings.
   useEffect(() => {
-    if (mode !== 'guided' || status !== 'recording') return
+    if (status !== 'recording') return
 
-    // ── Speech recognition (WPM + filler detection) ──────────────────────────
     const SpeechRec =
       (window as typeof window & { SpeechRecognition?: new () => SpeechRecognition }).SpeechRecognition ||
       (window as typeof window & { webkitSpeechRecognition?: new () => SpeechRecognition }).webkitSpeechRecognition
@@ -69,35 +75,69 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
         const now = Date.now()
+        let interimText = ''
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const t = event.results[i][0].transcript.toLowerCase().trim()
-          if (!t) continue
+          const result = event.results[i]
+          const t = result[0].transcript
 
-          // Filler detection
-          if (FILLERS.some((f) => t.split(/\s+/).includes(f))) {
-            showWarning({ message: 'Watch your filler words (um, uh, like)', isRed: false })
+          if (result.isFinal) {
+            // Accumulate into the final buffer, then trim from the left if too long
+            finalBufferRef.current = (finalBufferRef.current + ' ' + t.trim()).trim()
+            if (finalBufferRef.current.length > SUBTITLE_MAX_CHARS) {
+              // Drop words from the front until within limit
+              const words = finalBufferRef.current.split(/\s+/)
+              while (words.join(' ').length > SUBTITLE_MAX_CHARS && words.length > 1) {
+                words.shift()
+              }
+              finalBufferRef.current = words.join(' ')
+            }
+
+            // Guided mode: filler + WPM analysis
+            if (mode === 'guided') {
+              const lower = t.toLowerCase().trim()
+              if (FILLERS.some((f) => lower.split(/\s+/).includes(f))) {
+                showWarning({ message: 'Watch your filler words (um, uh, like)', isRed: false })
+              }
+              const words = lower.split(/\s+/).filter(Boolean)
+              words.forEach(() => wordTimesRef.current.push(now))
+            }
+          } else {
+            interimText = t
           }
-
-          // Collect word timestamps for WPM
-          const words = t.split(/\s+/).filter(Boolean)
-          words.forEach(() => wordTimesRef.current.push(now))
         }
 
-        // WPM check 500ms after last speech event
-        if (wpmCheckTimer) clearTimeout(wpmCheckTimer)
-        wpmCheckTimer = setTimeout(() => {
-          const cutoff = Date.now() - 15000
-          wordTimesRef.current = wordTimesRef.current.filter((ts) => ts > cutoff)
-          const wpm = Math.round((wordTimesRef.current.length / 15) * 60)
-          if (wpm > 0 && wpm < 90) showWarning({ message: 'Speaking too slowly — pick up the pace', isRed: false })
-          if (wpm > 160) showWarning({ message: 'Speaking too fast — aim for 130–150 WPM', isRed: false })
-        }, 500)
+        // Update subtitle display
+        const displayText = (finalBufferRef.current + (interimText ? ' ' + interimText.trim() : '')).trim()
+        if (displayText) {
+          setSubtitle({ text: displayText, isFinal: !interimText })
+
+          // Clear the final buffer after a pause so the next phrase starts fresh
+          if (!interimText) {
+            if (subtitleClearRef.current) clearTimeout(subtitleClearRef.current)
+            subtitleClearRef.current = setTimeout(() => {
+              finalBufferRef.current = ''
+              setSubtitle(null)
+            }, 2500)
+          }
+        }
+
+        // WPM check (guided only)
+        if (mode === 'guided') {
+          if (wpmCheckTimer) clearTimeout(wpmCheckTimer)
+          wpmCheckTimer = setTimeout(() => {
+            const cutoff = Date.now() - 15000
+            wordTimesRef.current = wordTimesRef.current.filter((ts) => ts > cutoff)
+            const wpm = Math.round((wordTimesRef.current.length / 15) * 60)
+            if (wpm > 0 && wpm < 90) showWarning({ message: 'Speaking too slowly — pick up the pace', isRed: false })
+            if (wpm > 160) showWarning({ message: 'Speaking too fast — aim for 130–150 WPM', isRed: false })
+          }, 500)
+        }
       }
 
       recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
         const err = e.error
         if (!started && lang === 'en-MY' && (err === 'language-not-supported' || err === 'network')) {
-          // Retry with en-US
           try { recognition.stop() } catch {}
           startRecognition('en-US')
           return
@@ -105,14 +145,12 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
         if (err === 'not-allowed' || err === 'audio-capture') {
           setSpeechAvailable(false)
         }
-        // For 'no-speech' or 'aborted' — restart recognition to keep it continuous
         if (err === 'no-speech' || err === 'aborted') {
           try { recognition.start() } catch {}
         }
       }
 
       recognition.onend = () => {
-        // Auto-restart if still recording (recognition stops after silence)
         if (recognitionRef.current === recognition) {
           try { recognition.start() } catch {}
         }
@@ -127,42 +165,38 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
     startRecognition('en-MY')
 
-    // ── Gaze & camera reminders (every 30s) ───────────────────────────────────
-    // Give a periodic reminder to maintain eye contact since we can't do
-    // real-time gaze detection without MediaPipe in-browser.
-    let gazeReminderCount = 0
-    const GAZE_REMINDERS = [
-      'Maintain eye contact — look at the camera',
-      'Remember to look directly at the camera',
-      'Keep steady eye contact with your audience',
-    ]
-    faceCheckRef.current = setInterval(() => {
-      const video = videoRef.current
-      if (!video) return
-
-      // Pixel coverage check — detect if camera is blocked
-      const canvas = document.createElement('canvas')
-      canvas.width = 80; canvas.height = 60
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-      try {
-        ctx.drawImage(video, 0, 0, 80, 60)
-        const { data } = ctx.getImageData(0, 0, 80, 60)
-        let nonBlack = 0
-        for (let i = 0; i < data.length; i += 4) {
-          if (data[i] > 30 || data[i + 1] > 30 || data[i + 2] > 30) nonBlack++
-        }
-        const coverage = nonBlack / (80 * 60)
-        if (coverage < 0.05) {
-          showWarning({ message: 'Camera blocked — make sure camera is unobstructed', isRed: true })
-          return
-        }
-      } catch { /* ignore */ }
-
-      // Periodic eye-contact reminder
-      showWarning({ message: GAZE_REMINDERS[gazeReminderCount % GAZE_REMINDERS.length], isRed: false })
-      gazeReminderCount++
-    }, 30000) // every 30 seconds
+    // ── Gaze & camera reminders — guided mode only ─────────────────────────
+    if (mode === 'guided') {
+      let gazeReminderCount = 0
+      const GAZE_REMINDERS = [
+        'Maintain eye contact — look at the camera',
+        'Remember to look directly at the camera',
+        'Keep steady eye contact with your audience',
+      ]
+      faceCheckRef.current = setInterval(() => {
+        const video = videoRef.current
+        if (!video) return
+        const canvas = document.createElement('canvas')
+        canvas.width = 80; canvas.height = 60
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        try {
+          ctx.drawImage(video, 0, 0, 80, 60)
+          const { data } = ctx.getImageData(0, 0, 80, 60)
+          let nonBlack = 0
+          for (let i = 0; i < data.length; i += 4) {
+            if (data[i] > 30 || data[i + 1] > 30 || data[i + 2] > 30) nonBlack++
+          }
+          const coverage = nonBlack / (80 * 60)
+          if (coverage < 0.05) {
+            showWarning({ message: 'Camera blocked — make sure camera is unobstructed', isRed: true })
+            return
+          }
+        } catch { /* ignore */ }
+        showWarning({ message: GAZE_REMINDERS[gazeReminderCount % GAZE_REMINDERS.length], isRed: false })
+        gazeReminderCount++
+      }, 30000)
+    }
 
     return () => {
       if (wpmCheckTimer) clearTimeout(wpmCheckTimer)
@@ -170,6 +204,9 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       recognitionRef.current = null
       if (faceCheckRef.current) clearInterval(faceCheckRef.current)
       wordTimesRef.current = []
+      finalBufferRef.current = ''
+      if (subtitleClearRef.current) clearTimeout(subtitleClearRef.current)
+      setSubtitle(null)
     }
   }, [mode, status])
 
@@ -386,9 +423,40 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             </div>
           )}
 
+          {/* Live subtitle strip — overlaid at the bottom of the video */}
+          <div
+            className="absolute inset-x-0 bottom-0"
+            style={{
+              minHeight: 48,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)',
+              display: 'flex',
+              alignItems: 'flex-end',
+              padding: '0 16px 10px',
+            }}
+          >
+            {subtitle && status === 'recording' && (
+              <p
+                key={subtitle.text}
+                style={{
+                  fontSize: 15,
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                  color: subtitle.isFinal ? '#e8e8f0' : 'rgba(232,232,240,0.65)',
+                  textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+                  letterSpacing: '0.01em',
+                  transition: 'opacity 0.3s ease',
+                  maxWidth: '100%',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {subtitle.text}
+              </p>
+            )}
+          </div>
+
           {/* Waveform overlay */}
-          <div className="absolute bottom-0 inset-x-0 px-3 pb-2">
-            <canvas ref={canvasRef} width={640} height={40} className="w-full" style={{ height: 40, opacity: 0.9 }} />
+          <div className="absolute bottom-0 inset-x-0 px-3 pb-2" style={{ pointerEvents: 'none' }}>
+            <canvas ref={canvasRef} width={640} height={32} className="w-full" style={{ height: 32, opacity: subtitle ? 0.35 : 0.9 }} />
           </div>
         </div>
 
