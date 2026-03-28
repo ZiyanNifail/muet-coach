@@ -8,7 +8,7 @@ Used to protect admin and other sensitive routes.
 """
 import os
 import logging
-from fastapi import Depends, HTTPException, Header
+from fastapi import HTTPException, Header
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -45,24 +45,45 @@ async def get_current_user_id(authorization: Optional[str] = Header(None)) -> st
 
 
 async def require_admin(
-    user_id: str = Depends(get_current_user_id),
+    authorization: Optional[str] = Header(None),
     x_admin_key: Optional[str] = Header(None),
 ) -> str:
     """
-    Dependency that requires the authenticated user to have role='admin'.
-    Also accepts X-Admin-Key header matching ADMIN_ACCESS_KEY env var (demo mode).
-    Returns the user_id on success. Raises HTTP 403 otherwise.
+    Dependency that requires admin access.
+
+    Accepts two paths:
+      1. X-Admin-Key header matching ADMIN_ACCESS_KEY env var (demo/FYP mode).
+         Checked first so the admin panel works without a Supabase session.
+      2. Authorization: Bearer <jwt> where the user has role='admin' in the
+         users table (production path).
+
+    Returns the user identifier on success. Raises HTTP 401/403 otherwise.
     """
-    # Demo-mode bypass: X-Admin-Key header matches env var
+    # ── Path 1: admin key bypass ──────────────────────────────────────────────
     admin_key = os.getenv("ADMIN_ACCESS_KEY", "")
     if admin_key and x_admin_key == admin_key:
         return "admin-demo"
+
+    # ── Path 2: Supabase JWT + role check ─────────────────────────────────────
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Admin access requires either X-Admin-Key header or a valid admin JWT.",
+        )
+
+    token = authorization.split(" ", 1)[1].strip()
 
     try:
         from services.supabase_client import get_supabase
         sb = get_supabase()
         if sb is None:
             raise HTTPException(status_code=503, detail="Auth service unavailable")
+
+        user_response = sb.auth.get_user(token)
+        if not user_response or not user_response.user:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+        user_id = user_response.user.id
         res = (
             sb.table("users")
             .select("role")
@@ -76,5 +97,5 @@ async def require_admin(
     except HTTPException:
         raise
     except Exception as exc:
-        logger.warning("Admin role check failed for %s: %s", user_id, exc)
+        logger.warning("Admin auth failed: %s", exc)
         raise HTTPException(status_code=403, detail="Access denied")
