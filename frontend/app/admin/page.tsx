@@ -17,6 +17,13 @@ interface Approval {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
+  // Check for demo admin key stored by the login bubble
+  const demoKey = sessionStorage.getItem('adminAccessKey')
+  if (demoKey) {
+    return { 'X-Admin-Key': demoKey }
+  }
+
+  // Fall back to Supabase JWT
   try {
     const sb = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,6 +42,11 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isDemo, setIsDemo] = useState(false)
+
+  useEffect(() => {
+    setIsDemo(!!sessionStorage.getItem('adminAccessKey'))
+  }, [])
 
   async function fetchApprovals() {
     setLoading(true)
@@ -105,7 +117,9 @@ export default function AdminPage() {
         className="rounded-lg border px-4 py-3 text-sm"
         style={{ background: 'rgba(245,158,11,0.06)', borderColor: 'rgba(245,158,11,0.2)', color: '#f59e0b' }}
       >
-        Admin access — only authorised administrators should view this page.
+        {isDemo
+          ? 'Admin demo mode — authenticated via admin key.'
+          : 'Admin access — only authorised administrators should view this page.'}
       </div>
 
       {/* Error */}

@@ -2,8 +2,11 @@
 FastAPI authentication dependencies — CRIT-02 fix.
 
 Verifies Supabase JWT tokens passed as `Authorization: Bearer <token>`.
+Also accepts an X-Admin-Key header matching ADMIN_ACCESS_KEY env var for
+direct admin panel access (FYP demo mode).
 Used to protect admin and other sensitive routes.
 """
+import os
 import logging
 from fastapi import Depends, HTTPException, Header
 from typing import Optional
@@ -41,11 +44,20 @@ async def get_current_user_id(authorization: Optional[str] = Header(None)) -> st
         raise HTTPException(status_code=401, detail="Token verification failed")
 
 
-async def require_admin(user_id: str = Depends(get_current_user_id)) -> str:
+async def require_admin(
+    user_id: str = Depends(get_current_user_id),
+    x_admin_key: Optional[str] = Header(None),
+) -> str:
     """
     Dependency that requires the authenticated user to have role='admin'.
+    Also accepts X-Admin-Key header matching ADMIN_ACCESS_KEY env var (demo mode).
     Returns the user_id on success. Raises HTTP 403 otherwise.
     """
+    # Demo-mode bypass: X-Admin-Key header matches env var
+    admin_key = os.getenv("ADMIN_ACCESS_KEY", "")
+    if admin_key and x_admin_key == admin_key:
+        return "admin-demo"
+
     try:
         from services.supabase_client import get_supabase
         sb = get_supabase()
