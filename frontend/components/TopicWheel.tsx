@@ -55,23 +55,6 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
   )
   const spinTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Fetch live topics from Supabase
-  useEffect(() => {
-    supabase
-      .from('muet_topics')
-      .select('id, topic, category')
-      .eq('active', true)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          const t = data as Topic[]
-          setTopics(t)
-          const idx = Math.floor(Math.random() * t.length)
-          setSelectedIdx(idx)
-          setOffset(computeOffset(t.length, idx))
-        }
-      })
-  }, [])
-
   function spin() {
     if (spinning) return
     if (spinTimeout.current) clearTimeout(spinTimeout.current)
@@ -91,6 +74,25 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
       })
     })
   }
+
+  // Fetch live topics from Supabase, then auto-spin once loaded (WARN-05 fix)
+  useEffect(() => {
+    supabase
+      .from('muet_topics')
+      .select('id, topic, category')
+      .eq('active', true)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const t = data as Topic[]
+          setTopics(t)
+          const idx = Math.floor(Math.random() * t.length)
+          setSelectedIdx(idx)
+          setOffset(computeOffset(t.length, idx))
+        }
+        // Auto-spin once after topics are ready (or after mount with fallback topics)
+        setTimeout(() => spin(), 80)
+      })
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -201,10 +203,12 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
                   style={{
                     height: ITEM_H,
                     color: isSelected ? '#e8e8f0' : '#3a3a52',
+                    opacity: isSelected ? 1 : 0.5,
+                    filter: isSelected ? 'none' : 'blur(1.5px)',
                     fontSize: isSelected ? 15 : 13,
                     fontWeight: isSelected ? 500 : 400,
                     letterSpacing: isSelected ? '0.01em' : '0.02em',
-                    transition: 'color 0.4s ease, font-size 0.4s ease',
+                    transition: 'color 0.4s ease, font-size 0.4s ease, filter 0.4s ease, opacity 0.4s ease',
                     userSelect: 'none',
                   }}
                 >

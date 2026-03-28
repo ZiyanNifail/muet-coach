@@ -129,6 +129,7 @@ async def upload_presentation(
         video_path=video_path,
         duration_secs=float(duration_secs or 0),
         topic=topic_text or "",
+        session_mode=session_mode or "unguided",
     )
 
     return UploadResponse(

@@ -67,7 +67,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
         setSpeechAvailable(true)
       }
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const now = Date.now()
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const t = event.results[i][0].transcript.toLowerCase().trim()
@@ -94,8 +94,8 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
         }, 500)
       }
 
-      recognition.onerror = (e) => {
-        const err = (e as SpeechRecognitionErrorEvent).error
+      recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
+        const err = e.error
         if (!started && lang === 'en-MY' && (err === 'language-not-supported' || err === 'network')) {
           // Retry with en-US
           try { recognition.stop() } catch {}

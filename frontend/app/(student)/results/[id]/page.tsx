@@ -23,6 +23,9 @@ interface Report {
   pace_timeseries: { time_sec: number; wpm: number }[] | null
   advice_cards: { impact: 'HIGH' | 'MED' | 'LOW'; text: string }[] | null
   confidence_flags: { audio_ok: boolean; face_ok: boolean; pose_ok: boolean } | null
+  topic_text: string | null
+  session_mode: string | null
+  duration_secs: number | null
 }
 
 const DEMO_REPORT: Report = {
@@ -51,6 +54,9 @@ const DEMO_REPORT: Report = {
     { impact: 'LOW', text: 'Vary sentence length — mix short statements with longer explanations.' },
   ],
   confidence_flags: { audio_ok: true, face_ok: true, pose_ok: true },
+  topic_text: 'Education in Malaysia',
+  session_mode: 'guided',
+  duration_secs: 120,
 }
 
 const IMPACT_VARIANT = { HIGH: 'red', MED: 'amber', LOW: 'blue' } as const
@@ -58,9 +64,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 function postureLabel(score: number | null): string {
   if (score === null) return 'N/A'
-  if (score >= 80) return 'Excellent'
-  if (score >= 60) return 'Good'
-  if (score >= 40) return 'Fair'
+  if (score >= 70) return 'Good'
+  if (score >= 40) return 'Needs Work'
   return 'Poor'
 }
 
@@ -116,7 +121,7 @@ function BandRing({ score }: { score: number }) {
 // Posture progress bar
 function PostureBar({ score }: { score: number }) {
   const pct = Math.max(0, Math.min(100, score))
-  const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444'
+  const color = pct >= 70 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#ef4444'
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
@@ -332,6 +337,19 @@ export default function ResultsPage() {
             FEEDBACK REPORT{isDemo && ' · DEMO DATA'}{error && ' · DEMO FALLBACK'}
           </div>
           <h1 className="text-xl font-semibold text-[#e8e8f0]">Presentation Analysis</h1>
+          {(r.topic_text || r.session_mode) && (
+            <p className="text-[#55556a] text-xs mt-1">
+              {r.topic_text && <span>{r.topic_text}</span>}
+              {r.session_mode && (
+                <span className="ml-2 capitalize">{r.session_mode.replace('_', ' ')} session</span>
+              )}
+              {r.duration_secs != null && (
+                <span className="ml-2">
+                  · {Math.floor(r.duration_secs / 60)}:{String(Math.round(r.duration_secs % 60)).padStart(2, '0')}
+                </span>
+              )}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={() => printReport(r)}>
@@ -421,7 +439,8 @@ export default function ResultsPage() {
               <YAxis tick={{ fill: '#55556a', fontSize: 10 }} axisLine={false} tickLine={false} domain={['auto', 'auto']} />
               <Tooltip
                 contentStyle={{ background: 'rgba(14,14,22,0.9)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#e8e8f0', fontSize: 12 }}
-                formatter={(v: number) => [`${v} WPM`, 'Pace']}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={((v: number | undefined) => [`${v ?? '—'} WPM`, 'Pace']) as any}
               />
               <ReferenceLine y={130} stroke="#f59e0b" strokeDasharray="4 4" strokeOpacity={0.6} />
               <ReferenceLine y={150} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.6} />

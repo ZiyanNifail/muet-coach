@@ -38,6 +38,7 @@ async def run_pipeline(
     video_path: str,
     duration_secs: float,
     topic: str = "",
+    session_mode: str = "unguided",
 ) -> None:
     """
     Full AI analysis pipeline. Writes results to Supabase.
@@ -103,6 +104,7 @@ async def run_pipeline(
             "posture_score": posture_score,
             "lexical_diversity": lexical_diversity,
             "duration_secs": duration_secs,
+            "session_mode": session_mode,
         }
         groq_result = await generate_feedback(transcript, metrics_for_groq)
 

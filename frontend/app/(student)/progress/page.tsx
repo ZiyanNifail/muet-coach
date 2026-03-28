@@ -50,7 +50,8 @@ function SparkLine({
           <YAxis hide domain={['auto', 'auto']} />
           <Tooltip
             contentStyle={{ background: 'rgba(14,14,22,0.9)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#e8e8f0', fontSize: 11 }}
-            formatter={(v: number) => [`${v}${unit}`, label]}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            formatter={((v: number | undefined) => [`${v ?? '—'}${unit}`, label]) as any}
             labelFormatter={(l) => l}
           />
           {refVal !== undefined && (
@@ -194,7 +195,8 @@ export default function ProgressPage() {
                   <YAxis tick={{ fill: '#55556a', fontSize: 10 }} axisLine={false} tickLine={false} domain={[1, 6]} ticks={[1, 2, 3, 4, 5, 6]} />
                   <Tooltip
                     contentStyle={{ background: 'rgba(14,14,22,0.9)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#e8e8f0', fontSize: 12 }}
-                    formatter={(v: number) => [`Band ${v.toFixed(1)}`, 'Score']}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    formatter={((v: number | undefined) => [`Band ${(v ?? 0).toFixed(1)}`, 'Score']) as any}
                   />
                   <ReferenceLine y={3.5} stroke="#f59e0b" strokeDasharray="4 4" strokeOpacity={0.4} />
                   <Line type="monotone" dataKey="band" stroke="#8b5cf6" strokeWidth={2.5} dot={{ fill: '#8b5cf6', r: 4 }} activeDot={{ r: 6 }} />
