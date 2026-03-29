@@ -26,6 +26,11 @@ interface Report {
   topic_text: string | null
   session_mode: string | null
   duration_secs: number | null
+  pitch_mean_hz: number | null
+  energy_mean_db: number | null
+  sentiment_score: number | null
+  voice_clarity_score: number | null
+  confidence_score: number | null
 }
 
 const DEMO_REPORT: Report = {
@@ -57,6 +62,11 @@ const DEMO_REPORT: Report = {
   topic_text: 'Education in Malaysia',
   session_mode: 'guided',
   duration_secs: 120,
+  pitch_mean_hz: 182,
+  energy_mean_db: -24.3,
+  sentiment_score: 0.71,
+  voice_clarity_score: 78,
+  confidence_score: 73.2,
 }
 
 const IMPACT_VARIANT = { HIGH: 'red', MED: 'amber', LOW: 'blue' } as const
@@ -253,6 +263,66 @@ ${r.transcript ? `
   win.addEventListener('load', () => win.print())
 }
 
+function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
+  score: number
+  sentiment: number | null
+  clarity: number | null
+  pitch: number | null
+  energy: number | null
+}) {
+  const color = score >= 70 ? '#22c55e' : score >= 50 ? '#3b82f6' : score >= 35 ? '#f59e0b' : '#ef4444'
+  const label = score >= 70 ? 'Strong' : score >= 50 ? 'Developing' : score >= 35 ? 'Needs Work' : 'Weak'
+  const pct = Math.max(0, Math.min(100, score))
+
+  return (
+    <div
+      className="flex flex-col gap-4 rounded-xl border p-5"
+      style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+    >
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+        AI CONFIDENCE SCORE
+      </div>
+
+      {/* Main score bar */}
+      <div className="flex items-center gap-4">
+        <div className="flex flex-col">
+          <span className="font-mono text-3xl font-bold" style={{ color }}>{score.toFixed(1)}</span>
+          <span style={{ fontSize: 10, color: '#55556a' }}>/100 · {label}</span>
+        </div>
+        <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${pct}%`, background: color, transition: 'width 1.2s ease' }}
+          />
+        </div>
+      </div>
+
+      {/* Sub-metrics row */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[
+          { label: 'VOICE CLARITY', value: clarity != null ? `${Math.round(clarity)}%` : '—', color: '#8b5cf6' },
+          { label: 'SENTIMENT', value: sentiment != null ? `${Math.round(sentiment * 100)}%` : '—', color: '#06b6d4' },
+          { label: 'PITCH', value: pitch != null ? `${Math.round(pitch)} Hz` : '—', color: '#f59e0b' },
+          { label: 'ENERGY', value: energy != null ? `${energy.toFixed(1)} dB` : '—', color: '#f97316' },
+        ].map((m) => (
+          <div
+            key={m.label}
+            className="flex flex-col gap-0.5 rounded-lg border p-2.5"
+            style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.05)' }}
+          >
+            <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#3a3a52' }}>
+              {m.label}
+            </span>
+            <span className="font-mono text-sm font-semibold" style={{ color: m.color }}>
+              {m.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function ResultsPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id ?? 'demo'
@@ -416,6 +486,17 @@ export default function ResultsPage() {
           )}
         </div>
       </div>
+
+      {/* Composite Confidence Score */}
+      {r.confidence_score != null && (
+        <ConfidenceCard
+          score={r.confidence_score}
+          sentiment={r.sentiment_score ?? null}
+          clarity={r.voice_clarity_score ?? null}
+          pitch={r.pitch_mean_hz ?? null}
+          energy={r.energy_mean_db ?? null}
+        />
+      )}
 
       {/* WPM pace chart */}
       {chartData && (

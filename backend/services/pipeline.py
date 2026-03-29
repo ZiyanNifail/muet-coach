@@ -11,7 +11,7 @@ import logging
 
 from services.audio_service import extract_wav, chunk_wav
 from services.video_service import extract_frames
-from services.whisper_service import transcribe_chunks
+from services.whisper_service import transcribe_chunks, transcribe_chunks_with_clarity
 from services.mediapipe_service import analyse_video
 from services.nlp_service import (
     detect_fillers,
@@ -27,9 +27,57 @@ from services.supabase_client import (
     db_insert_session_history,
 )
 from services.storage_service import compress_video_for_storage, upload_video
+from services.voice_dynamics_service import analyse_voice_dynamics
+from services.sentiment_service import analyse_sentiment
 
 logger = logging.getLogger(__name__)
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads")
+
+
+def compute_confidence_score(
+    band_score, eye_contact_pct, posture_score,
+    voice_clarity_score, sentiment_score, wpm_avg, filler_density
+) -> float | None:
+    """
+    T3.04A — Composite confidence score (0–100).
+
+    Weights:
+        band_score        30%
+        eye_contact_pct   20%
+        posture_score     15%
+        voice_clarity     15%
+        pace (wpm)        10%
+        sentiment         10%
+    A filler penalty (up to −15) is applied after normalisation.
+    Returns None if no components are available.
+    """
+    score = 0.0
+    weight = 0.0
+    if band_score is not None:
+        score += ((band_score - 1) / 5) * 100 * 0.30
+        weight += 0.30
+    if eye_contact_pct is not None:
+        score += eye_contact_pct * 0.20
+        weight += 0.20
+    if posture_score is not None:
+        score += posture_score * 0.15
+        weight += 0.15
+    if voice_clarity_score is not None:
+        score += voice_clarity_score * 0.15
+        weight += 0.15
+    if wpm_avg is not None:
+        pace_score = max(0.0, 100.0 - abs(wpm_avg - 140) * 2.0)
+        score += pace_score * 0.10
+        weight += 0.10
+    if sentiment_score is not None:
+        score += sentiment_score * 100 * 0.10
+        weight += 0.10
+    if weight < 0.01:
+        return None
+    result = score / weight
+    if filler_density is not None:
+        result = max(0.0, result - min(15.0, filler_density * 2.0))
+    return round(result, 1)
 
 
 async def run_pipeline(
@@ -60,11 +108,14 @@ async def run_pipeline(
             audio_ok = False
             chunk_paths = []
 
-        # ── T2.10  Whisper transcription ─────────────────────────────────────
+        # ── T2.10  Whisper transcription + T2.12C voice clarity ─────────────
         transcript = ""
+        voice_clarity_score: float | None = None
         if audio_ok and chunk_paths:
             try:
-                transcript = await transcribe_chunks(chunk_paths)
+                transcript, avg_logprob = await transcribe_chunks_with_clarity(chunk_paths)
+                if avg_logprob is not None:
+                    voice_clarity_score = round(max(0.0, min(100.0, (avg_logprob + 1.0) * 100.0)), 1)
             except Exception as exc:
                 logger.warning("Whisper failed: %s", exc)
 
@@ -74,12 +125,33 @@ async def run_pipeline(
             logger.warning("Transcript empty or too short for %s — marking audio_ok=False", presentation_id)
             audio_ok = False
 
+        # ── T2.12B  Sentiment (distilbert) ───────────────────────────────────
+        sentiment_score: float | None = None
+        if transcript and len(transcript.split()) >= 5:
+            loop = asyncio.get_event_loop()
+            try:
+                sentiment_score = await loop.run_in_executor(None, analyse_sentiment, transcript)
+            except Exception as exc:
+                logger.warning("Sentiment analysis failed: %s", exc)
+
         # ── T2.14 / T2.15  MediaPipe ─────────────────────────────────────────
         vision_results = await _run_mediapipe(video_path)
         eye_contact_pct: float | None = vision_results["eye_contact_pct"]
         posture_score: float | None = vision_results["posture_score"]
         confidence_flags = vision_results["confidence_flags"]
         confidence_flags["audio_ok"] = audio_ok and bool(transcript)
+
+        # ── T2.12A  Voice dynamics (librosa) ─────────────────────────────────
+        pitch_mean_hz: float | None = None
+        energy_mean_db: float | None = None
+        if audio_ok and os.path.exists(wav_path):
+            loop = asyncio.get_event_loop()
+            try:
+                vd = await loop.run_in_executor(None, analyse_voice_dynamics, wav_path)
+                pitch_mean_hz = vd.get("pitch_mean_hz")
+                energy_mean_db = vd.get("energy_mean_db")
+            except Exception as exc:
+                logger.warning("Voice dynamics failed: %s", exc)
 
         # ── T2.12 / T2.13  NLP ───────────────────────────────────────────────
         filler_data = detect_fillers(transcript)
@@ -119,6 +191,17 @@ async def run_pipeline(
         final_band = groq_result["band_score"] if groq_result["band_score"] is not None else rule_band
         advice_cards = groq_result["advice_cards"]
 
+        # ── T3.04A  Composite Confidence Score ───────────────────────────────
+        confidence_score = compute_confidence_score(
+            band_score=final_band,
+            eye_contact_pct=eye_contact_pct,
+            posture_score=posture_score,
+            voice_clarity_score=voice_clarity_score,
+            sentiment_score=sentiment_score,
+            wpm_avg=wpm_avg,
+            filler_density=filler_density,
+        )
+
         # ── T2.19  Persist report ─────────────────────────────────────────────
         report = {
             "presentation_id": presentation_id,
@@ -132,6 +215,11 @@ async def run_pipeline(
             "pace_timeseries": pace_timeseries,
             "advice_cards": advice_cards,
             "confidence_flags": confidence_flags,
+            "pitch_mean_hz": pitch_mean_hz,
+            "energy_mean_db": energy_mean_db,
+            "sentiment_score": sentiment_score,
+            "voice_clarity_score": voice_clarity_score,
+            "confidence_score": confidence_score,
         }
         report_id = await db_insert_report(report)
 
