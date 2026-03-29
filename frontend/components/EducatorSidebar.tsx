@@ -9,7 +9,6 @@ import {
   FileCheck,
   Users,
   BarChart2,
-  ClipboardList,
   GraduationCap,
   Shield,
 } from 'lucide-react'

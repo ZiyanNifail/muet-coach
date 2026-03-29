@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { clsx } from 'clsx'
 import { Button } from '@/components/ui/Button'
 import { TopicWheel } from '@/components/TopicWheel'
 import { BrainstormPanel } from '@/components/BrainstormPanel'
@@ -57,7 +56,7 @@ function ExamPrepStep({ topic, onReady }: { topic: string; onReady: () => void }
 
   useEffect(() => {
     if (phase !== 'prep') return
-    if (secs <= 0) { setPhase('ready'); return }
+    if (secs <= 0) { setTimeout(() => setPhase('ready'), 0); return }
     const t = setTimeout(() => setSecs((s) => s - 1), 1000)
     return () => clearTimeout(t)
   }, [secs, phase])

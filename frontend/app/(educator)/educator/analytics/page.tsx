@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { BarChart2, Users, BookOpen, FileCheck, TrendingUp, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react'
+import { Users, BookOpen, FileCheck, TrendingUp, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 

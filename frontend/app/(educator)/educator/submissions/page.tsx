@@ -38,7 +38,6 @@ export default function AllSubmissionsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
   const [filterCourse, setFilterCourse] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
@@ -50,8 +49,6 @@ export default function AllSubmissionsPage() {
       )
       const { data: { user } } = await sb.auth.getUser()
       if (!user) { setLoading(false); return }
-      setUserId(user.id)
-
       try {
         const coursesRes = await fetch(`${API_URL}/api/courses?educator_id=${user.id}`)
         if (!coursesRes.ok) { setLoading(false); return }

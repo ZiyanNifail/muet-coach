@@ -75,7 +75,7 @@ export default function RegisterPage() {
         </div>
         <h2 className="text-xl font-semibold text-[#e8e8f0]">Pending admin review</h2>
         <p className="text-[#8888a0] text-sm leading-6">
-          Educator accounts require approval before Educator features are unlocked. You'll receive an
+          Educator accounts require approval before Educator features are unlocked. You&apos;ll receive an
           email once your account is approved.
         </p>
         <div

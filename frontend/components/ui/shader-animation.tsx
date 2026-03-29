@@ -85,7 +85,6 @@ export function ShaderAnimation() {
 
     const animate = () => {
       const animationId = requestAnimationFrame(animate)
-      ;(uniforms.time.value as number)
       uniforms.time.value = (uniforms.time.value as number) + 0.05
       renderer.render(scene, camera)
       if (sceneRef.current) {

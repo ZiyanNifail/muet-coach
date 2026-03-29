@@ -280,6 +280,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       if (subtitleClearRef.current) clearTimeout(subtitleClearRef.current)
       setSubtitle(null)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, status])
 
   // ── Elapsed timer ─────────────────────────────────────────────────────────
@@ -291,6 +292,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       if (elapsedRef.current >= maxSecs) stopRecording()
     }, 1000)
     return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, maxSecs])
 
   // ── Waveform ──────────────────────────────────────────────────────────────
@@ -313,7 +315,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       let x = 0
       for (let i = 0; i < buf.length; i++) {
         const y = (buf[i] / 128) * (h / 2)
-        i === 0 ? c.moveTo(x, y) : c.lineTo(x, y)
+        if (i === 0) { c.moveTo(x, y) } else { c.lineTo(x, y) }
         x += sliceW
       }
       c.stroke()
@@ -363,6 +365,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       try { recognitionRef.current?.stop() } catch {}
       if (faceCheckRef.current) clearInterval(faceCheckRef.current)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const stopRecording = useCallback(() => {

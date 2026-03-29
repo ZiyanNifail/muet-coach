@@ -17,6 +17,7 @@ export function BrainstormPanel({ topic, onReady, onSkip }: BrainstormPanelProps
     if (timeLeft <= 0) { onReady(notes); return }
     const t = setInterval(() => setTimeLeft((s) => s - 1), 1000)
     return () => clearInterval(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft])
 
   const mins = Math.floor(timeLeft / 60)

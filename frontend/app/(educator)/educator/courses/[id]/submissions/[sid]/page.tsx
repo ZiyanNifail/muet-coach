@@ -254,7 +254,7 @@ export default function SubmissionReviewPage() {
                 <CheckCircle size={28} style={{ color: '#22c55e' }} />
                 <p className="text-sm text-[#22c55e] font-semibold">Override saved successfully.</p>
                 <p className="text-xs text-[#55556a] text-center">
-                  Band score updated to <strong className="text-[#e8e8f0]">{overrideBand}</strong>. The student's results page will reflect this change.
+                  Band score updated to <strong className="text-[#e8e8f0]">{overrideBand}</strong>. The student&apos;s results page will reflect this change.
                 </p>
               </div>
             ) : (
@@ -318,7 +318,7 @@ export default function SubmissionReviewPage() {
                 </Button>
 
                 <p className="text-[#3a3a52] text-xs">
-                  Overrides update the student's band score immediately. An audit trail is kept in <code>educator_overrides</code>.
+                  Overrides update the student&apos;s band score immediately. An audit trail is kept in <code>educator_overrides</code>.
                 </p>
               </>
             )}
