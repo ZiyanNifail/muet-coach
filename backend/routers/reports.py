@@ -31,6 +31,10 @@ class FeedbackReport(BaseModel):
     pace_timeseries: Optional[Any] = None
     advice_cards: Optional[Any] = None
     confidence_flags: Optional[Any] = None
+    # Presentation context fields (WARN-04 fix)
+    topic_text: Optional[str] = None
+    session_mode: Optional[str] = None
+    duration_secs: Optional[float] = None
 
 
 @router.get("/{presentation_id}", response_model=FeedbackReport)

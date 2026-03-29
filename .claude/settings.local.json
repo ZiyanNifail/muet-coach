@@ -14,7 +14,18 @@
       "Bash(curl -s http://localhost:8000/health -w \"\\\\n\")",
       "mcp__ide__getDiagnostics",
       "Bash(curl:*)",
-      "Bash(python -c \":*)"
+      "Bash(python -c \":*)",
+      "Bash(grep -r \"GROQ_API_KEY\\\\|SUPABASE_SERVICE_KEY\\\\|gsk_\\\\|sk-\\\\|eyJ\" /c/presentation-coach-fyp --include=*.ts --include=*.tsx --include=*.py --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=venv)",
+      "Bash(grep -n \"NEXT_PUBLIC_GROQ_API_KEY\" /c/presentation-coach-fyp/frontend/app/\\\\\\(educator\\\\\\)/educator/courses/[id]/page.tsx)",
+      "Bash(python -m py_compile routers/courses.py)",
+      "Bash(python -m py_compile routers/admin.py services/auth_deps.py)",
+      "Bash(python -m py_compile routers/presentations.py)",
+      "Bash(python -m py_compile services/cefr_evaluator.py services/pipeline.py)",
+      "Bash(python -m py_compile services/groq_service.py)",
+      "Bash(python -m py_compile services/pipeline.py services/groq_service.py routers/presentations.py)",
+      "Bash(xargs python:*)",
+      "Bash(npx tsc:*)",
+      "Bash(echo \"TSC exit: $?\")"
     ]
   }
 }

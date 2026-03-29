@@ -97,17 +97,29 @@ async def db_insert_session_history(student_id: str, report_id: str) -> None:
 
 
 async def db_get_report(presentation_id: str) -> dict | None:
+    """
+    Fetch the feedback report joined with presentation context fields
+    (topic_text, session_mode, duration_secs) for the results page header.
+    """
     sb = get_supabase()
     if sb is None:
         return None
     res = (
         sb.table("feedback_reports")
-        .select("*")
+        .select("*, presentations!feedback_reports_presentation_id_fkey(topic_text, session_mode, duration_secs)")
         .eq("presentation_id", presentation_id)
         .maybe_single()
         .execute()
     )
-    return res.data
+    if not res.data:
+        return None
+    row = dict(res.data)
+    # Flatten presentation context fields into the report row
+    pres = row.pop("presentations", None) or {}
+    row["topic_text"] = pres.get("topic_text")
+    row["session_mode"] = pres.get("session_mode")
+    row["duration_secs"] = pres.get("duration_secs")
+    return row
 
 
 # ── Admin helpers ────────────────────────────────────────────────────────────

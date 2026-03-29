@@ -68,6 +68,12 @@ async def run_pipeline(
             except Exception as exc:
                 logger.warning("Whisper failed: %s", exc)
 
+        # Guard: if transcript is empty after Whisper, mark audio as failed.
+        # This prevents NLP + Groq from producing scores on silence (WARN-03 fix).
+        if not transcript or len(transcript.split()) < 5:
+            logger.warning("Transcript empty or too short for %s — marking audio_ok=False", presentation_id)
+            audio_ok = False
+
         # ── T2.14 / T2.15  MediaPipe ─────────────────────────────────────────
         vision_results = await _run_mediapipe(video_path)
         eye_contact_pct: float | None = vision_results["eye_contact_pct"]
@@ -106,10 +112,11 @@ async def run_pipeline(
             "duration_secs": duration_secs,
             "session_mode": session_mode,
         }
-        groq_result = await generate_feedback(transcript, metrics_for_groq)
+        # Pass rule_band so Groq uses it as a calibration anchor (CRIT-01 fix).
+        groq_result = await generate_feedback(transcript, metrics_for_groq, rule_band=rule_band)
 
-        # LLM band takes precedence if available; otherwise rule-based
-        final_band = groq_result["band_score"] or rule_band
+        # Use merged band from groq_service; fall back to rule_band if Groq failed.
+        final_band = groq_result["band_score"] if groq_result["band_score"] is not None else rule_band
         advice_cards = groq_result["advice_cards"]
 
         # ── T2.19  Persist report ─────────────────────────────────────────────
