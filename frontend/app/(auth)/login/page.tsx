@@ -202,13 +202,13 @@ export default function LoginPage() {
                 disabled={adminLoading}
                 style={{
                   marginTop: 2,
-                  background: 'rgba(59,130,246,0.15)',
-                  border: '1px solid rgba(59,130,246,0.3)',
+                  background: 'rgba(148,163,184,0.12)',
+                  border: '1px solid rgba(148,163,184,0.25)',
                   borderRadius: 6,
                   padding: '7px 0',
                   fontSize: 12,
                   fontWeight: 600,
-                  color: '#3b82f6',
+                  color: '#94a3b8',
                   cursor: adminLoading ? 'not-allowed' : 'pointer',
                   opacity: adminLoading ? 0.6 : 1,
                   width: '100%',
@@ -274,7 +274,7 @@ export default function LoginPage() {
 
         <p className="text-[#8888a0] text-sm text-center">
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-[#3b82f6] hover:underline">
+          <Link href="/register" className="text-[#94a3b8] hover:underline">
             Create one
           </Link>
         </p>

@@ -183,7 +183,7 @@ export default function HistoryPage() {
       ) : sessions.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-32 rounded-xl border gap-3" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
           <p className="text-[#55556a] text-sm">No sessions yet. Complete your first practice session to see history here.</p>
-          <Link href="/practice" className="text-[#3b82f6] text-sm hover:underline">Start a session →</Link>
+          <Link href="/practice" className="text-[#94a3b8] text-sm hover:underline">Start a session →</Link>
         </div>
       ) : (
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
@@ -215,7 +215,7 @@ export default function HistoryPage() {
                 className="grid gap-4 px-5 py-3.5 items-center transition-colors"
                 style={{
                   gridTemplateColumns: comparing ? 'auto 1fr auto auto auto auto' : '1fr auto auto auto auto',
-                  background: isSelected ? 'rgba(59,130,246,0.06)' : 'transparent',
+                  background: isSelected ? 'rgba(148,163,184,0.06)' : 'transparent',
                   borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.04)',
                   cursor: comparing ? 'pointer' : 'default',
                 }}
@@ -225,8 +225,8 @@ export default function HistoryPage() {
                   <div
                     className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
                     style={{
-                      borderColor: isSelected ? '#3b82f6' : 'rgba(255,255,255,0.15)',
-                      background: isSelected ? '#3b82f6' : 'transparent',
+                      borderColor: isSelected ? '#94a3b8' : 'rgba(255,255,255,0.15)',
+                      background: isSelected ? '#94a3b8' : 'transparent',
                     }}
                   >
                     {isSelected && <span style={{ color: '#fff', fontSize: 10 }}>✓</span>}
@@ -252,7 +252,7 @@ export default function HistoryPage() {
                 {r?.presentation_id ? (
                   <Link
                     href={`/results/${r.presentation_id}`}
-                    className="flex items-center gap-1 text-[#3b82f6] text-xs hover:underline"
+                    className="flex items-center gap-1 text-[#94a3b8] text-xs hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <ExternalLink size={12} />

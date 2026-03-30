@@ -17,9 +17,9 @@ const FILLERS = new Set(['um', 'uh', 'ah', 'er', 'like', 'you know'])
 const MODE_CONFIG = {
   unguided: {
     label: 'UNGUIDED',
-    borderColor: '#3b82f6',
-    accentColor: '#3b82f6',
-    bgTint: 'rgba(59,130,246,0.04)',
+    borderColor: '#6b7280',
+    accentColor: '#94a3b8',
+    bgTint: 'rgba(100,100,120,0.05)',
     badge: 'Baseline recording — no interruptions',
     coachingActive: false,
     examMode: false,
@@ -593,13 +593,13 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
         {/* Unguided info panel */}
         {mode === 'unguided' && (
           <div className="rounded-xl border p-4 flex flex-col gap-2"
-            style={{ background: 'rgba(59,130,246,0.04)', borderColor: 'rgba(59,130,246,0.2)' }}>
-            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#3b82f6' }}>
+            style={{ background: 'rgba(100,100,120,0.05)', borderColor: 'rgba(107,114,128,0.25)' }}>
+            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#94a3b8' }}>
               Baseline Mode
             </p>
             {['No interruptions during recording', 'Full AI analysis after you stop', 'Your natural delivery baseline'].map(rule => (
               <div key={rule} className="flex items-center gap-2">
-                <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: '#3b82f6' }} />
+                <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: '#6b7280' }} />
                 <p className="text-[11px] text-[#8888a0]">{rule}</p>
               </div>
             ))}

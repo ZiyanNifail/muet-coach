@@ -88,7 +88,7 @@ export default function RegisterPage() {
         >
           Account pending admin review
         </div>
-        <Link href="/login" className="text-[#3b82f6] text-sm hover:underline">
+        <Link href="/login" className="text-[#94a3b8] text-sm hover:underline">
           Back to sign in
         </Link>
       </div>
@@ -142,11 +142,11 @@ export default function RegisterPage() {
               className={clsx(
                 'text-left flex flex-col gap-2 p-4 rounded-lg border transition-all cursor-pointer',
                 role === opt.value
-                  ? 'border-[#3b82f6] bg-[rgba(59,130,246,0.08)]'
+                  ? 'border-[#94a3b8] bg-[rgba(148,163,184,0.08)]'
                   : 'border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.10)]'
               )}
             >
-              <opt.Icon size={22} style={{ color: role === opt.value ? '#3b82f6' : '#55556a' }} />
+              <opt.Icon size={22} style={{ color: role === opt.value ? '#94a3b8' : '#55556a' }} />
               <span className="text-[10px] font-semibold text-[#55556a] tracking-widest uppercase">
                 {opt.title}
               </span>
@@ -204,7 +204,7 @@ export default function RegisterPage() {
 
       <p className="text-[#8888a0] text-sm text-center">
         Already have an account?{' '}
-        <Link href="/login" className="text-[#3b82f6] hover:underline">
+        <Link href="/login" className="text-[#94a3b8] hover:underline">
           Sign in
         </Link>
       </p>

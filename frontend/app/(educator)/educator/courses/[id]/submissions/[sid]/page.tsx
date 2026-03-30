@@ -183,7 +183,7 @@ export default function SubmissionReviewPage() {
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: 'Band Score', value: report.band_score != null ? report.band_score.toFixed(1) : '—', color: '#8b5cf6' },
-                  { label: 'Avg WPM', value: report.wpm_avg != null ? Math.round(report.wpm_avg) : '—', color: '#3b82f6' },
+                  { label: 'Avg WPM', value: report.wpm_avg != null ? Math.round(report.wpm_avg) : '—', color: '#94a3b8' },
                   { label: 'Eye Contact', value: report.eye_contact_pct != null ? `${Math.round(report.eye_contact_pct)}%` : '—', color: '#22c55e' },
                   { label: 'Posture', value: postureLabel(report.posture_score), color: '#f59e0b' },
                   { label: 'Filler Words', value: report.filler_count ?? '—', color: '#f59e0b' },

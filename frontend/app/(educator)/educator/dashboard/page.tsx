@@ -114,7 +114,7 @@ export default function EducatorDashboard() {
   function bandColor(b: number | null) {
     if (b == null) return '#3a3a52'
     if (b >= 4.5) return '#22c55e'
-    if (b >= 3.5) return '#3b82f6'
+    if (b >= 3.5) return '#94a3b8'
     if (b >= 2.5) return '#f59e0b'
     return '#ef4444'
   }
@@ -150,7 +150,7 @@ export default function EducatorDashboard() {
       <div className="grid grid-cols-4 gap-3">
         {[
           { label: 'COURSES', value: String(courses.length), icon: BookOpen, color: '#f59e0b' },
-          { label: 'TOTAL STUDENTS', value: String(totalStudents), icon: Users, color: '#3b82f6' },
+          { label: 'TOTAL STUDENTS', value: String(totalStudents), icon: Users, color: '#94a3b8' },
           { label: 'PENDING REQUESTS', value: String(pendingItems.length), icon: Clock, color: pendingItems.length > 0 ? '#ef4444' : '#22c55e' },
           { label: 'RECENT SUBMISSIONS', value: String(recentSubs.length), icon: FileCheck, color: '#8b5cf6' },
         ].map((m) => {
@@ -228,7 +228,7 @@ export default function EducatorDashboard() {
                   RECENT SUBMISSIONS
                 </div>
                 <Link href="/educator/submissions">
-                  <span className="text-xs text-[#3b82f6] hover:underline cursor-pointer">View all</span>
+                  <span className="text-xs text-[#94a3b8] hover:underline cursor-pointer">View all</span>
                 </Link>
               </div>
               <div className="rounded-xl border overflow-hidden"

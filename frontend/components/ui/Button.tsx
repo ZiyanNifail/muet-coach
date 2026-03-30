@@ -20,7 +20,7 @@ export function Button({
         'inline-flex items-center justify-center font-medium rounded-lg transition-all cursor-pointer',
         'disabled:opacity-40 disabled:cursor-not-allowed',
         {
-          'bg-[#3b82f6] text-white hover:opacity-[0.88]': variant === 'primary',
+          'bg-[#e8e8f0] text-[#0d0d14] hover:bg-white font-semibold': variant === 'primary',
           'bg-transparent text-[#8888a0] border border-[rgba(255,255,255,0.10)] hover:border-[rgba(255,255,255,0.18)] hover:text-[#e8e8f0]':
             variant === 'secondary',
           'bg-[rgba(239,68,68,0.12)] text-[#ef4444] border border-[rgba(239,68,68,0.25)]':

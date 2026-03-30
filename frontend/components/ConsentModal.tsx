@@ -46,7 +46,7 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
         }}
       >
         <div className="flex items-start gap-3">
-          <ShieldCheck size={22} style={{ color: '#3b82f6', marginTop: 2, flexShrink: 0 }} />
+          <ShieldCheck size={22} style={{ color: '#94a3b8', marginTop: 2, flexShrink: 0 }} />
           <div>
             <div
               style={{
@@ -72,7 +72,7 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
             <li key={i} className="flex gap-2.5 text-sm text-[#8888a0] leading-6">
               <ChevronRight
                 size={14}
-                style={{ color: '#3b82f6', marginTop: 4, flexShrink: 0 }}
+                style={{ color: '#94a3b8', marginTop: 4, flexShrink: 0 }}
               />
               {point}
             </li>
@@ -84,7 +84,7 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
             type="checkbox"
             checked={checked}
             onChange={(e) => setChecked(e.target.checked)}
-            className="mt-1 w-4 h-4 accent-[#3b82f6] shrink-0"
+            className="mt-1 w-4 h-4 accent-[#94a3b8] shrink-0"
           />
           <span className="text-sm text-[#e8e8f0]">
             I understand and consent to my video and audio being processed by AI for coaching purposes.

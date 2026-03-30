@@ -33,7 +33,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 function bandColor(band: number | null): string {
   if (band == null) return '#3a3a52'
   if (band >= 4.5) return '#22c55e'
-  if (band >= 3.5) return '#3b82f6'
+  if (band >= 3.5) return '#94a3b8'
   if (band >= 2.5) return '#f59e0b'
   return '#ef4444'
 }
@@ -134,7 +134,7 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-4 gap-3">
             {[
               { label: 'COURSES', value: String(data.totals.course_count), icon: BookOpen, color: '#f59e0b' },
-              { label: 'TOTAL STUDENTS', value: String(data.totals.student_count), icon: Users, color: '#3b82f6' },
+              { label: 'TOTAL STUDENTS', value: String(data.totals.student_count), icon: Users, color: '#94a3b8' },
               { label: 'SUBMISSIONS', value: String(data.totals.submission_count), icon: FileCheck, color: '#8b5cf6' },
               {
                 label: 'AVG BAND SCORE',
@@ -197,7 +197,7 @@ export default function AnalyticsPage() {
                         <div className="text-sm font-semibold text-[#e8e8f0] truncate">{c.name}</div>
                         <div className="text-[10px] font-mono text-[#f59e0b]">{c.subject_code}</div>
                       </div>
-                      <div className="font-mono text-sm" style={{ color: '#3b82f6' }}>{c.student_count}</div>
+                      <div className="font-mono text-sm" style={{ color: '#94a3b8' }}>{c.student_count}</div>
                       <div className="font-mono text-sm text-[#8888a0]">{c.submission_count}</div>
                       <div className="font-mono text-sm font-semibold" style={{ color: bandColor(c.avg_band) }}>
                         {c.avg_band != null ? c.avg_band.toFixed(2) : '—'}

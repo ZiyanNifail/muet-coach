@@ -296,7 +296,7 @@ export default function CourseDetailPage() {
             </div>
           ) : rubricFile ? (
             <div className="flex items-center gap-2">
-              <FileText size={16} style={{ color: '#3b82f6' }} />
+              <FileText size={16} style={{ color: '#94a3b8' }} />
               <span className="text-sm text-[#8888a0] truncate flex-1">{rubricFile.name}</span>
               <button onClick={() => setRubricFile(null)}><X size={14} style={{ color: '#55556a' }} /></button>
             </div>

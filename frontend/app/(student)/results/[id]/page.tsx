@@ -90,7 +90,7 @@ function bandDescriptor(score: number): string {
 
 function bandColor(score: number): string {
   if (score >= 5) return '#22c55e'
-  if (score >= 3.5) return '#3b82f6'
+  if (score >= 3.5) return '#94a3b8'
   if (score >= 2.5) return '#f59e0b'
   return '#ef4444'
 }
@@ -174,7 +174,7 @@ function printReport(r: Report) {
   .impact{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;margin-top:1px}
   .iH{background:#fee2e2;color:#dc2626}
   .iM{background:#fef3c7;color:#d97706}
-  .iL{background:#dbeafe;color:#2563eb}
+  .iL{background:#e2e8f0;color:#475569}
   .transcript{background:#f9fafb;border-radius:8px;padding:14px;font-size:13px;line-height:1.9;color:#374151}
   .filler{background:#fee2e2;color:#dc2626;border-radius:3px;padding:0 3px}
   .posture-bar-bg{background:#f3f4f6;border-radius:9999px;height:8px;overflow:hidden;margin-top:6px}
@@ -196,7 +196,7 @@ function printReport(r: Report) {
   </div>
   <div class="metric">
     <div class="mlabel">Avg WPM</div>
-    <div class="mval" style="color:#2563eb">${r.wpm_avg ? Math.round(r.wpm_avg) : '—'}</div>
+    <div class="mval" style="color:#64748b">${r.wpm_avg ? Math.round(r.wpm_avg) : '—'}</div>
     <div class="msub">Target: 130–150</div>
   </div>
   <div class="metric">
@@ -270,7 +270,7 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
   pitch: number | null
   energy: number | null
 }) {
-  const color = score >= 70 ? '#22c55e' : score >= 50 ? '#3b82f6' : score >= 35 ? '#f59e0b' : '#ef4444'
+  const color = score >= 70 ? '#22c55e' : score >= 50 ? '#94a3b8' : score >= 35 ? '#f59e0b' : '#ef4444'
   const label = score >= 70 ? 'Strong' : score >= 50 ? 'Developing' : score >= 35 ? 'Needs Work' : 'Weak'
   const pct = Math.max(0, Math.min(100, score))
 
@@ -455,7 +455,7 @@ export default function ResultsPage() {
         <div className="flex-1 flex flex-col gap-4 justify-center">
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'AVG WPM', value: r.wpm_avg != null ? String(Math.round(r.wpm_avg)) : '—', color: '#3b82f6', sub: 'Target 130–150' },
+              { label: 'AVG WPM', value: r.wpm_avg != null ? String(Math.round(r.wpm_avg)) : '—', color: '#94a3b8', sub: 'Target 130–150' },
               { label: 'EYE CONTACT', value: r.eye_contact_pct != null ? `${Math.round(r.eye_contact_pct)}%` : '—', color: '#22c55e', sub: 'Target ≥70%' },
               { label: 'FILLERS', value: r.filler_count != null ? `${r.filler_count}` : '—', color: '#f59e0b', sub: r.filler_density != null ? `${r.filler_density.toFixed(1)}/min` : '' },
             ].map((m) => (
@@ -525,7 +525,7 @@ export default function ResultsPage() {
               />
               <ReferenceLine y={130} stroke="#f59e0b" strokeDasharray="4 4" strokeOpacity={0.6} />
               <ReferenceLine y={150} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.6} />
-              <Line type="monotone" dataKey="wpm" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 3 }} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="wpm" stroke="#94a3b8" strokeWidth={2} dot={{ fill: '#94a3b8', r: 3 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
