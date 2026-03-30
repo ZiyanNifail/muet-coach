@@ -2,7 +2,7 @@
 MediaPipe service — T2.14 (Face Mesh) and T2.15 (Pose).
 
 Analyses video frames to compute:
-  - eye_contact_pct: proportion of frames where nose X is within centre ±15% of frame width
+  - eye_contact_pct: proportion of frames where iris gaze is directed at camera
   - posture_score: 100 - head_tilt*2 - shoulder_diff/5 (clamped 0–100)
   - confidence_flags: { face_ok, pose_ok }
 
@@ -12,10 +12,37 @@ import math
 from typing import Optional
 
 
-def _nose_in_center(landmarks, img_w: int, threshold: float = 0.15) -> bool:
-    """Nose X within centre ±threshold of frame width (nose landmark index 1)."""
-    nose_x = landmarks.landmark[1].x  # normalised 0–1
-    return abs(nose_x - 0.5) <= threshold
+def _iris_gaze_on_camera(landmarks) -> bool:
+    """
+    Estimate gaze direction using iris landmark positions (requires refine_landmarks=True).
+
+    Iris centres:      left=468, right=473
+    Eye corners (inner/outer):
+      Left eye:  inner=133, outer=33
+      Right eye: inner=362, outer=263
+
+    Computes the normalised iris-X ratio for each eye:
+      ratio = (iris_x - corner_outer_x) / (corner_inner_x - corner_outer_x)
+    A ratio in [0.35, 0.65] means the iris is roughly centred → looking at camera.
+    Both eyes must pass for the frame to count as eye-contact.
+    Falls back to True (non-penalising) when iris landmarks are absent.
+    """
+    lm = landmarks.landmark
+    if len(lm) < 478:
+        return True  # iris landmarks not available — don't penalise
+
+    def _ratio(iris_idx: int, outer_idx: int, inner_idx: int) -> float:
+        iris_x = lm[iris_idx].x
+        outer_x = lm[outer_idx].x
+        inner_x = lm[inner_idx].x
+        span = inner_x - outer_x
+        if abs(span) < 1e-6:
+            return 0.5
+        return (iris_x - outer_x) / span
+
+    left_ratio = _ratio(468, 33, 133)
+    right_ratio = _ratio(473, 263, 362)
+    return 0.35 <= left_ratio <= 0.65 and 0.35 <= right_ratio <= 0.65
 
 
 def _posture_score(pose_landmarks) -> float:
@@ -47,7 +74,7 @@ def _posture_score(pose_landmarks) -> float:
 
 async def analyse_video(video_path: str) -> dict:
     """
-    Analyse video frames at 5 FPS for eye contact and posture.
+    Analyse video frames at 3 FPS for eye contact and posture.
     Falls back gracefully if mediapipe or opencv is not installed.
 
     Returns:
@@ -92,7 +119,7 @@ async def analyse_video(video_path: str) -> dict:
     with mp_face.FaceMesh(
         static_image_mode=True,   # static_image_mode=True is faster when seeking
         max_num_faces=1,
-        refine_landmarks=False,
+        refine_landmarks=True,    # enables 478 landmarks including iris (indices 468–477)
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
     ) as face_mesh, mp_pose.Pose(
@@ -110,12 +137,12 @@ async def analyse_video(video_path: str) -> dict:
             img_h, img_w = frame.shape[:2]
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            # Face Mesh — eye contact
+            # Face Mesh — eye contact via iris gaze
             face_results = face_mesh.process(rgb)
             if face_results.multi_face_landmarks:
                 face_detected += 1
                 fl = face_results.multi_face_landmarks[0]
-                if _nose_in_center(fl, img_w):
+                if _iris_gaze_on_camera(fl):
                     eye_contact_frames += 1
 
             # Pose — posture
