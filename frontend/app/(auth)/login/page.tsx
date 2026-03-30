@@ -56,11 +56,17 @@ export default function LoginPage() {
     setAdminLoading(true)
 
     // Validate credentials against env-configured values
-    const expectedId = process.env.NEXT_PUBLIC_ADMIN_ID || 'ziyan'
-    const expectedPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Nirvana2003'
+    const expectedId = process.env.NEXT_PUBLIC_ADMIN_ID
+    const expectedPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD
     const adminKey = process.env.NEXT_PUBLIC_ADMIN_ACCESS_KEY || ''
 
     await new Promise((r) => setTimeout(r, 300)) // brief delay to prevent instant guess
+
+    if (!expectedId || !expectedPassword) {
+      setAdminError('Admin access is not configured.')
+      setAdminLoading(false)
+      return
+    }
 
     if (adminId === expectedId && adminPassword === expectedPassword) {
       if (adminKey) {
