@@ -35,6 +35,12 @@ class FeedbackReport(BaseModel):
     topic_text: Optional[str] = None
     session_mode: Optional[str] = None
     duration_secs: Optional[float] = None
+    # AI metric fields (T2.12A–C + T3.04A)
+    pitch_mean_hz: Optional[float] = None
+    energy_mean_db: Optional[float] = None
+    sentiment_score: Optional[float] = None
+    voice_clarity_score: Optional[float] = None
+    confidence_score: Optional[float] = None
 
 
 @router.get("/{presentation_id}", response_model=FeedbackReport)

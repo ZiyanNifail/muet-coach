@@ -141,8 +141,8 @@ export default function StudentsPage() {
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
-                    style={{ background: 'rgba(59,130,246,0.12)' }}>
-                    <GraduationCap size={13} style={{ color: '#3b82f6' }} />
+                    style={{ background: 'rgba(148,163,184,0.12)' }}>
+                    <GraduationCap size={13} style={{ color: '#94a3b8' }} />
                   </div>
                   <span className="text-sm font-semibold text-[#e8e8f0] truncate">{s.full_name}</span>
                 </div>

@@ -1,12 +1,11 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { clsx } from 'clsx'
 import { Button } from '@/components/ui/Button'
 import { TopicWheel } from '@/components/TopicWheel'
 import { BrainstormPanel } from '@/components/BrainstormPanel'
 import { RecordingInterface } from '@/components/RecordingInterface'
-import { AlertTriangle, Upload, X, FileText, Timer } from 'lucide-react'
+import { AlertTriangle, Upload, X, FileText, Timer, Mic, Mic2 } from 'lucide-react'
 
 type Step = 'mode' | 'topic' | 'brainstorm' | 'exam_prep' | 'slides' | 'recording' | 'processing'
 type Mode = 'unguided' | 'guided' | 'exam'
@@ -16,19 +15,31 @@ const MODE_OPTIONS = [
     mode: 'unguided' as Mode,
     title: 'UNGUIDED SESSION',
     desc: 'Baseline analysis. AI evaluates only after session ends. No interruptions during recording.',
-    color: '#3b82f6',
+    color: '#6b7280',
+    badge: null as string | null,
+    icon: Mic,
+    features: ['No coaching interruptions', 'Full AI analysis at the end', 'Natural baseline recording'],
+    buttonLabel: 'Start Session →',
   },
   {
     mode: 'guided' as Mode,
     title: 'GUIDED SESSION',
-    desc: 'Real-time coaching. Warnings appear when you speak too fast, too slow, or lose eye contact.',
+    desc: 'Real-time coaching. Warnings fire when you speak too fast, too slow, or lose eye contact.',
     color: '#22c55e',
+    badge: 'RECOMMENDED' as string | null,
+    icon: Mic2,
+    features: ['Filler word alerts (um, uh, er…)', 'Live pace coaching (90–160 WPM)', 'Eye contact reminders every 45 s'],
+    buttonLabel: 'Start Session →',
   },
   {
     mode: 'exam' as Mode,
     title: 'EXAM MODE',
-    desc: 'MUET Part 1 format. 2-minute preparation followed by a 2-minute delivery. Timed.',
+    desc: 'MUET Part 1 format. 2-minute preparation followed by a 2-minute timed delivery.',
     color: '#f59e0b',
+    badge: 'MUET FORMAT' as string | null,
+    icon: Timer,
+    features: ['No pausing allowed', '2 min prep + 2 min delivery', 'MUET rubric scoring only'],
+    buttonLabel: 'Start Exam →',
   },
 ]
 
@@ -57,7 +68,7 @@ function ExamPrepStep({ topic, onReady }: { topic: string; onReady: () => void }
 
   useEffect(() => {
     if (phase !== 'prep') return
-    if (secs <= 0) { setPhase('ready'); return }
+    if (secs <= 0) { setTimeout(() => setPhase('ready'), 0); return }
     const t = setTimeout(() => setSecs((s) => s - 1), 1000)
     return () => clearTimeout(t)
   }, [secs, phase])
@@ -145,8 +156,8 @@ function SlideUploadStep({
       <div
         className="flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-10 transition-colors"
         style={{
-          borderColor: dragging ? '#3b82f6' : file ? '#22c55e' : 'rgba(255,255,255,0.10)',
-          background: dragging ? 'rgba(59,130,246,0.04)' : 'rgba(255,255,255,0.02)',
+          borderColor: dragging ? '#94a3b8' : file ? '#22c55e' : 'rgba(255,255,255,0.10)',
+          background: dragging ? 'rgba(148,163,184,0.05)' : 'rgba(255,255,255,0.02)',
           cursor: 'pointer',
         }}
         onClick={() => inputRef.current?.click()}
@@ -327,26 +338,62 @@ export function PracticeContent() {
             <h1 className="text-2xl font-semibold text-[#e8e8f0]">Choose session mode</h1>
             <p className="text-[#8888a0] text-sm mt-1">Select how you want to practise today.</p>
           </div>
-          <div className="grid grid-cols-1 gap-4">
-            {MODE_OPTIONS.map((opt) => (
-              <div
-                key={opt.mode}
-                className="flex items-center gap-5 p-5 rounded-lg border"
-                style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)' }}
-              >
+          <div className="flex flex-col gap-3">
+            {MODE_OPTIONS.map((opt) => {
+              const Icon = opt.icon
+              return (
                 <div
-                  className="shrink-0 rounded-full"
-                  style={{ width: 10, height: 10, background: opt.color, boxShadow: `0 0 8px ${opt.color}` }}
-                />
-                <div className="flex-1">
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: opt.color, marginBottom: 4 }}>
-                    {opt.title}
+                  key={opt.mode}
+                  className="flex flex-col gap-4 p-5 rounded-xl border cursor-pointer"
+                  style={{
+                    background: `rgba(${opt.mode === 'unguided' ? '80,80,96' : opt.mode === 'guided' ? '34,197,94' : '245,158,11'}, 0.05)`,
+                    borderColor: opt.color + '40',
+                  }}
+                  onClick={() => handleModeSelect(opt.mode)}
+                >
+                  {/* Top row: icon + title + badge */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: opt.color + '18', border: `1px solid ${opt.color}40` }}
+                      >
+                        <Icon size={18} style={{ color: opt.color }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: opt.color }}>
+                          {opt.title}
+                        </div>
+                        <p className="text-[#8888a0] text-sm mt-0.5 leading-5 max-w-lg">{opt.desc}</p>
+                      </div>
+                    </div>
+                    {opt.badge && (
+                      <span
+                        className="flex-shrink-0 text-[9px] font-bold tracking-[0.12em] px-2 py-0.5 rounded"
+                        style={{ background: opt.color + '18', color: opt.color, border: `1px solid ${opt.color}40` }}
+                      >
+                        {opt.badge}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm text-[#8888a0] leading-6">{opt.desc}</p>
+
+                  {/* Bottom row: features + button */}
+                  <div className="flex items-center justify-between gap-4 pl-13">
+                    <div className="flex gap-4 flex-wrap">
+                      {opt.features.map(f => (
+                        <div key={f} className="flex items-center gap-1.5">
+                          <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: opt.color, opacity: 0.6 }} />
+                          <span style={{ fontSize: 11, color: '#55556a' }}>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <Button onClick={(e) => { e.stopPropagation(); handleModeSelect(opt.mode) }}>
+                      {opt.buttonLabel}
+                    </Button>
+                  </div>
                 </div>
-                <Button onClick={() => handleModeSelect(opt.mode)}>Start →</Button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
@@ -419,7 +466,7 @@ export function PracticeContent() {
             {processingStatus === 'uploading' && (
               <div className="w-full">
                 <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                  <div className="h-full rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)' }} />
+                  <div className="h-full rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, background: 'linear-gradient(90deg, #94a3b8, #8b5cf6)' }} />
                 </div>
                 <p className="text-[#55556a] text-xs mt-1">{uploadProgress}%</p>
               </div>

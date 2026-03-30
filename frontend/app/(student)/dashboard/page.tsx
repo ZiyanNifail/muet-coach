@@ -14,7 +14,7 @@ const metricCards = [
     label: 'PRACTICE HOURS',
     value: '0h',
     sub: 'Total time recorded',
-    color: '#3b82f6',
+    color: '#94a3b8',
   },
   {
     label: 'TOTAL SESSIONS',

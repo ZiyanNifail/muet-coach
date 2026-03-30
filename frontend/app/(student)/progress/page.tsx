@@ -151,7 +151,7 @@ export default function ProgressPage() {
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: 'SESSIONS', value: String(sessions.length), color: '#8b5cf6' },
-            { label: 'LATEST BAND', value: latestBand != null ? latestBand.toFixed(1) : '—', color: '#3b82f6' },
+            { label: 'LATEST BAND', value: latestBand != null ? latestBand.toFixed(1) : '—', color: '#94a3b8' },
             { label: 'IMPROVEMENT', value: improvement != null ? (Number(improvement) >= 0 ? `+${improvement}` : improvement) : '—', color: Number(improvement) >= 0 ? '#22c55e' : '#ef4444' },
           ].map((m) => (
             <div key={m.label} className="flex flex-col gap-1 rounded-lg border p-3"
@@ -175,7 +175,7 @@ export default function ProgressPage() {
       ) : !hasSessions ? (
         <div className="flex flex-col items-center justify-center h-48 rounded-xl border gap-3" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
           <p className="text-[#55556a] text-sm">Complete at least 2 sessions to see your progress trend.</p>
-          <Link href="/practice" className="text-[#3b82f6] text-sm hover:underline">Start a session →</Link>
+          <Link href="/practice" className="text-[#94a3b8] text-sm hover:underline">Start a session →</Link>
         </div>
       ) : (
         <>
@@ -212,7 +212,7 @@ export default function ProgressPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {wpmData.length >= 2 && (
-                <SparkLine data={wpmData} dataKey="wpm" color="#3b82f6" label="Speaking Pace (WPM)" unit=" wpm" refVal={140} />
+                <SparkLine data={wpmData} dataKey="wpm" color="#94a3b8" label="Speaking Pace (WPM)" unit=" wpm" refVal={140} />
               )}
               {eyeData.length >= 2 && (
                 <SparkLine data={eyeData} dataKey="eye" color="#22c55e" label="Eye Contact" unit="%" refVal={70} />

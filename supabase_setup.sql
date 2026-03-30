@@ -248,3 +248,13 @@ CREATE POLICY "overrides_student_select" ON educator_overrides FOR SELECT USING 
 -- RLS policies for "recordings" bucket:
 --   SELECT: educator of the course (service role from backend)
 --   INSERT: service role only (backend pipeline)
+
+-- =====================================================
+-- T2.12A–C + T3.04A: AI metric columns
+-- Run if upgrading an existing DB (idempotent).
+-- =====================================================
+ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS pitch_mean_hz FLOAT;
+ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS energy_mean_db FLOAT;
+ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS sentiment_score FLOAT;
+ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS voice_clarity_score FLOAT;
+ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS confidence_score FLOAT;
