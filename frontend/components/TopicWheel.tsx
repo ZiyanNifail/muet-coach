@@ -92,6 +92,7 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
         // Auto-spin once after topics are ready (or after mount with fallback topics)
         setTimeout(() => spin(), 80)
       })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -164,7 +165,7 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
               height: ITEM_H,
               borderTop: '1px solid rgba(255,255,255,0.12)',
               borderBottom: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(59,130,246,0.06)',
+              background: 'rgba(148,163,184,0.06)',
             }}
           />
 

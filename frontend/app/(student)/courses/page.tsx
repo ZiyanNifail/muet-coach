@@ -21,11 +21,6 @@ interface Membership {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-function statusVariant(s: string): 'green' | 'amber' | 'red' {
-  if (s === 'approved') return 'green'
-  if (s === 'rejected') return 'red'
-  return 'amber'
-}
 
 export default function CoursesPage() {
   const [inviteCode, setInviteCode] = useState('')

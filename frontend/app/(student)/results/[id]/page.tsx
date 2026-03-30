@@ -26,6 +26,11 @@ interface Report {
   topic_text: string | null
   session_mode: string | null
   duration_secs: number | null
+  pitch_mean_hz: number | null
+  energy_mean_db: number | null
+  sentiment_score: number | null
+  voice_clarity_score: number | null
+  confidence_score: number | null
 }
 
 const DEMO_REPORT: Report = {
@@ -57,6 +62,11 @@ const DEMO_REPORT: Report = {
   topic_text: 'Education in Malaysia',
   session_mode: 'guided',
   duration_secs: 120,
+  pitch_mean_hz: 182,
+  energy_mean_db: -24.3,
+  sentiment_score: 0.71,
+  voice_clarity_score: 78,
+  confidence_score: 73.2,
 }
 
 const IMPACT_VARIANT = { HIGH: 'red', MED: 'amber', LOW: 'blue' } as const
@@ -80,7 +90,7 @@ function bandDescriptor(score: number): string {
 
 function bandColor(score: number): string {
   if (score >= 5) return '#22c55e'
-  if (score >= 3.5) return '#3b82f6'
+  if (score >= 3.5) return '#94a3b8'
   if (score >= 2.5) return '#f59e0b'
   return '#ef4444'
 }
@@ -164,7 +174,7 @@ function printReport(r: Report) {
   .impact{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;margin-top:1px}
   .iH{background:#fee2e2;color:#dc2626}
   .iM{background:#fef3c7;color:#d97706}
-  .iL{background:#dbeafe;color:#2563eb}
+  .iL{background:#e2e8f0;color:#475569}
   .transcript{background:#f9fafb;border-radius:8px;padding:14px;font-size:13px;line-height:1.9;color:#374151}
   .filler{background:#fee2e2;color:#dc2626;border-radius:3px;padding:0 3px}
   .posture-bar-bg{background:#f3f4f6;border-radius:9999px;height:8px;overflow:hidden;margin-top:6px}
@@ -186,7 +196,7 @@ function printReport(r: Report) {
   </div>
   <div class="metric">
     <div class="mlabel">Avg WPM</div>
-    <div class="mval" style="color:#2563eb">${r.wpm_avg ? Math.round(r.wpm_avg) : '—'}</div>
+    <div class="mval" style="color:#64748b">${r.wpm_avg ? Math.round(r.wpm_avg) : '—'}</div>
     <div class="msub">Target: 130–150</div>
   </div>
   <div class="metric">
@@ -251,6 +261,66 @@ ${r.transcript ? `
   win.document.write(html)
   win.document.close()
   win.addEventListener('load', () => win.print())
+}
+
+function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
+  score: number
+  sentiment: number | null
+  clarity: number | null
+  pitch: number | null
+  energy: number | null
+}) {
+  const color = score >= 70 ? '#22c55e' : score >= 50 ? '#94a3b8' : score >= 35 ? '#f59e0b' : '#ef4444'
+  const label = score >= 70 ? 'Strong' : score >= 50 ? 'Developing' : score >= 35 ? 'Needs Work' : 'Weak'
+  const pct = Math.max(0, Math.min(100, score))
+
+  return (
+    <div
+      className="flex flex-col gap-4 rounded-xl border p-5"
+      style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+    >
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+        AI CONFIDENCE SCORE
+      </div>
+
+      {/* Main score bar */}
+      <div className="flex items-center gap-4">
+        <div className="flex flex-col">
+          <span className="font-mono text-3xl font-bold" style={{ color }}>{score.toFixed(1)}</span>
+          <span style={{ fontSize: 10, color: '#55556a' }}>/100 · {label}</span>
+        </div>
+        <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${pct}%`, background: color, transition: 'width 1.2s ease' }}
+          />
+        </div>
+      </div>
+
+      {/* Sub-metrics row */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[
+          { label: 'VOICE CLARITY', value: clarity != null ? `${Math.round(clarity)}%` : '—', color: '#8b5cf6' },
+          { label: 'SENTIMENT', value: sentiment != null ? `${Math.round(sentiment * 100)}%` : '—', color: '#06b6d4' },
+          { label: 'PITCH', value: pitch != null ? `${Math.round(pitch)} Hz` : '—', color: '#f59e0b' },
+          { label: 'ENERGY', value: energy != null ? `${energy.toFixed(1)} dB` : '—', color: '#f97316' },
+        ].map((m) => (
+          <div
+            key={m.label}
+            className="flex flex-col gap-0.5 rounded-lg border p-2.5"
+            style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.05)' }}
+          >
+            <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#3a3a52' }}>
+              {m.label}
+            </span>
+            <span className="font-mono text-sm font-semibold" style={{ color: m.color }}>
+              {m.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function ResultsPage() {
@@ -385,7 +455,7 @@ export default function ResultsPage() {
         <div className="flex-1 flex flex-col gap-4 justify-center">
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'AVG WPM', value: r.wpm_avg != null ? String(Math.round(r.wpm_avg)) : '—', color: '#3b82f6', sub: 'Target 130–150' },
+              { label: 'AVG WPM', value: r.wpm_avg != null ? String(Math.round(r.wpm_avg)) : '—', color: '#94a3b8', sub: 'Target 130–150' },
               { label: 'EYE CONTACT', value: r.eye_contact_pct != null ? `${Math.round(r.eye_contact_pct)}%` : '—', color: '#22c55e', sub: 'Target ≥70%' },
               { label: 'FILLERS', value: r.filler_count != null ? `${r.filler_count}` : '—', color: '#f59e0b', sub: r.filler_density != null ? `${r.filler_density.toFixed(1)}/min` : '' },
             ].map((m) => (
@@ -417,6 +487,17 @@ export default function ResultsPage() {
         </div>
       </div>
 
+      {/* Composite Confidence Score */}
+      {r.confidence_score != null && (
+        <ConfidenceCard
+          score={r.confidence_score}
+          sentiment={r.sentiment_score ?? null}
+          clarity={r.voice_clarity_score ?? null}
+          pitch={r.pitch_mean_hz ?? null}
+          energy={r.energy_mean_db ?? null}
+        />
+      )}
+
       {/* WPM pace chart */}
       {chartData && (
         <div
@@ -444,7 +525,7 @@ export default function ResultsPage() {
               />
               <ReferenceLine y={130} stroke="#f59e0b" strokeDasharray="4 4" strokeOpacity={0.6} />
               <ReferenceLine y={150} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.6} />
-              <Line type="monotone" dataKey="wpm" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', r: 3 }} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="wpm" stroke="#94a3b8" strokeWidth={2} dot={{ fill: '#94a3b8', r: 3 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
