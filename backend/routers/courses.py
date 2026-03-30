@@ -23,10 +23,11 @@ import random
 import string
 import logging
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Depends
 from pydantic import BaseModel
 from typing import Optional
 
+from services.auth_deps import get_current_user_id
 from services.supabase_client import (
     get_supabase,
     db_get_courses_for_educator,
@@ -57,7 +58,12 @@ def _gen_invite_code(subject_code: str) -> str:
 # ── Educator: list courses ────────────────────────────────────────────────────
 
 @router.get("/")
-async def list_courses(educator_id: str = Query(...)):
+async def list_courses(
+    educator_id: str = Query(...),
+    user_id: str = Depends(get_current_user_id),
+):
+    if educator_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied — educator_id does not match authenticated user.")
     courses = db_get_courses_for_educator(educator_id)
     return {"courses": courses}
 
@@ -65,7 +71,12 @@ async def list_courses(educator_id: str = Query(...)):
 # ── Student: enrolled courses ─────────────────────────────────────────────────
 
 @router.get("/student/{student_id}")
-async def get_student_courses(student_id: str):
+async def get_student_courses(
+    student_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    if student_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied — you can only view your own courses.")
     memberships = db_get_student_courses(student_id)
     return {"memberships": memberships}
 
@@ -78,7 +89,12 @@ class JoinRequest(BaseModel):
 
 
 @router.post("/join")
-async def join_course(body: JoinRequest):
+async def join_course(
+    body: JoinRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    if body.student_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied — student_id does not match authenticated user.")
     result = db_join_course_by_code(body.student_id, body.invite_code)
     if result is None:
         raise HTTPException(404, "Invalid invite code — no course found.")
@@ -95,7 +111,12 @@ class CreateCourseBody(BaseModel):
 
 
 @router.post("/")
-async def create_course(body: CreateCourseBody):
+async def create_course(
+    body: CreateCourseBody,
+    user_id: str = Depends(get_current_user_id),
+):
+    if body.educator_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied — educator_id does not match authenticated user.")
     invite_code = _gen_invite_code(body.subject_code)
     try:
         course = db_create_course(
@@ -113,14 +134,22 @@ async def create_course(body: CreateCourseBody):
 # ── Educator: analytics ───────────────────────────────────────────────────────
 
 @router.get("/analytics")
-async def get_analytics(educator_id: str = Query(...)):
+async def get_analytics(
+    educator_id: str = Query(...),
+    user_id: str = Depends(get_current_user_id),
+):
+    if educator_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied — educator_id does not match authenticated user.")
     return db_get_educator_analytics(educator_id)
 
 
 # ── Educator: course detail ───────────────────────────────────────────────────
 
 @router.get("/{course_id}")
-async def get_course(course_id: str):
+async def get_course(
+    course_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
     course = db_get_course(course_id)
     if not course:
         raise HTTPException(404, "Course not found.")
@@ -133,6 +162,7 @@ async def get_course(course_id: str):
 async def upload_course_rubric(
     course_id: str,
     rubric: UploadFile = File(...),
+    user_id: str = Depends(get_current_user_id),
 ):
     ct = (rubric.content_type or "").split(";")[0].strip()
     if ct != "application/pdf":
@@ -160,7 +190,10 @@ async def upload_course_rubric(
 # ── Educator / Student: rubric signed URL ─────────────────────────────────────
 
 @router.get("/{course_id}/rubric-url")
-async def get_rubric_url(course_id: str):
+async def get_rubric_url(
+    course_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
     course = db_get_course(course_id)
     if not course or not course.get("rubric_path"):
         raise HTTPException(404, "No rubric uploaded for this course.")
@@ -185,13 +218,20 @@ async def get_rubric_url(course_id: str):
 # ── Educator: members ─────────────────────────────────────────────────────────
 
 @router.get("/{course_id}/members")
-async def list_members(course_id: str):
+async def list_members(
+    course_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
     members = db_get_course_members(course_id)
     return {"members": members}
 
 
 @router.post("/{course_id}/members/{member_id}/approve")
-async def approve_member(course_id: str, member_id: str):
+async def approve_member(
+    course_id: str,
+    member_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
     ok = db_respond_member(member_id, "approved")
     if not ok:
         raise HTTPException(500, "Failed to approve member.")
@@ -199,7 +239,11 @@ async def approve_member(course_id: str, member_id: str):
 
 
 @router.post("/{course_id}/members/{member_id}/reject")
-async def reject_member(course_id: str, member_id: str):
+async def reject_member(
+    course_id: str,
+    member_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
     ok = db_respond_member(member_id, "rejected")
     if not ok:
         raise HTTPException(500, "Failed to reject member.")
@@ -214,7 +258,13 @@ class InviteBody(BaseModel):
 
 
 @router.post("/{course_id}/invite")
-async def invite_student(course_id: str, body: InviteBody):
+async def invite_student(
+    course_id: str,
+    body: InviteBody,
+    user_id: str = Depends(get_current_user_id),
+):
+    if body.educator_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied — educator_id does not match authenticated user.")
     sb = get_supabase()
     if sb is None:
         raise HTTPException(503, "Database not configured.")
@@ -248,7 +298,10 @@ async def invite_student(course_id: str, body: InviteBody):
 # ── Educator: assignments ─────────────────────────────────────────────────────
 
 @router.get("/{course_id}/assignments")
-async def list_assignments(course_id: str):
+async def list_assignments(
+    course_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
     assignments = db_get_assignments(course_id)
     return {"assignments": assignments}
 
@@ -261,7 +314,11 @@ class CreateAssignmentBody(BaseModel):
 
 
 @router.post("/{course_id}/assignments")
-async def create_assignment(course_id: str, body: CreateAssignmentBody):
+async def create_assignment(
+    course_id: str,
+    body: CreateAssignmentBody,
+    user_id: str = Depends(get_current_user_id),
+):
     assignment = db_create_assignment(
         course_id, body.title, body.description or "",
         body.deadline, body.exam_mode,
@@ -274,7 +331,10 @@ async def create_assignment(course_id: str, body: CreateAssignmentBody):
 # ── Educator: submissions ─────────────────────────────────────────────────────
 
 @router.get("/{course_id}/submissions")
-async def list_submissions(course_id: str):
+async def list_submissions(
+    course_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
     submissions = db_get_course_submissions(course_id)
     return {"submissions": submissions}
 
@@ -291,7 +351,11 @@ class GenerateRubricBody(BaseModel):
 
 
 @router.post("/{course_id}/generate-rubric")
-async def generate_rubric(course_id: str, body: GenerateRubricBody):
+async def generate_rubric(
+    course_id: str,
+    body: GenerateRubricBody,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     Generate a presentation rubric using Groq/Llama 3.3 70B.
     Runs server-side so the GROQ_API_KEY stays in the backend environment.
