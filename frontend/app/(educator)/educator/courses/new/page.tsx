@@ -29,10 +29,12 @@ export default function NewCoursePage() {
       )
       const { data: { user } } = await sb.auth.getUser()
       if (!user) { setError('Not authenticated.'); return }
+      const { data: { session } } = await sb.auth.getSession()
+      if (!session) { setError('Session expired. Please log in again.'); return }
 
       const res = await fetch(`${API_URL}/api/courses`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
         body: JSON.stringify({
           educator_id: user.id,
           name: name.trim(),

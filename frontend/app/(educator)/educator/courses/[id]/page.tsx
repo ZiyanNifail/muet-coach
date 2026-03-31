@@ -161,7 +161,8 @@ export default function CourseDetailPage() {
     const formData = new FormData()
     formData.append('rubric', rubricFile, rubricFile.name)
     try {
-      const res = await fetch(`${API_URL}/api/courses/${id}/rubric`, { method: 'POST', body: formData })
+      const authHdr: Record<string, string> = tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {}
+      const res = await fetch(`${API_URL}/api/courses/${id}/rubric`, { method: 'POST', headers: authHdr, body: formData })
       if (!res.ok) throw new Error((await res.json()).detail || 'Upload failed')
       setRubricMsg('Rubric uploaded successfully.')
       setCourse((c) => c ? { ...c, rubric_path: 'uploaded' } : c)
@@ -180,7 +181,7 @@ export default function CourseDetailPage() {
     try {
       const res = await fetch(`${API_URL}/api/courses/${id}/invite`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {}) },
         body: JSON.stringify({ educator_id: userId, email: inviteEmail.trim() }),
       })
       const data = await res.json()
@@ -220,7 +221,7 @@ export default function CourseDetailPage() {
     try {
       const res = await fetch(`${API_URL}/api/courses/${id}/generate-rubric`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {}) },
         body: JSON.stringify({
           course_name: course?.name ?? '',
           subject_code: course?.subject_code ?? '',

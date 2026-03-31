@@ -46,9 +46,12 @@ export default function EducatorDashboard() {
       )
       const { data: { user } } = await sb.auth.getUser()
       if (!user) return
+      const { data: { session } } = await sb.auth.getSession()
+      const authHdr: Record<string, string> = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` } : {}
 
       try {
-        const coursesRes = await fetch(`${API_URL}/api/courses?educator_id=${user.id}`)
+        const coursesRes = await fetch(`${API_URL}/api/courses?educator_id=${user.id}`, { headers: authHdr })
         if (!coursesRes.ok) { setLoading(false); return }
         const courseList: Course[] = (await coursesRes.json()).courses || []
         setCourses(courseList)
@@ -57,8 +60,8 @@ export default function EducatorDashboard() {
         const details = await Promise.all(
           courseList.map(async (c) => {
             const [membersRes, subsRes] = await Promise.all([
-              fetch(`${API_URL}/api/courses/${c.id}/members`),
-              fetch(`${API_URL}/api/courses/${c.id}/submissions`),
+              fetch(`${API_URL}/api/courses/${c.id}/members`, { headers: authHdr }),
+              fetch(`${API_URL}/api/courses/${c.id}/submissions`, { headers: authHdr }),
             ])
             const members = membersRes.ok ? ((await membersRes.json()).members || []) : []
             const subs = subsRes.ok ? ((await subsRes.json()).submissions || []) : []
