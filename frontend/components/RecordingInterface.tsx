@@ -80,11 +80,13 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
   const [speechAvailable, setSpeechAvailable] = useState<boolean | null>(null)
   const [subtitle, setSubtitle]         = useState<{ text: string; isFinal: boolean } | null>(null)
   const [transcript, setTranscript]     = useState<string[]>([])   // persistent lines for display
-  const transcriptEndRef = useRef<HTMLDivElement>(null)
+  const transcriptScrollRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll transcript to bottom when new lines arrive
+  // Auto-scroll transcript panel to bottom — scroll the container directly,
+  // NOT scrollIntoView (which scrolls the page <main> and causes violent shake)
   useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = transcriptScrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [transcript])
 
   // ── Warning display helper ────────────────────────────────────────────────
@@ -105,15 +107,19 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
     if (!SpeechRec) { setSpeechAvailable(false); return }
 
-    let started = false
     let wpmCheckTimer: ReturnType<typeof setTimeout> | null = null
+    let restartTimer: ReturnType<typeof setTimeout> | null = null
 
     function startRecognition(lang: string) {
+      if (restartTimer) { clearTimeout(restartTimer); restartTimer = null }
+
       const recognition = new SpeechRec!()
       recognition.continuous    = true
       recognition.interimResults = true
       recognition.lang          = lang
       recognitionRef.current    = recognition
+
+      let started = false
 
       recognition.onstart = () => { started = true; setSpeechAvailable(true) }
 
@@ -209,23 +215,32 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
         const err = e.error
         if (!started && lang === 'en-MY' && (err === 'language-not-supported' || err === 'network')) {
-          try { recognition.stop() } catch {}
+          try { recognition.abort() } catch {}
           startRecognition('en-US')
           return
         }
         if (err === 'not-allowed' || err === 'audio-capture') setSpeechAvailable(false)
-        if (err === 'no-speech' || err === 'aborted') {
-          try { recognition.start() } catch {}
-        }
+        // All other errors (network, no-speech, aborted): onend will handle restart
       }
 
       recognition.onend = () => {
+        // Only restart if this recognition is still the active one
         if (recognitionRef.current === recognition) {
-          try { recognition.start() } catch {}
+          // Use a fresh object on restart — calling .start() on a stopped/errored
+          // recognition throws InvalidStateError and kills the transcript silently.
+          restartTimer = setTimeout(() => {
+            restartTimer = null
+            if (recognitionRef.current === recognition) startRecognition(lang)
+          }, 300)
         }
       }
 
-      try { recognition.start() } catch { setSpeechAvailable(false) }
+      // Defer start by one tick so the 'recording' render commits to the DOM
+      // before the recognition state update fires (CRIT-F02 fix — prevents
+      // three cascading re-renders from stacking on the same paint frame).
+      setTimeout(() => {
+        try { recognition.start() } catch { setSpeechAvailable(false) }
+      }, 0)
     }
 
     startRecognition('en-MY')
@@ -272,8 +287,11 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
     return () => {
       if (wpmCheckTimer) clearTimeout(wpmCheckTimer)
-      try { recognitionRef.current?.stop() } catch {}
+      if (restartTimer) clearTimeout(restartTimer)
+      // Null the ref BEFORE stopping — prevents onend from scheduling a restart
+      const rec = recognitionRef.current
       recognitionRef.current = null
+      try { rec?.stop() } catch {}
       if (faceCheckRef.current) clearInterval(faceCheckRef.current)
       wordTimesRef.current = []
       finalBufferRef.current = ''
@@ -305,6 +323,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
     const c = ctx; const w = canvas.width; const h = canvas.height
 
     function loop() {
+      if (!canvasRef.current) return  // component unmounted — stop loop
       animFrameRef.current = requestAnimationFrame(loop)
       analyser.getByteTimeDomainData(buf)
       c.clearRect(0, 0, w, h)
@@ -328,7 +347,10 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
     let cancelled = false
     async function init() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: true,
+        })
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
         streamRef.current = stream
         if (videoRef.current) videoRef.current.srcObject = stream
@@ -410,17 +432,19 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
   }
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden">
 
       {/* ── Main recording card ─────────────────────────────────────────── */}
       <div
-        className="flex-1 flex flex-col gap-3 rounded-2xl border p-4"
+        className="flex-1 min-h-0 flex flex-col gap-3 rounded-2xl border p-4"
         style={{
           background: cfg.bgTint,
           borderColor: cfg.borderColor + '55',
           boxShadow: `0 0 0 1px ${cfg.borderColor}22`,
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
+          willChange: 'transform',
+          transform: 'translateZ(0)',
         }}
       >
         {/* Header row */}
@@ -445,7 +469,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
         {/* Video feed */}
         <div className="relative rounded-xl overflow-hidden bg-black aspect-video"
-          style={{ border: `1.5px solid ${cfg.borderColor}33` }}>
+          style={{ border: `1.5px solid ${cfg.borderColor}33`, willChange: 'transform', transform: 'translateZ(0)' }}>
           <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
 
           {/* Guided warning overlay — slides in from top */}
@@ -489,8 +513,8 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
           {/* Live subtitle strip */}
           <div className="absolute inset-x-0 bottom-0"
-            style={{ minHeight: 48, background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
-              display: 'flex', alignItems: 'flex-end', padding: '0 16px 10px' }}>
+            style={{ height: 48, background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
+              display: 'flex', alignItems: 'flex-end', padding: '0 16px 10px', overflow: 'hidden' }}>
             {subtitle && status === 'recording' && (
               <p style={{
                 fontSize: 14, fontWeight: 500, lineHeight: 1.4,
@@ -517,8 +541,8 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             <span className="font-mono text-xs text-[#55556a]">{remStr} remaining</span>
           </div>
           <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-            <div className="h-full rounded-full transition-all duration-1000"
-              style={{ width: `${progress}%`, background: progress > 85 ? '#ef4444' : cfg.accentColor }} />
+            <div className="h-full rounded-full transition-[width] duration-1000"
+              style={{ width: `${progress}%`, background: progress > 85 ? '#ef4444' : cfg.accentColor, willChange: 'width' }} />
           </div>
         </div>
 
@@ -542,7 +566,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       </div>
 
       {/* ── Right panel: transcript + guided coaching rules ──────────────── */}
-      <div className="flex flex-col gap-3 lg:w-64 xl:w-72">
+      <div className="flex flex-col gap-3 lg:w-64 xl:w-72 min-h-0 overflow-hidden">
 
         {/* Guided coaching rules panel */}
         {mode === 'guided' && (
@@ -626,7 +650,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-0.5" style={{ maxHeight: 260 }}>
+          <div ref={transcriptScrollRef} className="flex-1 overflow-y-auto p-3 space-y-0.5" style={{ maxHeight: 260 }}>
             {transcript.length === 0 ? (
               <p className="text-[11px] text-[#55556a] italic">
                 {status === 'recording' ? 'Start speaking — transcript will appear here…' : 'Transcript will appear when recording starts.'}
@@ -636,7 +660,6 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
                 <p key={i} className="text-xs text-[#e8e8f0] leading-relaxed">{line}</p>
               ))
             )}
-            <div ref={transcriptEndRef} />
           </div>
 
           {transcript.length > 0 && (

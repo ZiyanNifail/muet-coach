@@ -1,9 +1,17 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { BookOpen, FileText, Clock, CheckCircle, ExternalLink } from 'lucide-react'
+import { BookOpen, FileText, Clock, CheckCircle, ClipboardList, ExternalLink } from 'lucide-react'
+
+interface Assignment {
+  id: string
+  title: string
+  description: string
+  deadline: string | null
+  exam_mode: boolean
+}
 
 interface Membership {
   id: string
@@ -31,9 +39,11 @@ export default function CoursesPage() {
   const [memberships, setMemberships] = useState<Membership[]>([])
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
+  const tokenRef = useRef<string>('')
 
   // Rubric URL state: courseId → url | 'loading' | 'error'
   const [rubricUrls, setRubricUrls] = useState<Record<string, string | 'loading' | 'error'>>({})
+  const [courseAssignments, setCourseAssignments] = useState<Record<string, Assignment[]>>({})
 
   useEffect(() => {
     async function load() {
@@ -44,12 +54,34 @@ export default function CoursesPage() {
       const { data: { user } } = await sb.auth.getUser()
       if (!user) { setLoading(false); return }
       setUserId(user.id)
+      const { data: { session } } = await sb.auth.getSession()
+      tokenRef.current = session?.access_token ?? ''
+      const authHdr: Record<string, string> = tokenRef.current
+        ? { Authorization: `Bearer ${tokenRef.current}` } : {}
 
       try {
-        const res = await fetch(`${API_URL}/api/courses/student/${user.id}`)
+        const res = await fetch(`${API_URL}/api/courses/student/${user.id}`, { headers: authHdr })
         if (res.ok) {
           const data = await res.json()
-          setMemberships(data.memberships || [])
+          const memberships: Membership[] = data.memberships || []
+          setMemberships(memberships)
+
+          // Fetch assignments for all approved courses in parallel
+          const approved = memberships.filter((m) => m.status === 'approved' && m.courses?.id)
+          if (approved.length > 0) {
+            const results = await Promise.all(
+              approved.map((m) =>
+                fetch(`${API_URL}/api/courses/${m.courses!.id}/assignments`, { headers: authHdr })
+                  .then((r) => r.ok ? r.json() : { assignments: [] })
+                  .catch(() => ({ assignments: [] })),
+              ),
+            )
+            const map: Record<string, Assignment[]> = {}
+            approved.forEach((m, i) => {
+              map[m.courses!.id] = results[i].assignments || []
+            })
+            setCourseAssignments(map)
+          }
         }
       } catch {}
       setLoading(false)
@@ -62,10 +94,12 @@ export default function CoursesPage() {
     setJoining(true)
     setJoinMsg(null)
     setJoinError(false)
+    const authHdr: Record<string, string> = tokenRef.current
+      ? { Authorization: `Bearer ${tokenRef.current}` } : {}
     try {
       const res = await fetch(`${API_URL}/api/courses/join`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHdr },
         body: JSON.stringify({ student_id: userId, invite_code: inviteCode.trim() }),
       })
       const data = await res.json()
@@ -73,7 +107,7 @@ export default function CoursesPage() {
       setJoinMsg('Request sent! Your educator will approve your enrolment.')
       setInviteCode('')
       // Refresh memberships
-      const r2 = await fetch(`${API_URL}/api/courses/student/${userId}`)
+      const r2 = await fetch(`${API_URL}/api/courses/student/${userId}`, { headers: authHdr })
       if (r2.ok) setMemberships((await r2.json()).memberships || [])
     } catch {
       setJoinError(true)
@@ -226,6 +260,45 @@ export default function CoursesPage() {
                     Enrolled {new Date(m.requested_at).toLocaleDateString('en-MY', { dateStyle: 'medium' })}
                   </span>
                 </div>
+
+                {/* Assignments */}
+                {(() => {
+                  const assignments = courseAssignments[course.id]
+                  if (!assignments) return null
+                  return (
+                    <div className="flex flex-col gap-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+                        ASSIGNMENTS {assignments.length > 0 && `(${assignments.length})`}
+                      </div>
+                      {assignments.length === 0 ? (
+                        <span className="text-xs text-[#3a3a52] flex items-center gap-1.5">
+                          <ClipboardList size={12} /> No assignments yet
+                        </span>
+                      ) : (
+                        assignments.map((a) => (
+                          <div key={a.id} className="flex items-start gap-3 rounded-lg border px-3 py-2.5"
+                            style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                            <ClipboardList size={13} style={{ color: '#8888a0', flexShrink: 0, marginTop: 1 }} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-semibold text-[#e8e8f0]">{a.title}</span>
+                                {a.exam_mode && <Badge variant="amber">Exam Mode</Badge>}
+                              </div>
+                              {a.description && (
+                                <p className="text-[11px] text-[#55556a] mt-0.5 line-clamp-2">{a.description}</p>
+                              )}
+                              {a.deadline && (
+                                <p className="text-[11px] text-[#3a3a52] mt-0.5">
+                                  Due: {new Date(a.deadline).toLocaleDateString('en-MY', { dateStyle: 'medium' })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             )
           })

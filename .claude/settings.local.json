@@ -25,7 +25,12 @@
       "Bash(python -m py_compile services/pipeline.py services/groq_service.py routers/presentations.py)",
       "Bash(xargs python:*)",
       "Bash(npx tsc:*)",
-      "Bash(echo \"TSC exit: $?\")"
+      "Bash(echo \"TSC exit: $?\")",
+      "mcp__plugin_context-mode_context-mode__ctx_doctor",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "Bash(venv/Scripts/python.exe -c \"import main\")",
+      "Bash(echo \"EXIT: $?\")",
+      "mcp__plugin_context-mode_context-mode__ctx_search"
     ]
   }
 }

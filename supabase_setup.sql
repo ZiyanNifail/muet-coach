@@ -85,6 +85,12 @@ CREATE TABLE IF NOT EXISTS educator_approvals (
 ALTER TABLE educator_approvals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "educator_approvals_own" ON educator_approvals FOR SELECT USING (auth.uid() = educator_id);
 CREATE POLICY "educator_approvals_insert" ON educator_approvals FOR INSERT WITH CHECK (auth.uid() = educator_id);
+-- CRIT-D01: Admin can read and update all educator approval records
+CREATE POLICY "educator_approvals_admin_select" ON educator_approvals FOR SELECT
+  USING (EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'));
+CREATE POLICY "educator_approvals_admin_update" ON educator_approvals FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role = 'admin'));
 
 -- Presentations
 CREATE TABLE IF NOT EXISTS presentations (
@@ -104,6 +110,15 @@ ALTER TABLE presentations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "presentations_student_select" ON presentations FOR SELECT USING (auth.uid() = student_id);
 CREATE POLICY "presentations_student_insert" ON presentations FOR INSERT WITH CHECK (auth.uid() = student_id);
 CREATE POLICY "presentations_student_update" ON presentations FOR UPDATE USING (auth.uid() = student_id);
+-- CRIT-D03: Educator can read presentations submitted to their courses
+CREATE POLICY "presentations_educator_select" ON presentations FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM course_members cm
+    JOIN courses c ON c.id = cm.course_id
+    WHERE cm.student_id = student_id
+      AND c.educator_id = auth.uid()
+      AND cm.status = 'approved'
+  ));
 
 -- Feedback reports
 CREATE TABLE IF NOT EXISTS feedback_reports (
@@ -127,6 +142,16 @@ CREATE POLICY "reports_student_select" ON feedback_reports FOR SELECT
     SELECT 1 FROM presentations
     WHERE presentations.id = presentation_id
       AND presentations.student_id = auth.uid()
+  ));
+-- CRIT-D02: Educator can read reports for students enrolled in their courses
+CREATE POLICY "reports_educator_select" ON feedback_reports FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM presentations p
+    JOIN course_members cm ON cm.student_id = p.student_id
+    JOIN courses c ON c.id = cm.course_id
+    WHERE p.id = presentation_id
+      AND c.educator_id = auth.uid()
+      AND cm.status = 'approved'
   ));
 
 -- Session history
@@ -195,7 +220,10 @@ CREATE TABLE IF NOT EXISTS educator_overrides (
 -- ── RLS (all tables exist by this point) ──────────────────────────────────────
 
 ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "courses_educator_all" ON courses USING (auth.uid() = educator_id);
+-- CRIT-D05: Added WITH CHECK so educators can INSERT new courses (USING alone doesn't cover INSERT)
+CREATE POLICY "courses_educator_all" ON courses
+  USING (auth.uid() = educator_id)
+  WITH CHECK (auth.uid() = educator_id);
 CREATE POLICY "courses_member_select" ON courses FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM course_members
@@ -225,7 +253,10 @@ CREATE POLICY "assignments_member_select" ON assignments FOR SELECT USING (
 );
 
 ALTER TABLE educator_overrides ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "overrides_educator" ON educator_overrides USING (auth.uid() = educator_id);
+-- CRIT-D04: Added WITH CHECK so INSERT is also covered (USING alone does not apply to INSERT in PostgreSQL)
+CREATE POLICY "overrides_educator" ON educator_overrides
+  USING (auth.uid() = educator_id)
+  WITH CHECK (auth.uid() = educator_id);
 CREATE POLICY "overrides_student_select" ON educator_overrides FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM presentations
@@ -258,3 +289,7 @@ ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS energy_mean_db FLOAT;
 ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS sentiment_score FLOAT;
 ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS voice_clarity_score FLOAT;
 ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS confidence_score FLOAT;
+-- WARN-D01: lexical_diversity computed by nlp_service but was never persisted
+ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS lexical_diversity FLOAT;
+-- WARN-D02: slide upload (T2.04) implemented but presentations table had no column for it
+ALTER TABLE presentations ADD COLUMN IF NOT EXISTS slide_path TEXT;

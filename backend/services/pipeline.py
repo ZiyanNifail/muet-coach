@@ -220,6 +220,7 @@ async def run_pipeline(
             "sentiment_score": sentiment_score,
             "voice_clarity_score": voice_clarity_score,
             "confidence_score": confidence_score,
+            "lexical_diversity": lexical_diversity,  # WARN-D01 fix: was computed but never persisted
         }
         report_id = await db_insert_report(report)
 

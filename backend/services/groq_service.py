@@ -5,18 +5,44 @@ Sends transcript + metrics to Llama 3.3 70B via Groq API.
 Returns { band_score, advice_cards }.
 Falls back to rule-based cards if Groq is unavailable.
 
-Rate limiting: capped at 25 req/min (safely under Groq free tier of 30/min).
+Rate limiting: token-bucket capped at 25 req/min (safely under Groq free tier of 30/min).
 """
 import os
+import re
 import json
 import asyncio
+import logging
+import time
 from typing import Optional
 
-# ── Rate limiter: max 25 concurrent/sequential Groq calls per minute ─────────
-# Uses a simple asyncio.Semaphore to cap parallel requests.
-# For a 30-user pilot, full concurrency is unlikely, but this prevents
-# the free tier (30 req/min) being exceeded under burst load.
-_groq_semaphore = asyncio.Semaphore(25)
+logger = logging.getLogger(__name__)
+
+# ── Token-bucket rate limiter: max 25 requests per 60-second window ──────────
+# A plain Semaphore only limits concurrency, not rate — 25 requests could all
+# complete in <1 s and then another 25 start immediately, easily hitting 50/min.
+# This token bucket refills at 25 tokens/60 s, enforcing a true per-minute cap.
+class _TokenBucket:
+    def __init__(self, rate: int, period: float = 60.0):
+        self._rate   = rate
+        self._period = period
+        self._tokens = float(rate)
+        self._last   = time.monotonic()
+        self._lock   = asyncio.Lock()
+
+    async def acquire(self) -> None:
+        async with self._lock:
+            now = time.monotonic()
+            elapsed = now - self._last
+            self._tokens = min(self._rate, self._tokens + elapsed * (self._rate / self._period))
+            self._last = now
+            if self._tokens < 1:
+                wait = (1 - self._tokens) * (self._period / self._rate)
+                await asyncio.sleep(wait)
+                self._tokens = 0
+            else:
+                self._tokens -= 1
+
+_rate_limiter = _TokenBucket(rate=25, period=60.0)
 
 FALLBACK_ADVICE = [
     {"impact": "HIGH", "text": "Reduce filler words — pause briefly instead of saying 'um' or 'uh'."},
@@ -108,9 +134,15 @@ async def generate_feedback(transcript: str, metrics: dict, rule_band: float | N
     )
 
     try:
-        async with _groq_semaphore:
-            client = Groq(api_key=api_key)
-            chat = client.chat.completions.create(
+        # Enforce per-minute rate limit before calling Groq
+        await _rate_limiter.acquire()
+
+        client = Groq(api_key=api_key)
+
+        # Run the synchronous Groq SDK call in a thread pool so it doesn't
+        # block FastAPI's async event loop (CRIT-B01 fix).
+        def _call() -> object:
+            return client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
@@ -120,7 +152,13 @@ async def generate_feedback(transcript: str, metrics: dict, rule_band: float | N
                 max_tokens=600,
                 response_format={"type": "json_object"},
             )
+
+        chat = await asyncio.to_thread(_call)
         raw = chat.choices[0].message.content
+
+        # Strip markdown code fences — some Llama responses wrap JSON in ```json...```
+        # even when response_format=json_object is set (CRIT-B04 fix).
+        raw = re.sub(r'```(?:json)?\s*|\s*```', '', raw).strip()
         data = json.loads(raw)
         llm_band = float(data.get("band_score", 0))
         llm_band = round(max(1.0, min(6.0, llm_band)), 1)
@@ -150,4 +188,5 @@ async def generate_feedback(transcript: str, metrics: dict, rule_band: float | N
             validated = FALLBACK_ADVICE
         return {"band_score": final_band, "advice_cards": validated}
     except Exception:
+        logger.exception("Groq generate_feedback failed — falling back to rule-based advice")
         return {"band_score": rule_band, "advice_cards": FALLBACK_ADVICE}

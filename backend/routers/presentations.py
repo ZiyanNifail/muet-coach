@@ -113,6 +113,7 @@ async def upload_presentation(
         "brainstorm_notes": brainstorm_notes or None,
         "duration_secs": int(duration_secs) if duration_secs else None,
         "video_path": video_path,
+        "slide_path": slides_path,  # WARN-D02 fix: was computed but never persisted
         "status": "processing",
     }
     if sb is not None:

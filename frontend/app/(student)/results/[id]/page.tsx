@@ -337,10 +337,20 @@ export default function ResultsPage() {
     let cancelled = false
     let attempts = 0
     const MAX = 40
+    let authHeaders: Record<string, string> = {}
 
     async function fetchReport() {
       try {
-        const res = await fetch(`${API_URL}/api/reports/${id}`)
+        const res = await fetch(`${API_URL}/api/reports/${id}`, { headers: authHeaders })
+        if (res.status === 401 || res.status === 403) {
+          // Token may have expired — stop polling, show error
+          if (!cancelled) {
+            setError('Session expired. Please log in again.')
+            setReport(DEMO_REPORT)
+            setLoading(false)
+          }
+          return
+        }
         if (res.status === 404 && attempts < MAX) {
           attempts++
           if (!cancelled) setTimeout(fetchReport, 3000)
@@ -358,7 +368,21 @@ export default function ResultsPage() {
       }
     }
 
-    fetchReport()
+    async function init() {
+      // Get auth token once before polling starts
+      try {
+        const { createClient } = await import('@supabase/supabase-js')
+        const sb = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        )
+        const { data: { session } } = await sb.auth.getSession()
+        if (session?.access_token) authHeaders = { Authorization: `Bearer ${session.access_token}` }
+      } catch {}
+      if (!cancelled) fetchReport()
+    }
+
+    init()
     return () => { cancelled = true }
   }, [id, isDemo])
 

@@ -30,3 +30,7 @@ Thumbs.db
 # IDE
 .vscode/settings.json
 .idea/
+
+# Claude worktrees
+.claude/worktrees/
+C:/temp/

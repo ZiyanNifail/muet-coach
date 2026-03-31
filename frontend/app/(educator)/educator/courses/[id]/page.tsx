@@ -93,6 +93,7 @@ export default function CourseDetailPage() {
   const [inviting, setInviting] = useState(false)
   const [inviteMsg, setInviteMsg] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const tokenRef = useRef<string>('')
 
   // AI Rubric generation
   const [showAiPanel, setShowAiPanel] = useState(false)
@@ -112,12 +113,16 @@ export default function CourseDetailPage() {
       )
       const { data: { user } } = await sb.auth.getUser()
       if (user) setUserId(user.id)
+      const { data: { session } } = await sb.auth.getSession()
+      tokenRef.current = session?.access_token ?? ''
+      const authHdr: Record<string, string> = tokenRef.current
+        ? { Authorization: `Bearer ${tokenRef.current}` } : {}
 
       const [courseRes, membersRes, assignRes, subsRes] = await Promise.all([
-        fetch(`${API_URL}/api/courses/${id}`),
-        fetch(`${API_URL}/api/courses/${id}/members`),
-        fetch(`${API_URL}/api/courses/${id}/assignments`),
-        fetch(`${API_URL}/api/courses/${id}/submissions`),
+        fetch(`${API_URL}/api/courses/${id}`, { headers: authHdr }),
+        fetch(`${API_URL}/api/courses/${id}/members`, { headers: authHdr }),
+        fetch(`${API_URL}/api/courses/${id}/assignments`, { headers: authHdr }),
+        fetch(`${API_URL}/api/courses/${id}/submissions`, { headers: authHdr }),
       ])
 
       if (courseRes.ok) setCourse((await courseRes.json()).course)
@@ -127,11 +132,24 @@ export default function CourseDetailPage() {
       setLoading(false)
     }
     load()
+
+    // Poll for new join requests every 15 s so educator sees them without manual refresh
+    const poll = setInterval(async () => {
+      if (!tokenRef.current) return
+      const authHdr = { Authorization: `Bearer ${tokenRef.current}` }
+      const res = await fetch(`${API_URL}/api/courses/${id}/members`, { headers: authHdr })
+      if (res.ok) setMembers((await res.json()).members || [])
+    }, 15000)
+    return () => clearInterval(poll)
   }, [id])
 
   async function handleMemberAction(memberId: string, action: 'approve' | 'reject') {
     setActionId(memberId)
-    await fetch(`${API_URL}/api/courses/${id}/members/${memberId}/${action}`, { method: 'POST' })
+    const authHdr: Record<string, string> = tokenRef.current
+      ? { Authorization: `Bearer ${tokenRef.current}` } : {}
+    await fetch(`${API_URL}/api/courses/${id}/members/${memberId}/${action}`, {
+      method: 'POST', headers: authHdr,
+    })
     setMembers((prev) => prev.map((m) => m.id === memberId ? { ...m, status: action === 'approve' ? 'approved' : 'rejected' } : m))
     setActionId(null)
   }
@@ -630,14 +648,16 @@ export default function CourseDetailPage() {
               <p className="text-xs" style={{ color: '#4a4035' }}>No submissions yet.</p>
             </div>
           ) : (
-            submissions.map((s) => {
+            submissions.map((s, idx) => {
               const r = Array.isArray(s.feedback_reports) ? s.feedback_reports[0] : s.feedback_reports
+              // T4.01D: anonymise names in aggregate view — raw name only on individual review page
+              const anonLabel = `Student ${String.fromCharCode(65 + (idx % 26))}`
               return (
                 <div key={s.id} className="flex items-center gap-4 rounded-xl border p-4"
                   style={{ background: 'rgba(14,9,4,0.50)', borderColor: 'rgba(245,158,11,0.08)' }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-[#e8e8f0]">{s.users?.full_name}</span>
+                      <span className="text-sm font-semibold text-[#e8e8f0]">{anonLabel}</span>
                       <Badge variant={s.status === 'complete' ? 'green' : s.status === 'failed' ? 'red' : 'amber'}>
                         {s.status}
                       </Badge>
