@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft } from 'lucide-react'
 
@@ -25,9 +26,17 @@ export default function NewAssignmentPage() {
     setError(null)
 
     try {
+      const sb = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
+      const { data: { session } } = await sb.auth.getSession()
+      const authHdr: Record<string, string> = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` } : {}
+
       const res = await fetch(`${API_URL}/api/courses/${courseId}/assignments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHdr },
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),

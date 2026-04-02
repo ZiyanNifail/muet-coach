@@ -69,8 +69,11 @@ export default function AnalyticsPage() {
       )
       const { data: { user } } = await sb.auth.getUser()
       if (!user) { setError('Not authenticated.'); setLoading(false); return }
+      const { data: { session } } = await sb.auth.getSession()
+      const authHdr: Record<string, string> = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` } : {}
 
-      const res = await fetch(`${API_URL}/api/courses/analytics?educator_id=${user.id}`)
+      const res = await fetch(`${API_URL}/api/courses/analytics?educator_id=${user.id}`, { headers: authHdr })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setData(await res.json())
     } catch {

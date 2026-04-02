@@ -78,8 +78,11 @@ export default function ProgressPage() {
         )
         const { data: { user } } = await sb.auth.getUser()
         if (!user) { setLoading(false); return }
+        const { data: { session } } = await sb.auth.getSession()
+        const authHdr: Record<string, string> = session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` } : {}
 
-        const res = await fetch(`${API_URL}/api/reports/history/${user.id}`)
+        const res = await fetch(`${API_URL}/api/reports/history/${user.id}`, { headers: authHdr })
         if (!res.ok) throw new Error()
         const data = await res.json()
         setSessions(data.sessions || [])

@@ -105,7 +105,10 @@ export default function EducatorDashboard() {
         allSubs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         setRecentSubs(allSubs.slice(0, 8))
         setPendingItems(allPending)
-      } catch {}
+      } catch {
+        setLoading(false)
+        return
+      }
 
       setLoading(false)
     }
