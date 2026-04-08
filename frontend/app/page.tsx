@@ -249,7 +249,7 @@ function ProblemStatement() {
               ["Pacing 187 wpm in section 2", "MUET target is 120–150 wpm"],
             ].map(([finding, detail]) => (
               <li key={finding} className="flex items-start gap-3">
-                <ChevronRight className="w-3.5 h-3.5 text-[#d4622b] mt-0.5 flex-shrink-0" />
+                <ChevronRight className="w-3.5 h-3.5 text-[#d4622b] mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-[#f0ece4] font-medium">{finding}</p>
                   <p className="text-xs text-[#7a7265]">{detail}</p>
@@ -393,7 +393,7 @@ function HowItWorks() {
         {/* Vertical timeline */}
         <div className="relative">
           {/* Track line */}
-          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-[#2a2520]" />
+          <div className="absolute left-1.75 top-2 bottom-2 w-px bg-[#2a2520]" />
 
           <div className="space-y-10 pl-10">
             {steps.map((step, i) => (

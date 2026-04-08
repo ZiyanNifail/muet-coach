@@ -96,17 +96,29 @@ async def run_pipeline(
     os.makedirs(work_dir, exist_ok=True)
 
     try:
-        # ── T2.08  Audio extraction ──────────────────────────────────────────
         wav_path = os.path.join(work_dir, "audio.wav")
+        chunk_dir = os.path.join(work_dir, "chunks")
+
+        # ── Parallelise: start MediaPipe immediately — it only needs video_path
+        # and is fully independent of the audio pipeline.  The audio branch
+        # (extract → chunk → Whisper) runs while MediaPipe processes frames.
+        mediapipe_task = asyncio.create_task(_run_mediapipe(video_path))
+        # Yield to the event loop so mediapipe_task can reach run_in_executor
+        # and submit its thread-pool work *before* the blocking audio extraction
+        # starts.  Without this yield, create_task only schedules the coroutine
+        # but doesn't run it until the next await point.
+        await asyncio.sleep(0)
+        logger.info("MediaPipe task started in background for %s", presentation_id)
+
+        # ── T2.08  Audio extraction ──────────────────────────────────────────
         audio_ok = True
+        chunk_paths: list = []
         try:
             extract_wav(video_path, wav_path)
-            chunk_dir = os.path.join(work_dir, "chunks")
             chunk_paths = chunk_wav(wav_path, chunk_dir)
         except Exception as exc:
             logger.warning("Audio extraction failed: %s", exc)
             audio_ok = False
-            chunk_paths = []
 
         # ── T2.10  Whisper transcription + T2.12C voice clarity ─────────────
         transcript = ""
@@ -134,8 +146,13 @@ async def run_pipeline(
             except Exception as exc:
                 logger.warning("Sentiment analysis failed: %s", exc)
 
-        # ── T2.14 / T2.15  MediaPipe ─────────────────────────────────────────
-        vision_results = await _run_mediapipe(video_path)
+        # ── T2.14 / T2.15  MediaPipe — await background task started above ───
+        try:
+            vision_results = await mediapipe_task
+        except Exception as exc:
+            logger.warning("MediaPipe task failed: %s", exc)
+            vision_results = {"eye_contact_pct": None, "posture_score": None, "confidence_flags": {"face_ok": False}}
+
         eye_contact_pct: float | None = vision_results["eye_contact_pct"]
         posture_score: float | None = vision_results["posture_score"]
         confidence_flags = vision_results["confidence_flags"]
@@ -262,12 +279,14 @@ async def _store_video(
             video_path,
             compressed_path,
         )
+        with open(upload_path, "rb") as _fh:
+            video_bytes = _fh.read()
         storage_key = await loop.run_in_executor(
             None,
             upload_video,
             student_id,
             presentation_id,
-            open(upload_path, "rb").read(),
+            video_bytes,
             "video/mp4",
         )
         if storage_key:

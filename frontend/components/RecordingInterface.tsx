@@ -78,7 +78,8 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
   const [error, setError]               = useState('')
   const [warning, setWarning]           = useState<{ message: string; isRed?: boolean } | null>(null)
   const [speechAvailable, setSpeechAvailable] = useState<boolean | null>(null)
-  const [subtitle, setSubtitle]         = useState<{ text: string; isFinal: boolean } | null>(null)
+  // subtitle is written directly to the DOM ref — never stored in state to avoid re-renders
+  const subtitleDomRef = useRef<HTMLParagraphElement>(null)
   const [transcript, setTranscript]     = useState<string[]>([])   // persistent lines for display
   const transcriptScrollRef = useRef<HTMLDivElement>(null)
 
@@ -109,6 +110,8 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
     let wpmCheckTimer: ReturnType<typeof setTimeout> | null = null
     let restartTimer: ReturnType<typeof setTimeout> | null = null
+    let restartCount = 0
+    let hasProducedResults = false
 
     function startRecognition(lang: string) {
       if (restartTimer) { clearTimeout(restartTimer); restartTimer = null }
@@ -124,6 +127,8 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       recognition.onstart = () => { started = true; setSpeechAvailable(true) }
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
+        hasProducedResults = true
+        restartCount = 0  // reset on success
         const now = Date.now()
         let interimText = ''
 
@@ -134,21 +139,21 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
           if (result.isFinal) {
             // ── Accumulate full transcript ──────────────────────────────
             transcriptRef.current = (transcriptRef.current + ' ' + t.trim()).trim()
+
+            // Append-only: only wrap the NEW segment, preserving all prior lines
             setTranscript(prev => {
-              // Append new words; wrap into ~60-char display lines
-              const allText = (prev.join(' ') + ' ' + t.trim()).trim()
-              const words = allText.split(/\s+/)
-              const lines: string[] = []
-              let line = ''
-              for (const w of words) {
-                if ((line + ' ' + w).trim().length > 60) {
-                  if (line) lines.push(line)
-                  line = w
+              const newWords = t.trim().split(/\s+/)
+              const lines = [...prev]
+              let lastLine = lines.pop() ?? ''
+              for (const w of newWords) {
+                if ((lastLine + ' ' + w).trim().length > 60) {
+                  if (lastLine) lines.push(lastLine)
+                  lastLine = w
                 } else {
-                  line = (line + ' ' + w).trim()
+                  lastLine = (lastLine + ' ' + w).trim()
                 }
               }
-              if (line) lines.push(line)
+              if (lastLine) lines.push(lastLine)
               return lines
             })
 
@@ -186,15 +191,20 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
           }
         }
 
-        // Update subtitle overlay
+        // ── Update subtitle overlay directly in the DOM — no setState = no re-render ──
         const displayText = (finalBufferRef.current + (interimText ? ' ' + interimText.trim() : '')).trim()
-        if (displayText) {
-          setSubtitle({ text: displayText, isFinal: !interimText })
-          if (!interimText) {
+        const el = subtitleDomRef.current
+        if (el) {
+          if (displayText) {
+            el.textContent = displayText
+            el.style.color = interimText ? 'rgba(232,232,240,0.6)' : '#e8e8f0'
+            el.style.display = 'block'
+          }
+          if (!interimText && displayText) {
             if (subtitleClearRef.current) clearTimeout(subtitleClearRef.current)
             subtitleClearRef.current = setTimeout(() => {
               finalBufferRef.current = ''
-              setSubtitle(null)
+              if (subtitleDomRef.current) subtitleDomRef.current.style.display = 'none'
             }, 3000)
           }
         }
@@ -224,15 +234,19 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       }
 
       recognition.onend = () => {
-        // Only restart if this recognition is still the active one
-        if (recognitionRef.current === recognition) {
-          // Use a fresh object on restart — calling .start() on a stopped/errored
-          // recognition throws InvalidStateError and kills the transcript silently.
-          restartTimer = setTimeout(() => {
-            restartTimer = null
-            if (recognitionRef.current === recognition) startRecognition(lang)
-          }, 300)
+        if (recognitionRef.current !== recognition) return
+        restartCount++
+        // After 6 consecutive restarts with zero results, the speech API is
+        // not working (network blocked, browser unsupported, etc). Stop looping
+        // and show the user a clear message rather than silently doing nothing.
+        if (restartCount > 6 && !hasProducedResults) {
+          setSpeechAvailable(false)
+          return
         }
+        restartTimer = setTimeout(() => {
+          restartTimer = null
+          if (recognitionRef.current === recognition) startRecognition(lang)
+        }, 300)
       }
 
       // Defer start by one tick so the 'recording' render commits to the DOM
@@ -296,7 +310,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
       wordTimesRef.current = []
       finalBufferRef.current = ''
       if (subtitleClearRef.current) clearTimeout(subtitleClearRef.current)
-      setSubtitle(null)
+      if (subtitleDomRef.current) subtitleDomRef.current.style.display = 'none'
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, status])
@@ -511,26 +525,23 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             </div>
           )}
 
-          {/* Live subtitle strip */}
+          {/* Live subtitle strip — rendered once, updated via DOM ref to avoid re-renders */}
           <div className="absolute inset-x-0 bottom-0"
             style={{ height: 48, background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
               display: 'flex', alignItems: 'flex-end', padding: '0 16px 10px', overflow: 'hidden' }}>
-            {subtitle && status === 'recording' && (
-              <p style={{
-                fontSize: 14, fontWeight: 500, lineHeight: 1.4,
-                color: subtitle.isFinal ? '#e8e8f0' : 'rgba(232,232,240,0.6)',
-                textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-                transition: 'opacity 0.2s ease', maxWidth: '100%', wordBreak: 'break-word',
-              }}>
-                {subtitle.text}
-              </p>
-            )}
+            <p ref={subtitleDomRef} style={{
+              display: 'none',
+              fontSize: 14, fontWeight: 500, lineHeight: 1.4,
+              color: '#e8e8f0',
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+              maxWidth: '100%', wordBreak: 'break-word',
+            }} />
           </div>
 
           {/* Waveform */}
           <div className="absolute bottom-0 inset-x-0 px-3 pb-2" style={{ pointerEvents: 'none' }}>
             <canvas ref={canvasRef} width={640} height={28} className="w-full"
-              style={{ height: 28, opacity: subtitle ? 0.3 : 0.85 }} />
+              style={{ height: 28, opacity: 0.85 }} />
           </div>
         </div>
 
@@ -652,9 +663,20 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
           <div ref={transcriptScrollRef} className="flex-1 overflow-y-auto p-3 space-y-0.5" style={{ maxHeight: 260 }}>
             {transcript.length === 0 ? (
-              <p className="text-[11px] text-[#55556a] italic">
-                {status === 'recording' ? 'Start speaking — transcript will appear here…' : 'Transcript will appear when recording starts.'}
-              </p>
+              speechAvailable === false ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-[11px] text-[#f59e0b]">Live transcript unavailable.</p>
+                  <p className="text-[10px] text-[#55556a] leading-4">
+                    Use <strong className="text-[#8888a0]">Chrome or Edge</strong> for live transcript.
+                    Firefox and Safari do not support this API.
+                    Your recording is still saved — the AI will transcribe it after you stop.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[11px] text-[#55556a] italic">
+                  {status === 'recording' ? 'Start speaking — transcript will appear here…' : 'Transcript will appear when recording starts.'}
+                </p>
+              )
             ) : (
               transcript.map((line, i) => (
                 <p key={i} className="text-xs text-[#e8e8f0] leading-relaxed">{line}</p>

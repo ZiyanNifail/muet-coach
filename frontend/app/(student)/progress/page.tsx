@@ -1,10 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
 } from 'recharts'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import { swrFetcher } from '@/lib/api'
 import Link from 'next/link'
 
 interface SessionPoint {
@@ -19,8 +21,6 @@ interface SessionPoint {
     generated_at: string | null
   } | null
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-MY', { month: 'short', day: 'numeric' })
@@ -65,35 +65,22 @@ function SparkLine({
 }
 
 export default function ProgressPage() {
-  const [sessions, setSessions] = useState<SessionPoint[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [swrKey, setSwrKey] = useState<[string, string] | null>(null)
 
   useEffect(() => {
-    async function load() {
-      try {
-        const sb = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        )
-        const { data: { user } } = await sb.auth.getUser()
-        if (!user) { setLoading(false); return }
-        const { data: { session } } = await sb.auth.getSession()
-        const authHdr: Record<string, string> = session?.access_token
-          ? { Authorization: `Bearer ${session.access_token}` } : {}
-
-        const res = await fetch(`${API_URL}/api/reports/history/${user.id}`, { headers: authHdr })
-        if (!res.ok) throw new Error()
-        const data = await res.json()
-        setSessions(data.sessions || [])
-      } catch {
-        setError('Could not load progress data.')
-      } finally {
-        setLoading(false)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setSwrKey([`/api/reports/history/${session.user.id}`, session.access_token])
       }
-    }
-    load()
+    })
   }, [])
+
+  const { data, isLoading: loading, error: swrError } = useSWR(swrKey, swrFetcher, {
+    revalidateOnFocus: false,
+  })
+
+  const sessions: SessionPoint[] = data?.sessions ?? []
+  const error = swrError ? 'Could not load progress data.' : null
 
   const hasSessions = sessions.length >= 2
 

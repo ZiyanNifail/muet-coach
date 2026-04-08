@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "browser": {
+      "command": "node",
+      "args": ["C:\\presentation-coach-fyp\\tools\\browser-mcp\\index.mjs"]
+    }
+  }
+}

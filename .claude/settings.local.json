@@ -30,7 +30,16 @@
       "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
       "Bash(venv/Scripts/python.exe -c \"import main\")",
       "Bash(echo \"EXIT: $?\")",
-      "mcp__plugin_context-mode_context-mode__ctx_search"
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "Bash(npx skills:*)",
+      "Bash(ffmpeg -version)",
+      "Bash(pip freeze:*)",
+      "Bash(python -m py_compile services/pipeline.py services/sentiment_service.py)",
+      "Bash(python -m py_compile services/pipeline.py)",
+      "Bash(python -m py_compile services/sentiment_service.py)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('requirements.txt'\\).read\\(\\)\\)\")",
+      "Bash(npx playwright:*)",
+      "Bash(git add:*)"
     ]
   }
 }

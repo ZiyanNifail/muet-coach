@@ -1,15 +1,24 @@
-fastapi
-uvicorn[standard]
-python-multipart
-python-dotenv
-supabase
-pydantic
-httpx
-groq
-apscheduler
-transformers
-torch
-librosa
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+python-multipart==0.0.22
+python-dotenv==1.0.1
+supabase==2.5.0
+pydantic==2.12.3
+httpx==0.27.0
+groq==1.0.0
+apscheduler==3.10.4
+librosa==0.11.0
+mediapipe==0.10.14
+numpy==1.26.4
+opencv-python==4.8.1.78
 
-# Optional, for local Whisper fallback:
-# openai-whisper
+# Sentiment analysis — optional heavy dependency (~2 GB with CUDA).
+# The sentiment_service.py loads these lazily and degrades gracefully
+# if they are not installed. Comment out to skip on resource-constrained
+# deployments (Railway free tier, etc.).
+# transformers==4.46.3
+# torch==2.2.2
+
+# Local Whisper fallback (uses Groq Whisper API by default).
+# Uncomment only if you need offline transcription:
+# openai-whisper==20250625

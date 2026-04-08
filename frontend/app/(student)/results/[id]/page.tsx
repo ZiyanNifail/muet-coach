@@ -343,10 +343,8 @@ export default function ResultsPage() {
       try {
         const res = await fetch(`${API_URL}/api/reports/${id}`, { headers: authHeaders })
         if (res.status === 401 || res.status === 403) {
-          // Token may have expired — stop polling, show error
           if (!cancelled) {
-            setError('Session expired. Please log in again.')
-            setReport(DEMO_REPORT)
+            setError('Your session has expired. Please log in again to view this report.')
             setLoading(false)
           }
           return
@@ -356,20 +354,29 @@ export default function ResultsPage() {
           if (!cancelled) setTimeout(fetchReport, 3000)
           return
         }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        if (res.status === 404) {
+          // Exhausted retries — analysis likely failed
+          if (!cancelled) {
+            setError('Analysis did not complete. The AI pipeline may have encountered an error. Please try a new session.')
+            setLoading(false)
+          }
+          return
+        }
+        if (!res.ok) {
+          const body = await res.text().catch(() => '')
+          throw new Error(`HTTP ${res.status}: ${body.slice(0, 200)}`)
+        }
         const data: Report = await res.json()
         if (!cancelled) { setReport(data); setLoading(false) }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
-          setError('Could not load report. Showing demo data.')
-          setReport(DEMO_REPORT)
+          setError(`Could not load report: ${err instanceof Error ? err.message : 'Network error'}`)
           setLoading(false)
         }
       }
     }
 
     async function init() {
-      // Get auth token once before polling starts
       try {
         const { createClient } = await import('@supabase/supabase-js')
         const sb = createClient(
@@ -407,7 +414,29 @@ export default function ResultsPage() {
     )
   }
 
-  const r = report!
+  if (error && !report) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div
+          className="max-w-md w-full flex flex-col gap-4 rounded-xl border p-8 text-center"
+          style={{ background: 'rgba(14,14,22,0.55)', borderColor: 'rgba(239,68,68,0.2)' }}
+        >
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ef4444' }}>
+            REPORT ERROR
+          </div>
+          <p className="text-[#e8e8f0] text-sm leading-6">{error}</p>
+          <div className="flex gap-3 justify-center">
+            <Link href="/practice"><Button variant="secondary">New Session</Button></Link>
+            <Link href="/dashboard"><Button variant="ghost">Dashboard</Button></Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!report) return null
+
+  const r = report
   const chartData = r.pace_timeseries && r.pace_timeseries.length > 1
     ? r.pace_timeseries.map((p) => ({
         t: p.time_sec < 60
@@ -428,7 +457,7 @@ export default function ResultsPage() {
               textTransform: 'uppercase', color: '#55556a', marginBottom: 4,
             }}
           >
-            FEEDBACK REPORT{isDemo && ' · DEMO DATA'}{error && ' · DEMO FALLBACK'}
+            FEEDBACK REPORT{isDemo && ' · DEMO DATA'}
           </div>
           <h1 className="text-xl font-semibold text-[#e8e8f0]">Presentation Analysis</h1>
           {(r.topic_text || r.session_mode) && (

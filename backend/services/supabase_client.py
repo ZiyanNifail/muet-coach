@@ -91,31 +91,51 @@ async def db_insert_session_history(student_id: str, report_id: str) -> None:
     sb = get_supabase()
     if sb is None:
         return
-    sb.table("session_history").insert(
-        {"student_id": student_id, "report_id": report_id}
-    ).execute()
+    try:
+        sb.table("session_history").insert(
+            {"student_id": student_id, "report_id": report_id}
+        ).execute()
+    except Exception as exc:
+        logger.error("db_insert_session_history failed for student %s: %s", student_id, exc)
 
 
 async def db_get_report(presentation_id: str) -> dict | None:
     """
-    Fetch the feedback report joined with presentation context fields
-    (topic_text, session_mode, duration_secs) for the results page header.
+    Fetch the feedback report, then separately fetch presentation context fields.
+    Two separate queries avoids relying on a specific FK constraint name, which
+    differs between Supabase projects and caused 500 errors when the name didn't match.
     """
     sb = get_supabase()
     if sb is None:
         return None
-    res = (
-        sb.table("feedback_reports")
-        .select("*, presentations!feedback_reports_presentation_id_fkey(topic_text, session_mode, duration_secs)")
-        .eq("presentation_id", presentation_id)
-        .maybe_single()
-        .execute()
-    )
-    if not res.data:
+    try:
+        report_res = (
+            sb.table("feedback_reports")
+            .select("*")
+            .eq("presentation_id", presentation_id)
+            .maybe_single()
+            .execute()
+        )
+        if not report_res.data:
+            return None
+        row = dict(report_res.data)
+    except Exception as exc:
+        logger.error("db_get_report: feedback_reports query failed for %s: %s", presentation_id, exc)
         return None
-    row = dict(res.data)
-    # Flatten presentation context fields into the report row
-    pres = row.pop("presentations", None) or {}
+
+    # Separately fetch presentation context — non-fatal if columns don't exist yet
+    try:
+        pres_res = (
+            sb.table("presentations")
+            .select("topic_text, session_mode, duration_secs")
+            .eq("id", presentation_id)
+            .maybe_single()
+            .execute()
+        )
+        pres = pres_res.data or {}
+    except Exception:
+        pres = {}
+
     row["topic_text"] = pres.get("topic_text")
     row["session_mode"] = pres.get("session_mode")
     row["duration_secs"] = pres.get("duration_secs")
