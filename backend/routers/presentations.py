@@ -121,7 +121,8 @@ async def upload_presentation(
         try:
             sb.table("presentations").insert(row).execute()
         except Exception as exc:
-            logger.warning("Supabase insert failed (proceeding anyway): %s", exc)
+            logger.error("Supabase presentations insert failed — aborting pipeline: %s", exc)
+            raise HTTPException(500, f"Failed to create presentation record in database: {exc}")
 
     # ── Queue AI pipeline ─────────────────────────────────────────────────────
     background_tasks.add_task(
@@ -151,11 +152,11 @@ async def get_status(presentation_id: str):
             sb.table("presentations")
             .select("status")
             .eq("id", presentation_id)
-            .maybe_single()
+            .limit(1)
             .execute()
         )
         if res.data:
-            return {"presentation_id": presentation_id, "status": res.data["status"]}
+            return {"presentation_id": presentation_id, "status": res.data[0]["status"]}
     except Exception as exc:
         logger.warning("Status query failed: %s", exc)
     return {"presentation_id": presentation_id, "status": "processing"}
