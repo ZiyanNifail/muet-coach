@@ -46,6 +46,8 @@ class FeedbackReport(BaseModel):
     sentiment_score: Optional[float] = None
     voice_clarity_score: Optional[float] = None
     confidence_score: Optional[float] = None
+    # IMP-03: per-10s eye contact timeline for session replay annotations
+    eye_contact_timeline: Optional[Any] = None
 
 
 @router.get("/{presentation_id}", response_model=FeedbackReport)

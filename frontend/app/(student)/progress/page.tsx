@@ -8,6 +8,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { swrFetcher } from '@/lib/api'
 import Link from 'next/link'
+import { LearningPathPanel } from '@/components/LearningPathPanel'
 
 interface SessionPoint {
   session_date: string
@@ -66,10 +67,12 @@ function SparkLine({
 
 export default function ProgressPage() {
   const [swrKey, setSwrKey] = useState<[string, string] | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        setUserId(session.user.id)
         setSwrKey([`/api/reports/history/${session.user.id}`, session.access_token])
       }
     })
@@ -217,6 +220,9 @@ export default function ProgressPage() {
           </div>
         </>
       )}
+
+      {/* IMP-01: Learning path recommendation based on session history */}
+      {userId && <LearningPathPanel studentId={userId} />}
     </div>
   )
 }

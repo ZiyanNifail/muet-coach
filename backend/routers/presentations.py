@@ -12,12 +12,14 @@ import os
 import uuid
 import logging
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, Header
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, Header, Depends
 from pydantic import BaseModel
 from typing import Optional, List
 
 from services.supabase_client import get_supabase, db_update_presentation
 from services.pipeline import run_pipeline
+from services.storage_service import get_video_signed_url
+from services.auth_deps import get_current_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +149,45 @@ async def upload_presentation(
         status="processing",
         message="Upload received. Analysis started.",
     )
+
+
+@router.get("/{presentation_id}/video-url")
+async def get_video_url(
+    presentation_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    IMP-03: Return a 1-hour signed URL for the recorded video.
+    Requires auth; verifies ownership before issuing the URL.
+    """
+    sb = get_supabase()
+    if sb is None:
+        raise HTTPException(404, "Video not available")
+    try:
+        res = (
+            sb.table("presentations")
+            .select("student_id, video_path")
+            .eq("id", presentation_id)
+            .limit(1)
+            .execute()
+        )
+        row = res.data[0] if res.data else None
+        if not row:
+            raise HTTPException(404, "Presentation not found")
+        if row["student_id"] != user_id:
+            raise HTTPException(403, "Access denied")
+        video_path = row.get("video_path")
+        if not video_path:
+            raise HTTPException(404, "Video not stored for this session")
+        signed_url = get_video_signed_url(video_path)
+        if not signed_url:
+            raise HTTPException(404, "Could not generate video URL")
+        return {"url": signed_url}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("video-url fetch failed for %s: %s", presentation_id, exc)
+        raise HTTPException(500, "Video URL unavailable")
 
 
 @router.get("/{presentation_id}/status")

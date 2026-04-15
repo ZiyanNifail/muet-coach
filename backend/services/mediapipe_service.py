@@ -80,26 +80,25 @@ async def analyse_video(video_path: str) -> dict:
     Returns:
       { eye_contact_pct, posture_score, confidence_flags: { face_ok, pose_ok } }
     """
+    _EMPTY = {
+        "eye_contact_pct": None,
+        "posture_score": None,
+        "eye_contact_timeline": None,
+        "confidence_flags": {"face_ok": False, "pose_ok": False},
+    }
+
     try:
         import cv2
         import mediapipe as mp
     except ImportError:
-        return {
-            "eye_contact_pct": None,
-            "posture_score": None,
-            "confidence_flags": {"face_ok": False, "pose_ok": False},
-        }
+        return _EMPTY
 
     mp_face = mp.solutions.face_mesh
     mp_pose = mp.solutions.pose
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        return {
-            "eye_contact_pct": None,
-            "posture_score": None,
-            "confidence_flags": {"face_ok": False, "pose_ok": False},
-        }
+        return _EMPTY
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
     native_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
@@ -115,6 +114,10 @@ async def analyse_video(video_path: str) -> dict:
     face_detected = 0
     pose_detected = 0
     total_sampled = 0
+
+    # IMP-03: per-10s chunk gaze tracking for session replay timeline
+    CHUNK_SECS = 10
+    chunk_gaze: dict[int, list[bool]] = {}
 
     with mp_face.FaceMesh(
         static_image_mode=True,   # static_image_mode=True is faster when seeking
@@ -134,16 +137,21 @@ async def analyse_video(video_path: str) -> dict:
                 continue
 
             total_sampled += 1
+            t_sec = frame_pos / native_fps
+            chunk_key = int(t_sec / CHUNK_SECS)
             img_h, img_w = frame.shape[:2]
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Face Mesh — eye contact via iris gaze
+            eye_on = False
             face_results = face_mesh.process(rgb)
             if face_results.multi_face_landmarks:
                 face_detected += 1
                 fl = face_results.multi_face_landmarks[0]
-                if _iris_gaze_on_camera(fl):
+                eye_on = _iris_gaze_on_camera(fl)
+                if eye_on:
                     eye_contact_frames += 1
+            chunk_gaze.setdefault(chunk_key, []).append(eye_on)
 
             # Pose — posture
             pose_results = pose.process(rgb)
@@ -153,12 +161,15 @@ async def analyse_video(video_path: str) -> dict:
 
     cap.release()
 
+    # Build eye contact timeline from chunk data
+    eye_contact_timeline = [
+        {"t": chunk_key * CHUNK_SECS, "value": round(sum(v) / len(v) * 100, 1)}
+        for chunk_key, v in sorted(chunk_gaze.items())
+        if v
+    ]
+
     if total_sampled == 0:
-        return {
-            "eye_contact_pct": None,
-            "posture_score": None,
-            "confidence_flags": {"face_ok": False, "pose_ok": False},
-        }
+        return _EMPTY
 
     eye_pct = round((eye_contact_frames / total_sampled) * 100, 1) if face_detected > 0 else None
     avg_posture = round(sum(posture_scores) / len(posture_scores), 1) if posture_scores else None
@@ -166,6 +177,7 @@ async def analyse_video(video_path: str) -> dict:
     return {
         "eye_contact_pct": eye_pct,
         "posture_score": avg_posture,
+        "eye_contact_timeline": eye_contact_timeline if len(eye_contact_timeline) > 1 else None,
         "confidence_flags": {
             "face_ok": face_detected > 0,
             "pose_ok": pose_detected > 0,

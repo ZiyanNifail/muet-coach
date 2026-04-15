@@ -9,7 +9,10 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Download } from 'lucide-react'
-import { getAuthHeaders } from '@/lib/supabase'
+import { getAuthHeaders, supabase } from '@/lib/supabase'
+import { TranscriptViewer } from '@/components/TranscriptViewer'
+import { VideoPlayer } from '@/components/VideoPlayer'
+import { LearningPathPanel } from '@/components/LearningPathPanel'
 
 interface Report {
   id: string
@@ -32,6 +35,7 @@ interface Report {
   sentiment_score: number | null
   voice_clarity_score: number | null
   confidence_score: number | null
+  eye_contact_timeline: { t: number; value: number }[] | null
 }
 
 const DEMO_REPORT: Report = {
@@ -68,6 +72,20 @@ const DEMO_REPORT: Report = {
   sentiment_score: 0.71,
   voice_clarity_score: 78,
   confidence_score: 73.2,
+  eye_contact_timeline: [
+    { t: 0, value: 82 },
+    { t: 10, value: 45 },
+    { t: 20, value: 71 },
+    { t: 30, value: 28 },
+    { t: 40, value: 68 },
+    { t: 50, value: 90 },
+    { t: 60, value: 55 },
+    { t: 70, value: 33 },
+    { t: 80, value: 74 },
+    { t: 90, value: 88 },
+    { t: 100, value: 62 },
+    { t: 110, value: 41 },
+  ],
 }
 
 const IMPACT_VARIANT = { HIGH: 'red', MED: 'amber', LOW: 'blue' } as const
@@ -332,6 +350,13 @@ export default function ResultsPage() {
   const [report, setReport] = useState<Report | null>(isDemo ? DEMO_REPORT : null)
   const [loading, setLoading] = useState(!isDemo)
   const [error, setError] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setUserId(session.user.id)
+    })
+  }, [])
 
   useEffect(() => {
     if (isDemo) return
@@ -588,31 +613,29 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* Transcript */}
+      {/* IMP-03: Session replay with eye contact timeline */}
+      {!isDemo && (
+        <VideoPlayer
+          presentationId={r.presentation_id}
+          eyeContactTimeline={r.eye_contact_timeline ?? null}
+          duration={r.duration_secs ?? null}
+        />
+      )}
+      {isDemo && r.eye_contact_timeline && (
+        <VideoPlayer
+          presentationId="demo"
+          eyeContactTimeline={r.eye_contact_timeline}
+          duration={r.duration_secs ?? null}
+        />
+      )}
+
+      {/* IMP-02: Transcript with amber filler highlights + breakdown */}
       {r.transcript && (
-        <div
-          className="flex flex-col gap-3 rounded-xl border p-5"
-          style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
-        >
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
-            TRANSCRIPT
-          </div>
-          <p className="text-[#8888a0] text-sm leading-7">
-            {r.transcript.split(/(\[[^\]]+\])/).map((part, i) =>
-              /^\[.+\]$/.test(part) ? (
-                <mark key={i} className="rounded px-0.5 not-italic" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>
-                  {part.slice(1, -1)}
-                </mark>
-              ) : part
-            )}
-          </p>
-          {r.filler_count != null && r.filler_count > 0 && (
-            <p className="text-xs text-[#55556a]">
-              {r.filler_count} filler word{r.filler_count !== 1 ? 's' : ''} detected
-              {r.filler_density != null && ` · ${r.filler_density.toFixed(1)}/min`}
-            </p>
-          )}
-        </div>
+        <TranscriptViewer
+          transcript={r.transcript}
+          fillerCount={r.filler_count ?? null}
+          fillerDensity={r.filler_density ?? null}
+        />
       )}
 
       {/* Advice cards */}
@@ -640,6 +663,9 @@ export default function ResultsPage() {
           ))}
         </div>
       )}
+
+      {/* IMP-01: Learning path recommendation */}
+      {userId && <LearningPathPanel studentId={userId} />}
 
       <div className="flex gap-3">
         <Link href="/practice"><Button variant="secondary">New Session</Button></Link>

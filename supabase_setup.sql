@@ -289,6 +289,8 @@ ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS energy_mean_db FLOAT;
 ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS sentiment_score FLOAT;
 ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS voice_clarity_score FLOAT;
 ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS confidence_score FLOAT;
+-- IMP-03: per-10s eye contact timeline for session replay annotations
+ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS eye_contact_timeline JSONB;
 -- WARN-D01: lexical_diversity computed by nlp_service but was never persisted
 ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS lexical_diversity FLOAT;
 -- WARN-D02: slide upload (T2.04) implemented but presentations table had no column for it

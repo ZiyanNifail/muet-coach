@@ -165,6 +165,7 @@ async def run_pipeline(
 
         eye_contact_pct: float | None = vision_results["eye_contact_pct"]
         posture_score: float | None = vision_results["posture_score"]
+        eye_contact_timeline = vision_results.get("eye_contact_timeline")
         confidence_flags = vision_results["confidence_flags"]
         confidence_flags["audio_ok"] = audio_ok and bool(transcript)
 
@@ -237,6 +238,7 @@ async def run_pipeline(
             "filler_density": filler_density,
             "eye_contact_pct": eye_contact_pct,
             "posture_score": posture_score,
+            "eye_contact_timeline": eye_contact_timeline,
             "transcript": marked_transcript,
             "pace_timeseries": pace_timeseries,
             "advice_cards": advice_cards,
