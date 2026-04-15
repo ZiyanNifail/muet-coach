@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { CheckCircle, XCircle, Clock, RefreshCw } from 'lucide-react'
@@ -25,11 +25,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 
   // Fall back to Supabase JWT
   try {
-    const sb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    )
-    const { data: { session } } = await sb.auth.getSession()
+    const { data: { session } } = await supabase.auth.getSession()
     if (session?.access_token) {
       return { Authorization: `Bearer ${session.access_token}` }
     }

@@ -3,6 +3,15 @@
     "browser": {
       "command": "node",
       "args": ["C:\\presentation-coach-fyp\\tools\\browser-mcp\\index.mjs"]
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_1e9ff4a60fda3c0ecca1c601a39bdc94dd038a1f"
+      ]
     }
   }
 }

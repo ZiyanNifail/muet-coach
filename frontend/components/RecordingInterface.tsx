@@ -66,6 +66,10 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
   const chunksRef         = useRef<Blob[]>([])
   const warningTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
   const elapsedRef        = useRef(0)
+  const timerDisplayRef   = useRef<HTMLSpanElement>(null)
+  const remDisplayRef     = useRef<HTMLSpanElement>(null)
+  const progressFillRef   = useRef<HTMLDivElement>(null)
+  const examTimerRef      = useRef<HTMLDivElement>(null)
   const recognitionRef    = useRef<SpeechRecognition | null>(null)
   const wordTimesRef      = useRef<number[]>([])
   const faceCheckRef      = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -74,7 +78,6 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
   const finalBufferRef    = useRef('')          // rolling subtitle buffer
 
   const [status, setStatus]             = useState<'initialising' | 'recording' | 'paused' | 'done'>('initialising')
-  const [elapsed, setElapsed]           = useState(0)
   const [error, setError]               = useState('')
   const [warning, setWarning]           = useState<{ message: string; isRed?: boolean } | null>(null)
   const [speechAvailable, setSpeechAvailable] = useState<boolean | null>(null)
@@ -141,7 +144,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             transcriptRef.current = (transcriptRef.current + ' ' + t.trim()).trim()
 
             // Append-only: only wrap the NEW segment, preserving all prior lines
-            setTranscript(prev => {
+            requestAnimationFrame(() => setTranscript(prev => {
               const newWords = t.trim().split(/\s+/)
               const lines = [...prev]
               let lastLine = lines.pop() ?? ''
@@ -155,7 +158,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
               }
               if (lastLine) lines.push(lastLine)
               return lines
-            })
+            }))
 
             // ── Guided: filler check on FINAL results ──────────────────
             if (mode === 'guided') {
@@ -315,13 +318,34 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, status])
 
-  // ── Elapsed timer ─────────────────────────────────────────────────────────
+  // ── Elapsed timer — DOM-direct updates, no setState = no re-renders ────────
   useEffect(() => {
     if (status !== 'recording') return
     const t = setInterval(() => {
       elapsedRef.current += 1
-      setElapsed(elapsedRef.current)
-      if (elapsedRef.current >= maxSecs) stopRecording()
+      const e = elapsedRef.current
+      const mins = Math.floor(e / 60)
+      const secs = e % 60
+      const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+      const remaining = maxSecs - e
+      const remMins = Math.floor(remaining / 60)
+      const remSecs = remaining % 60
+      const remStr = `${remMins}:${remSecs.toString().padStart(2, '0')}`
+      const pct = Math.min((e / maxSecs) * 100, 100)
+      if (timerDisplayRef.current) timerDisplayRef.current.textContent = timeStr
+      if (remDisplayRef.current) remDisplayRef.current.textContent = `${remStr} remaining`
+      if (progressFillRef.current) {
+        progressFillRef.current.style.width = `${pct}%`
+        progressFillRef.current.style.background = pct > 85 ? '#ef4444' : cfg.accentColor
+      }
+      if (examTimerRef.current) {
+        examTimerRef.current.style.background = remaining < 30 ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.18)'
+        examTimerRef.current.style.borderColor = remaining < 30 ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.4)'
+        examTimerRef.current.style.color = remaining < 30 ? '#ef4444' : '#f59e0b'
+        const span = examTimerRef.current.querySelector<HTMLSpanElement>('span.exam-rem')
+        if (span) span.textContent = `${remStr} left`
+      }
+      if (e >= maxSecs) stopRecording()
     }, 1000)
     return () => clearInterval(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -421,14 +445,9 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
     else { mr.pause(); setStatus('paused') }
   }
 
-  const mins  = Math.floor(elapsed / 60)
-  const secs  = elapsed % 60
-  const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  const remaining = maxSecs - elapsed
-  const remMins = Math.floor(remaining / 60)
-  const remSecs = remaining % 60
-  const remStr = `${remMins}:${remSecs.toString().padStart(2, '0')}`
-  const progress = Math.min((elapsed / maxSecs) * 100, 100)
+  const initRemMins = Math.floor(maxSecs / 60)
+  const initRemSecs = maxSecs % 60
+  const initRemStr = `${initRemMins}:${initRemSecs.toString().padStart(2, '0')}`
 
   const dotColor = status === 'recording' ? cfg.accentColor : status === 'paused' ? '#f59e0b' : '#55556a'
 
@@ -483,7 +502,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
         {/* Video feed */}
         <div className="relative rounded-xl overflow-hidden bg-black aspect-video"
-          style={{ border: `1.5px solid ${cfg.borderColor}33`, willChange: 'transform', transform: 'translateZ(0)' }}>
+          style={{ border: `1.5px solid ${cfg.borderColor}33`, willChange: 'transform', transform: 'translateZ(0)', contain: 'layout style paint' }}>
           <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
 
           {/* Guided warning overlay — slides in from top */}
@@ -496,7 +515,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
                 border: `1px solid ${warning.isRed ? 'rgba(239,68,68,0.45)' : 'rgba(245,158,11,0.45)'}`,
                 color: warning.isRed ? '#ef4444' : '#f59e0b',
                 backdropFilter: 'blur(10px)', borderRadius: 8, padding: '8px 16px',
-                whiteSpace: 'nowrap', zIndex: 20, animation: 'slideDown 0.25s ease',
+                whiteSpace: 'nowrap', zIndex: 20,
               }}
             >
               <AlertTriangle size={14} />
@@ -506,14 +525,14 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
           {/* Exam mode — remaining time badge, no pause badge */}
           {mode === 'exam' && status === 'recording' && (
-            <div className="absolute top-3 right-3 rounded-lg px-3 py-1.5 flex items-center gap-1.5"
+            <div ref={examTimerRef} className="absolute top-3 right-3 rounded-lg px-3 py-1.5 flex items-center gap-1.5"
               style={{
-                background: remaining < 30 ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.18)',
-                border: `1px solid ${remaining < 30 ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.4)'}`,
-                color: remaining < 30 ? '#ef4444' : '#f59e0b',
+                background: 'rgba(245,158,11,0.18)',
+                border: '1px solid rgba(245,158,11,0.4)',
+                color: '#f59e0b',
               }}>
               <Clock size={12} />
-              <span className="font-mono text-sm font-semibold">{remStr} left</span>
+              <span className="exam-rem font-mono text-sm font-semibold">{initRemStr} left</span>
             </div>
           )}
 
@@ -548,12 +567,12 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
         {/* Timer + progress */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-sm text-[#e8e8f0]">{timeStr}</span>
-            <span className="font-mono text-xs text-[#55556a]">{remStr} remaining</span>
+            <span ref={timerDisplayRef} className="font-mono text-sm text-[#e8e8f0]">00:00</span>
+            <span ref={remDisplayRef} className="font-mono text-xs text-[#55556a]">{initRemStr} remaining</span>
           </div>
           <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-            <div className="h-full rounded-full transition-[width] duration-1000"
-              style={{ width: `${progress}%`, background: progress > 85 ? '#ef4444' : cfg.accentColor, willChange: 'width' }} />
+            <div ref={progressFillRef} className="h-full rounded-full"
+              style={{ width: '0%', background: cfg.accentColor }} />
           </div>
         </div>
 
@@ -643,22 +662,25 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
         {/* Live transcript panel — all modes */}
         <div className="flex-1 rounded-xl border flex flex-col overflow-hidden"
-          style={{ background: 'rgba(14,14,22,0.5)', borderColor: 'rgba(255,255,255,0.06)', minHeight: 180 }}>
-          <div className="px-3 py-2 border-b flex items-center justify-between"
-            style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          style={{ background: 'rgba(14,14,22,0.5)', borderColor: 'rgba(255,255,255,0.06)', minHeight: 180, contain: 'layout' }}>
+          <div className="px-3 border-b flex items-center justify-between"
+            style={{ borderColor: 'rgba(255,255,255,0.06)', height: 32, flexShrink: 0 }}>
             <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a' }}>
               Live Transcript
             </p>
-            {speechAvailable === false && (
-              <span className="text-[9px] text-[#f59e0b]">Speech API unavailable</span>
-            )}
-            {speechAvailable === true && status === 'recording' && (
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]"
-                  style={{ animation: 'pulse 1.5s ease-in-out infinite' }} />
-                <span className="text-[9px] text-[#22c55e]">Live</span>
-              </span>
-            )}
+            {/* Fixed-width right slot prevents layout shift when badge appears */}
+            <span style={{ minWidth: 80, display: 'flex', justifyContent: 'flex-end' }}>
+              {speechAvailable === false && (
+                <span className="text-[9px] text-[#f59e0b]">Speech API unavailable</span>
+              )}
+              {speechAvailable === true && status === 'recording' && (
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]"
+                    style={{ animation: 'pulse 1.5s ease-in-out infinite' }} />
+                  <span className="text-[9px] text-[#22c55e]">Live</span>
+                </span>
+              )}
+            </span>
           </div>
 
           <div ref={transcriptScrollRef} className="flex-1 overflow-y-auto p-3 space-y-0.5" style={{ maxHeight: 260 }}>
@@ -668,7 +690,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
                   <p className="text-[11px] text-[#f59e0b]">Live transcript unavailable.</p>
                   <p className="text-[10px] text-[#55556a] leading-4">
                     Use <strong className="text-[#8888a0]">Chrome or Edge</strong> for live transcript.
-                    Firefox and Safari do not support this API.
+                    Firefox, Safari, and Opera do not support this API.
                     Your recording is still saved — the AI will transcribe it after you stop.
                   </p>
                 </div>
@@ -684,13 +706,11 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             )}
           </div>
 
-          {transcript.length > 0 && (
-            <div className="px-3 py-1.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <p className="text-[9px] text-[#55556a]">
-                {transcriptRef.current.split(/\s+/).filter(Boolean).length} words
-              </p>
-            </div>
-          )}
+          <div className="px-3 py-1.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)', height: 28, flexShrink: 0 }}>
+            <p className="text-[9px] text-[#55556a]">
+              {transcript.length > 0 ? `${transcriptRef.current.split(/\s+/).filter(Boolean).length} words` : ''}
+            </p>
+          </div>
         </div>
       </div>
     </div>

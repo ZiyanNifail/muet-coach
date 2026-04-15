@@ -80,6 +80,7 @@ body {
   background-color: #0a0a0f;
   color: #e8e8f0;
   min-height: 100vh;
+  overflow-y: scroll; /* prevent scrollbar appearing/disappearing from causing layout zoom */
 }
 
 /* Reusable utility classes */
@@ -168,12 +169,12 @@ body {
   font-size: 13px;
   color: var(--accent-amber);
   backdrop-filter: blur(8px);
-  animation: slideDown 0.25s ease;
+  animation: fadeIn 0.2s ease;
   white-space: nowrap;
   z-index: 50;
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }

@@ -70,6 +70,29 @@ async def db_update_presentation(presentation_id: str, data: dict) -> None:
         logger.error("db_update_presentation failed for %s: %s", presentation_id, exc)
 
 
+def _coerce_json(obj):
+    """
+    Recursively convert numpy scalars / arrays to plain Python types so that
+    supabase-py can JSON-serialise the payload without TypeError.
+    Called on the report dict before every INSERT.
+    """
+    try:
+        import numpy as np
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+    except ImportError:
+        pass
+    if isinstance(obj, dict):
+        return {k: _coerce_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_coerce_json(v) for v in obj]
+    return obj
+
+
 async def db_insert_report(report: dict) -> str | None:
     """Insert feedback_reports row; returns the new row id."""
     sb = get_supabase()
@@ -77,13 +100,18 @@ async def db_insert_report(report: dict) -> str | None:
         logger.warning("db_insert_report: Supabase unavailable — report not saved for presentation %s", report.get("presentation_id"))
         return None
     try:
-        res = sb.table("feedback_reports").insert(report).execute()
+        safe_report = _coerce_json(report)
+        logger.debug("db_insert_report: inserting keys=%s for presentation=%s", list(safe_report.keys()), safe_report.get("presentation_id"))
+        # returning="representation" is the default in postgrest-py 0.16+ so
+        # res.data will contain the inserted row including the generated id.
+        res = sb.table("feedback_reports").insert(safe_report).execute()
+        logger.debug("db_insert_report: raw res.data=%s", res.data)
         if res.data:
             return res.data[0]["id"]
-        logger.warning("db_insert_report: insert returned no data for presentation %s", report.get("presentation_id"))
+        logger.warning("db_insert_report: insert returned no data for presentation %s — row may still exist in DB", safe_report.get("presentation_id"))
         return None
     except Exception as exc:
-        logger.error("db_insert_report failed: %s", exc)
+        logger.exception("db_insert_report failed for presentation %s", safe_report.get("presentation_id"))
         return None
 
 
@@ -113,12 +141,12 @@ async def db_get_report(presentation_id: str) -> dict | None:
             sb.table("feedback_reports")
             .select("*")
             .eq("presentation_id", presentation_id)
-            .maybe_single()
+            .limit(1)
             .execute()
         )
         if not report_res.data:
             return None
-        row = dict(report_res.data)
+        row = dict(report_res.data[0])
     except Exception as exc:
         logger.error("db_get_report: feedback_reports query failed for %s: %s", presentation_id, exc)
         return None
@@ -129,10 +157,10 @@ async def db_get_report(presentation_id: str) -> dict | None:
             sb.table("presentations")
             .select("topic_text, session_mode, duration_secs")
             .eq("id", presentation_id)
-            .maybe_single()
+            .limit(1)
             .execute()
         )
-        pres = pres_res.data or {}
+        pres = (pres_res.data[0] if pres_res.data else {}) if pres_res is not None else {}
     except Exception:
         pres = {}
 

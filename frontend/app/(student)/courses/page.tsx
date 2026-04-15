@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase, getAuthHeaders } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { BookOpen, FileText, Clock, CheckCircle, ClipboardList, ExternalLink } from 'lucide-react'
@@ -47,17 +47,12 @@ export default function CoursesPage() {
 
   useEffect(() => {
     async function load() {
-      const sb = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
-      const { data: { user } } = await sb.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
       setUserId(user.id)
-      const { data: { session } } = await sb.auth.getSession()
+      const authHdr = await getAuthHeaders()
+      const session = (await supabase.auth.getSession()).data.session
       tokenRef.current = session?.access_token ?? ''
-      const authHdr: Record<string, string> = tokenRef.current
-        ? { Authorization: `Bearer ${tokenRef.current}` } : {}
 
       try {
         const res = await fetch(`${API_URL}/api/courses/student/${user.id}`, { headers: authHdr })

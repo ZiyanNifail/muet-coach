@@ -293,3 +293,6 @@ ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS confidence_score FLOAT;
 ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS lexical_diversity FLOAT;
 -- WARN-D02: slide upload (T2.04) implemented but presentations table had no column for it
 ALTER TABLE presentations ADD COLUMN IF NOT EXISTS slide_path TEXT;
+-- WARN-D03: topic_text stored in code but column was missing — caused every upload to 500
+--           after this column was added to the insert payload. Applied 2026-04-14.
+ALTER TABLE presentations ADD COLUMN IF NOT EXISTS topic_text TEXT;

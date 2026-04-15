@@ -47,10 +47,16 @@ def detect_fillers(transcript: str) -> dict:
     }
 
 
-def compute_wpm_timeseries(transcript: str, duration_secs: float, chunk_secs: int = 60) -> list[dict]:
+def compute_wpm_timeseries(transcript: str, duration_secs: float, chunk_secs: int = 30) -> list[dict]:
     """
-    Estimate WPM per `chunk_secs` window.
-    Since transcript has no timestamps, words are spread uniformly across duration.
+    Estimate WPM per chunk window.
+    Words are spread uniformly across duration (Whisper doesn't return per-word timestamps).
+    WPM is calculated from each chunk's *actual* elapsed time so it matches compute_wpm_avg.
+
+    Previously used chunk_secs=60 as the divisor even for recordings shorter than 60 s,
+    producing WPM values far below the overall average and only 1 data point (chart invisible).
+    Now chunk_secs is scaled down for short recordings to ensure >= 2 data points.
+
     Returns [{ time_sec: int, wpm: float }, ...].
     """
     if not transcript or duration_secs <= 0:
@@ -61,14 +67,21 @@ def compute_wpm_timeseries(transcript: str, duration_secs: float, chunk_secs: in
     if total_words == 0:
         return []
 
+    # Scale chunk size down for short recordings so we produce >= 2 data points.
+    if duration_secs < chunk_secs:
+        chunk_secs = max(5, int(duration_secs / 2))
+
     n_chunks = max(1, int(duration_secs / chunk_secs))
-    words_per_chunk = total_words / n_chunks
 
     result: list[dict] = []
     for i in range(n_chunks):
         time_sec = i * chunk_secs
-        chunk_words = words_per_chunk
-        wpm = (chunk_words / chunk_secs) * 60
+        # Last chunk may be shorter — use actual elapsed time, not fixed chunk_secs.
+        actual_dur = chunk_secs if i < n_chunks - 1 else max(1.0, duration_secs - time_sec)
+        # Words proportional to this chunk's share of total duration.
+        # This ensures wpm == compute_wpm_avg for every chunk (uniform distribution).
+        chunk_words = total_words * (actual_dur / duration_secs)
+        wpm = (chunk_words / actual_dur) * 60
         result.append({"time_sec": time_sec, "wpm": round(wpm, 1)})
 
     return result

@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Download } from 'lucide-react'
+import { getAuthHeaders } from '@/lib/supabase'
 
 interface Report {
   id: string
@@ -349,6 +350,15 @@ export default function ResultsPage() {
           }
           return
         }
+        if (res.status === 422) {
+          // Pipeline failed — stop retrying immediately
+          const body = await res.json().catch(() => ({}))
+          if (!cancelled) {
+            setError(body.detail || 'Analysis pipeline failed. Please try a new session.')
+            setLoading(false)
+          }
+          return
+        }
         if (res.status === 404 && attempts < MAX) {
           attempts++
           if (!cancelled) setTimeout(fetchReport, 3000)
@@ -378,13 +388,7 @@ export default function ResultsPage() {
 
     async function init() {
       try {
-        const { createClient } = await import('@supabase/supabase-js')
-        const sb = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        )
-        const { data: { session } } = await sb.auth.getSession()
-        if (session?.access_token) authHeaders = { Authorization: `Bearer ${session.access_token}` }
+        authHeaders = await getAuthHeaders()
       } catch {}
       if (!cancelled) fetchReport()
     }

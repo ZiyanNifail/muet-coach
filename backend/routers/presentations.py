@@ -103,6 +103,13 @@ async def upload_presentation(
             except Exception:
                 slides_path = None  # non-fatal — proceed without slides
 
+    # Guard: reject anonymous uploads — student_id must be a real UUID.
+    # This produces a clear 401 instead of a Postgres type-error 500.
+    import re as _re
+    _UUID_RE = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    if not _re.match(_UUID_RE, student_id, _re.IGNORECASE):
+        raise HTTPException(401, "Not authenticated — please log in before recording.")
+
     # ── Create presentations row in Supabase ──────────────────────────────────
     sb = get_supabase()
     row = {

@@ -120,6 +120,16 @@ async def run_pipeline(
             logger.warning("Audio extraction failed: %s", exc)
             audio_ok = False
 
+        # ── T2.12A  Voice dynamics (librosa) — start in parallel with Whisper ─
+        # librosa.pyin is the slowest step; launch it now so it overlaps with
+        # Whisper, sentiment, and MediaPipe instead of running after all three.
+        _vd_loop = asyncio.get_event_loop()
+        voice_dynamics_future = (
+            _vd_loop.run_in_executor(None, analyse_voice_dynamics, wav_path)
+            if audio_ok and os.path.exists(wav_path)
+            else None
+        )
+
         # ── T2.10  Whisper transcription + T2.12C voice clarity ─────────────
         transcript = ""
         voice_clarity_score: float | None = None
@@ -158,13 +168,12 @@ async def run_pipeline(
         confidence_flags = vision_results["confidence_flags"]
         confidence_flags["audio_ok"] = audio_ok and bool(transcript)
 
-        # ── T2.12A  Voice dynamics (librosa) ─────────────────────────────────
+        # ── T2.12A  Voice dynamics (librosa) — await parallel future ────────
         pitch_mean_hz: float | None = None
         energy_mean_db: float | None = None
-        if audio_ok and os.path.exists(wav_path):
-            loop = asyncio.get_event_loop()
+        if voice_dynamics_future is not None:
             try:
-                vd = await loop.run_in_executor(None, analyse_voice_dynamics, wav_path)
+                vd = await voice_dynamics_future
                 pitch_mean_hz = vd.get("pitch_mean_hz")
                 energy_mean_db = vd.get("energy_mean_db")
             except Exception as exc:
@@ -237,9 +246,10 @@ async def run_pipeline(
             "sentiment_score": sentiment_score,
             "voice_clarity_score": voice_clarity_score,
             "confidence_score": confidence_score,
-            "lexical_diversity": lexical_diversity,  # WARN-D01 fix: was computed but never persisted
         }
         report_id = await db_insert_report(report)
+        if report_id is None:
+            raise RuntimeError(f"db_insert_report returned None — report was not saved for {presentation_id}")
 
         if report_id and student_id:
             await db_insert_session_history(student_id, report_id)

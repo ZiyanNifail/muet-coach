@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase, getAuthHeaders } from '@/lib/supabase'
 import { Users, BookOpen, FileCheck, TrendingUp, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
@@ -63,15 +63,9 @@ export default function AnalyticsPage() {
     setLoading(true)
     setError(null)
     try {
-      const sb = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
-      const { data: { user } } = await sb.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setError('Not authenticated.'); setLoading(false); return }
-      const { data: { session } } = await sb.auth.getSession()
-      const authHdr: Record<string, string> = session?.access_token
-        ? { Authorization: `Bearer ${session.access_token}` } : {}
+      const authHdr = await getAuthHeaders()
 
       const res = await fetch(`${API_URL}/api/courses/analytics?educator_id=${user.id}`, { headers: authHdr })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)

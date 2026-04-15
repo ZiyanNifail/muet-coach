@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { supabase, getAuthHeaders } from '@/lib/supabase'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -107,16 +107,11 @@ export default function CourseDetailPage() {
 
   useEffect(() => {
     async function load() {
-      const sb = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
-      const { data: { user } } = await sb.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (user) setUserId(user.id)
-      const { data: { session } } = await sb.auth.getSession()
+      const { data: { session } } = await supabase.auth.getSession()
       tokenRef.current = session?.access_token ?? ''
-      const authHdr: Record<string, string> = tokenRef.current
-        ? { Authorization: `Bearer ${tokenRef.current}` } : {}
+      const authHdr = await getAuthHeaders()
 
       const [courseRes, membersRes, assignRes, subsRes] = await Promise.all([
         fetch(`${API_URL}/api/courses/${id}`, { headers: authHdr }),

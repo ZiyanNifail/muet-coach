@@ -6,6 +6,7 @@ import { TopicWheel } from '@/components/TopicWheel'
 import { BrainstormPanel } from '@/components/BrainstormPanel'
 import { RecordingInterface } from '@/components/RecordingInterface'
 import { AlertTriangle, Upload, X, FileText, Timer, Mic, Mic2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 type Step = 'mode' | 'topic' | 'brainstorm' | 'exam_prep' | 'slides' | 'recording' | 'processing'
 type Mode = 'unguided' | 'guided' | 'exam'
@@ -256,12 +257,7 @@ export function PracticeContent() {
     let studentId = 'anonymous'
     let authToken = ''
     try {
-      const { createClient } = await import('@supabase/supabase-js')
-      const sb = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
-      const { data: { session } } = await sb.auth.getSession()
+      const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) studentId = session.user.id
       if (session?.access_token) authToken = session.access_token
     } catch {}

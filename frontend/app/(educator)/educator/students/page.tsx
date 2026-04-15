@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 import { GraduationCap, BookOpen, ChevronRight, TrendingUp, ArrowLeft } from 'lucide-react'
@@ -25,11 +25,7 @@ export default function StudentsPage() {
 
   useEffect(() => {
     async function load() {
-      const sb = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
-      const { data: { user } } = await sb.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
 
       try {

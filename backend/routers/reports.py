@@ -9,7 +9,9 @@ GET /api/reports/history/{student_id}
   Returns all session_history rows for longitudinal progress tracking.
   Requires auth; student_id must match the authenticated user.
 """
+import os
 import logging
+import time
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional, Any
@@ -51,23 +53,81 @@ async def get_report(
     presentation_id: str,
     user_id: str = Depends(get_current_user_id),
 ):
-    # Verify the presentation belongs to the authenticated user
+    # Single query: ownership check + status check combined
     sb = get_supabase()
     if sb is not None:
-        pres = (
-            sb.table("presentations")
-            .select("student_id")
-            .eq("id", presentation_id)
-            .maybe_single()
-            .execute()
-        )
-        if pres.data and pres.data.get("student_id") != user_id:
-            raise HTTPException(status_code=403, detail="Access denied — this report belongs to another user.")
+        try:
+            pres = (
+                sb.table("presentations")
+                .select("student_id, status")
+                .eq("id", presentation_id)
+                .limit(1)
+                .execute()
+            )
+            pres_data = (pres.data[0] if pres.data else None) if pres is not None else None
+            if pres_data:
+                if pres_data.get("student_id") != user_id:
+                    raise HTTPException(status_code=403, detail="Access denied — this report belongs to another user.")
+                if pres_data.get("status") == "failed":
+                    raise HTTPException(
+                        status_code=422,
+                        detail="Analysis pipeline failed. Please try uploading again.",
+                    )
+        except HTTPException:
+            raise
+        except Exception:
+            pass  # non-fatal — fall through to report lookup
 
     report = await db_get_report(presentation_id)
     if not report:
         raise HTTPException(404, "Report not found or not yet generated")
     return report
+
+
+@router.get("/debug/groq-ping")
+async def groq_ping():
+    """
+    Debug-only endpoint — gated behind DEBUG=true env var.
+    Calls generate_feedback() with a stub transcript to verify Groq connectivity
+    without needing to upload a full video through the pipeline.
+
+    Usage: GET /api/reports/debug/groq-ping
+    """
+    if os.getenv("DEBUG", "").lower() not in ("1", "true", "yes"):
+        raise HTTPException(status_code=404, detail="Not found")
+
+    from services.groq_service import generate_feedback
+    stub_transcript = (
+        "Good morning everyone. Today I will be presenting about climate change "
+        "and its impact on biodiversity. Um, so firstly, let us consider the data. "
+        "The temperature has risen by approximately 1.2 degrees Celsius since the "
+        "industrial revolution. This is, you know, a significant figure."
+    )
+    stub_metrics = {
+        "wpm_avg": 115.0,
+        "eye_contact_pct": 55.0,
+        "filler_density": 4.5,
+        "posture_score": 72.0,
+        "lexical_diversity": 0.61,
+        "duration_secs": 28.0,
+        "session_mode": "unguided",
+    }
+    t0 = time.monotonic()
+    try:
+        result = await generate_feedback(stub_transcript, stub_metrics, rule_band=3.5)
+        elapsed_ms = round((time.monotonic() - t0) * 1000)
+        groq_ok = bool(result.get("advice_cards") and result.get("band_score") is not None)
+        return {
+            "groq_ok": groq_ok,
+            "elapsed_ms": elapsed_ms,
+            "band_score": result.get("band_score"),
+            "advice_card_count": len(result.get("advice_cards", [])),
+            "first_card": (result.get("advice_cards") or [None])[0],
+        }
+    except Exception as exc:
+        elapsed_ms = round((time.monotonic() - t0) * 1000)
+        logger.exception("groq-ping failed")
+        return {"groq_ok": False, "elapsed_ms": elapsed_ms, "error": str(exc)}
 
 
 @router.get("/history/{student_id}")
@@ -84,7 +144,7 @@ async def get_student_history(
     try:
         res = (
             sb.table("session_history")
-            .select("*, feedback_reports(band_score, generated_at)")
+            .select("*, feedback_reports(band_score, wpm_avg, eye_contact_pct, posture_score, filler_count, generated_at, presentation_id)")
             .eq("student_id", student_id)
             .order("session_date", desc=True)
             .execute()

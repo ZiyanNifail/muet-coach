@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase, getAuthHeaders } from '@/lib/supabase'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -40,15 +40,9 @@ export default function EducatorDashboard() {
 
   useEffect(() => {
     async function load() {
-      const sb = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
-      const { data: { user } } = await sb.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: { session } } = await sb.auth.getSession()
-      const authHdr: Record<string, string> = session?.access_token
-        ? { Authorization: `Bearer ${session.access_token}` } : {}
+      const authHdr = await getAuthHeaders()
 
       try {
         const coursesRes = await fetch(`${API_URL}/api/courses?educator_id=${user.id}`, { headers: authHdr })

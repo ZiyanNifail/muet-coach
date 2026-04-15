@@ -44,7 +44,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       <Topbar userName={user?.full_name} role={user?.role} />
       <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 48px)' }}>
         <Sidebar />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-scroll">{children}</main>
       </div>
       {showConsent && user && (
         <ConsentModal userId={user.id} onAccepted={() => setShowConsent(false)} />

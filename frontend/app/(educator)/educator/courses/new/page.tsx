@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -23,13 +23,9 @@ export default function NewCoursePage() {
     setError(null)
 
     try {
-      const sb = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
-      const { data: { user } } = await sb.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setError('Not authenticated.'); return }
-      const { data: { session } } = await sb.auth.getSession()
+      const { data: { session } } = await supabase.auth.getSession()
       if (!session) { setError('Session expired. Please log in again.'); return }
 
       const res = await fetch(`${API_URL}/api/courses`, {

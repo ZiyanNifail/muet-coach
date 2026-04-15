@@ -39,7 +39,27 @@
       "Bash(python -m py_compile services/sentiment_service.py)",
       "Bash(python -c \"import ast; ast.parse\\(open\\('requirements.txt'\\).read\\(\\)\\)\")",
       "Bash(npx playwright:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "Bash(echo \"TSC EXIT:$?\")",
+      "Bash(echo \"BACKEND EXIT:$?\")",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(echo \"TSC:$?\")",
+      "Read(//c/Users/USER/.claude/**)",
+      "Read(//c/Users/USER/AppData/Roaming/Claude/**)",
+      "mcp__supabase__execute_sql",
+      "Bash(pip show:*)",
+      "mcp__supabase__get_logs",
+      "Bash(python -c \"import asyncio; print\\(asyncio.__version__ if hasattr\\(asyncio, '__version__'\\) else 'no version attr'\\)\")",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"import supabase; print\\('supabase:', supabase.__version__\\)\")",
+      "Bash(python -c \"import postgrest; print\\('postgrest:', postgrest.__version__\\)\")"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "browser"
+  ]
 }
