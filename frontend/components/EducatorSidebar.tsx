@@ -62,24 +62,22 @@ export function EducatorSidebar() {
       style={{
         width: 232,
         minWidth: 232,
-        background: 'rgba(12,8,4,0.80)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        borderRight: '1px solid rgba(245,158,11,0.14)',
+        background: '#EAE6DD',
+        borderRight: '1px solid rgba(180,165,148,0.28)',
       }}
     >
       {/* Portal identity */}
       <div className="px-4 pb-1 flex flex-col gap-1">
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(245,158,11,0.45)' }}>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9B8E80', fontFamily: 'var(--font-lora, Georgia, serif)' }}>
           PreCoach
         </span>
         <div className="flex items-center gap-2">
-          <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.03em', color: '#f59e0b' }}>
+          <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: '0.01em', color: '#1C1A17', fontFamily: 'var(--font-lora, Georgia, serif)' }}>
             Educator Portal
           </span>
           <span
             className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-            style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', letterSpacing: '0.06em' }}
+            style={{ background: 'rgba(58,125,106,0.12)', color: '#3A7D6A', letterSpacing: '0.06em' }}
           >
             EDU
           </span>
@@ -87,13 +85,13 @@ export function EducatorSidebar() {
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: 'rgba(245,158,11,0.10)', margin: '0 16px' }} />
+      <div style={{ height: 1, background: 'rgba(180,165,148,0.25)', margin: '0 16px' }} />
 
       {nav.map((group) => (
         <div key={group.section}>
           <div
             className="px-4 mb-1.5"
-            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(245,158,11,0.28)' }}
+            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#C4B8A8' }}
           >
             {group.section}
           </div>
@@ -107,13 +105,14 @@ export function EducatorSidebar() {
                   href={item.href}
                   className={clsx(
                     'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all no-underline',
-                    active
-                      ? 'text-[#f59e0b]'
-                      : 'text-[#6b6050] hover:text-[#a89070]',
+                    active ? 'font-medium' : 'hover:bg-[rgba(180,165,148,0.12)]',
                   )}
-                  style={active ? { background: 'rgba(245,158,11,0.12)', boxShadow: 'inset 0 0 0 1px rgba(245,158,11,0.10)' } : {}}
+                  style={active
+                    ? { background: 'rgba(58,125,106,0.10)', color: '#3A7D6A' }
+                    : { color: '#9B8E80' }
+                  }
                 >
-                  <Icon size={14} strokeWidth={1.75} style={{ color: active ? '#f59e0b' : undefined, opacity: active ? 1 : 0.6 }} />
+                  <Icon size={14} strokeWidth={1.75} />
                   {item.label}
                 </Link>
               )
@@ -123,11 +122,11 @@ export function EducatorSidebar() {
       ))}
 
       {/* Bottom: switch to student view */}
-      <div className="mt-auto px-4 pt-4" style={{ borderTop: '1px solid rgba(245,158,11,0.06)' }}>
+      <div className="mt-auto px-4 pt-4" style={{ borderTop: '1px solid rgba(180,165,148,0.20)' }}>
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 text-[12px] transition-colors no-underline"
-          style={{ color: 'rgba(245,158,11,0.25)' }}
+          className="flex items-center gap-2 text-[12px] transition-colors no-underline hover:opacity-70"
+          style={{ color: '#C4B8A8' }}
         >
           <Users size={12} />
           Switch to Student View

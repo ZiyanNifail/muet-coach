@@ -5,8 +5,10 @@
       "args": ["C:\\presentation-coach-fyp\\tools\\browser-mcp\\index.mjs"]
     },
     "supabase": {
-      "command": "npx",
+      "command": "cmd",
       "args": [
+        "/c",
+        "npx",
         "-y",
         "@supabase/mcp-server-supabase@latest",
         "--access-token",

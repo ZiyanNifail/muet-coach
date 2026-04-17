@@ -23,7 +23,6 @@ const educatorPageTitles: Record<string, string> = {
 
 function getTitle(pathname: string, role?: string): string {
   if (role === 'educator') {
-    // Check educator routes first, then dynamic routes
     if (educatorPageTitles[pathname]) return educatorPageTitles[pathname]
     if (pathname.match(/^\/educator\/courses\/[^/]+\/assignments\/new/)) return 'New Assignment'
     if (pathname.match(/^\/educator\/courses\/[^/]+\/submissions\//)) return 'Review Submission'
@@ -49,14 +48,8 @@ export function Topbar({ userName, role }: { userName?: string; role?: string })
       className="flex items-center justify-between px-5"
       style={{
         height: 48,
-        background: isEducator
-          ? 'rgba(14,9,4,0.65)'
-          : 'rgba(10,10,18,0.55)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: isEducator
-          ? '1px solid rgba(245,158,11,0.10)'
-          : '1px solid rgba(255,255,255,0.06)',
+        background: '#F5F2EC',
+        borderBottom: '1px solid rgba(180,165,148,0.25)',
       }}
     >
       <div className="flex items-center gap-3">
@@ -66,20 +59,21 @@ export function Topbar({ userName, role }: { userName?: string; role?: string })
             fontWeight: 700,
             letterSpacing: '0.16em',
             textTransform: 'uppercase',
-            color: isEducator ? 'rgba(245,158,11,0.35)' : '#3a3a52',
+            color: '#3A7D6A',
+            fontFamily: 'var(--font-lora, Georgia, serif)',
           }}
         >
           PreCoach
         </span>
-        <span style={{ color: isEducator ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.08)', fontSize: 16 }}>·</span>
-        <span className="text-sm" style={{ color: isEducator ? '#c08830' : '#8888a0' }}>{title}</span>
+        <span style={{ color: 'rgba(180,165,148,0.5)', fontSize: 16 }}>·</span>
+        <span className="text-sm" style={{ color: '#9B8E80' }}>{title}</span>
       </div>
 
       <div className="flex items-center gap-3">
         {isEducator && (
-          <div className="flex items-center gap-1.5 mr-1" style={{ color: 'rgba(245,158,11,0.5)' }}>
+          <div className="flex items-center gap-1.5 mr-1" style={{ color: '#9B8E80' }}>
             <GraduationCap size={13} />
-            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)' }}>
+            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9B8E80' }}>
               EDUCATOR
             </span>
           </div>
@@ -88,17 +82,15 @@ export function Topbar({ userName, role }: { userName?: string; role?: string })
           {isEducator ? 'Educator' : 'Student'}
         </Badge>
         {userName && (
-          <span className="text-[#55556a] text-sm hidden sm:block">{userName}</span>
+          <span className="text-sm hidden sm:block" style={{ color: '#6B6050' }}>{userName}</span>
         )}
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-1.5 text-sm transition-colors"
-          style={{ color: isEducator ? 'rgba(245,158,11,0.4)' : '#55556a' }}
+          className="flex items-center gap-1.5 text-sm transition-colors hover:opacity-70"
+          style={{ color: '#9B8E80' }}
         >
           <LogOut size={14} />
-          <span className="hidden sm:inline" style={{ color: isEducator ? 'rgba(245,158,11,0.4)' : undefined }}>
-            Sign out
-          </span>
+          <span className="hidden sm:inline">Sign out</span>
         </button>
       </div>
     </header>

@@ -21,10 +21,10 @@ function SkeletonCard() {
   return (
     <div
       className="flex flex-col gap-2 rounded-lg border p-4 animate-pulse"
-      style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)' }}
+      style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
-      <div className="h-2 w-16 rounded" style={{ background: 'rgba(255,255,255,0.06)' }} />
-      <div className="h-7 w-20 rounded" style={{ background: 'rgba(255,255,255,0.08)' }} />
+      <div className="h-2 w-16 rounded" style={{ background: 'rgba(180,165,148,0.22)' }} />
+      <div className="h-7 w-20 rounded" style={{ background: 'rgba(180,165,148,0.30)' }} />
       <div className="h-2 w-24 rounded" style={{ background: 'rgba(255,255,255,0.05)' }} />
     </div>
   )
@@ -105,14 +105,14 @@ export default function DashboardPage() {
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: '#55556a',
+            color: '#9B8E80',
             marginBottom: 4,
           }}
         >
           OVERVIEW
         </div>
-        <h1 className="text-2xl font-semibold text-[#e8e8f0]">Dashboard</h1>
-        <p className="text-[#8888a0] text-sm mt-1">
+        <h1 className="text-2xl font-semibold text-[#1C1A17]">Dashboard</h1>
+        <p className="text-[#6B6050] text-sm mt-1">
           Track your presentation progress and start a new session.
         </p>
       </div>
@@ -126,8 +126,8 @@ export default function DashboardPage() {
                 key={m.label}
                 className="flex flex-col gap-1 rounded-lg border p-4"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  borderColor: 'rgba(255,255,255,0.06)',
+                  background: 'rgba(180,165,148,0.08)',
+                  borderColor: 'rgba(180,165,148,0.22)',
                 }}
               >
                 <span
@@ -136,7 +136,7 @@ export default function DashboardPage() {
                     fontWeight: 600,
                     letterSpacing: '0.10em',
                     textTransform: 'uppercase',
-                    color: '#55556a',
+                    color: '#9B8E80',
                   }}
                 >
                   {m.label}
@@ -144,7 +144,7 @@ export default function DashboardPage() {
                 <span className="font-mono text-2xl font-semibold" style={{ color: m.color }}>
                   {m.value}
                 </span>
-                <span className="text-xs text-[#8888a0]">{m.sub}</span>
+                <span className="text-xs text-[#6B6050]">{m.sub}</span>
               </div>
             ))}
       </div>
@@ -153,8 +153,8 @@ export default function DashboardPage() {
       <div
         className="flex flex-col gap-4 rounded-xl border p-6"
         style={{
-          background: 'rgba(14,14,22,0.45)',
-          borderColor: 'rgba(255,255,255,0.06)',
+          background: 'rgba(255,255,255,0.80)',
+          borderColor: 'rgba(180,165,148,0.22)',
           backdropFilter: 'blur(12px)',
         }}
       >
@@ -166,14 +166,14 @@ export default function DashboardPage() {
                 fontWeight: 600,
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color: '#55556a',
+                color: '#9B8E80',
                 marginBottom: 4,
               }}
             >
               START PRACTICE
             </div>
-            <h2 className="text-lg font-semibold text-[#e8e8f0]">Ready to practise?</h2>
-            <p className="text-[#8888a0] text-sm mt-1">
+            <h2 className="text-lg font-semibold text-[#1C1A17]">Ready to practise?</h2>
+            <p className="text-[#6B6050] text-sm mt-1">
               Choose a session mode and get AI-powered feedback on your presentation skills.
             </p>
           </div>
@@ -193,8 +193,8 @@ export default function DashboardPage() {
       <div
         className="flex flex-col gap-3 rounded-xl border p-6"
         style={{
-          background: 'rgba(14,14,22,0.45)',
-          borderColor: 'rgba(255,255,255,0.06)',
+          background: 'rgba(255,255,255,0.80)',
+          borderColor: 'rgba(180,165,148,0.22)',
           backdropFilter: 'blur(12px)',
         }}
       >
@@ -204,7 +204,7 @@ export default function DashboardPage() {
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: '#55556a',
+            color: '#9B8E80',
           }}
         >
           RECENT SESSIONS
@@ -216,16 +216,16 @@ export default function DashboardPage() {
               <div
                 key={i}
                 className="flex items-center justify-between rounded-lg border p-3 animate-pulse"
-                style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }}
+                style={{ background: 'rgba(180,165,148,0.04)', borderColor: 'rgba(255,255,255,0.05)' }}
               >
-                <div className="h-3 w-32 rounded" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                <div className="h-3 w-12 rounded" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                <div className="h-3 w-32 rounded" style={{ background: 'rgba(180,165,148,0.22)' }} />
+                <div className="h-3 w-12 rounded" style={{ background: 'rgba(180,165,148,0.22)' }} />
               </div>
             ))}
           </div>
         ) : recentSessions.length === 0 ? (
           <div className="flex items-center justify-center h-20">
-            <p className="text-[#55556a] text-sm">
+            <p className="text-[#9B8E80] text-sm">
               No sessions yet. Start your first practice session above.
             </p>
           </div>
@@ -240,19 +240,19 @@ export default function DashboardPage() {
                   href={`/results/${s.report_id}`}
                   className="flex items-center justify-between rounded-lg border p-3 transition-colors"
                   style={{
-                    background: 'rgba(255,255,255,0.02)',
+                    background: 'rgba(180,165,148,0.04)',
                     borderColor: 'rgba(255,255,255,0.05)',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+                    e.currentTarget.style.borderColor = 'rgba(180,165,148,0.35)'
+                    e.currentTarget.style.background = 'rgba(180,165,148,0.08)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.02)'
+                    e.currentTarget.style.background = 'rgba(180,165,148,0.04)'
                   }}
                 >
-                  <span className="text-[#8888a0] text-sm">{date}</span>
+                  <span className="text-[#6B6050] text-sm">{date}</span>
                   <span
                     className="font-mono text-sm font-semibold"
                     style={{ color: bandColor(band ?? null) }}
@@ -263,7 +263,7 @@ export default function DashboardPage() {
               )
             })}
             {sessions.length > 5 && (
-              <Link href="/progress" className="text-center text-xs text-[#55556a] hover:text-[#8888a0] pt-1 transition-colors">
+              <Link href="/progress" className="text-center text-xs text-[#9B8E80] hover:text-[#6B6050] pt-1 transition-colors">
                 View all {sessions.length} sessions →
               </Link>
             )}

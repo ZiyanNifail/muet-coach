@@ -52,9 +52,9 @@ export default function NewCoursePage() {
   }
 
   const inputStyle = {
-    background: 'rgba(255,255,255,0.04)',
-    borderColor: 'rgba(255,255,255,0.08)',
-    color: '#e8e8f0',
+    background: 'rgba(180,165,148,0.08)',
+    borderColor: 'rgba(180,165,148,0.30)',
+    color: '#1C1A17',
   }
 
   return (
@@ -62,26 +62,26 @@ export default function NewCoursePage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/educator/dashboard">
-          <button className="text-[#55556a] hover:text-[#8888a0] transition-colors">
+          <button className="text-[#9B8E80] hover:text-[#6B6050] transition-colors">
             <ArrowLeft size={18} />
           </button>
         </Link>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 2 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 2 }}>
             COURSES
           </div>
-          <h1 className="text-2xl font-semibold text-[#e8e8f0]">Create New Course</h1>
+          <h1 className="text-2xl font-semibold text-[#1C1A17]">Create New Course</h1>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div
           className="flex flex-col gap-5 rounded-xl border p-5"
-          style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           {/* Course name */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#8888a0]" htmlFor="name">Course Name *</label>
+            <label className="text-xs font-semibold text-[#6B6050]" htmlFor="name">Course Name *</label>
             <input
               id="name"
               type="text"
@@ -89,16 +89,16 @@ export default function NewCoursePage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Speaking Skills for Academic Purposes"
               required
-              className="rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#3a3a52]"
+              className="rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8]"
               style={inputStyle}
               onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
-              onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
+              onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
             />
           </div>
 
           {/* Subject code */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#8888a0]" htmlFor="code">Subject Code *</label>
+            <label className="text-xs font-semibold text-[#6B6050]" htmlFor="code">Subject Code *</label>
             <input
               id="code"
               type="text"
@@ -106,27 +106,27 @@ export default function NewCoursePage() {
               onChange={(e) => setSubjectCode(e.target.value)}
               placeholder="e.g. BEL311"
               required
-              className="rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#3a3a52] font-mono"
+              className="rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8] font-mono"
               style={inputStyle}
               onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
-              onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
+              onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
             />
-            <p className="text-[#3a3a52] text-xs">Used to generate the invite code, e.g. BEL311-X7K2</p>
+            <p className="text-[#C4B8A8] text-xs">Used to generate the invite code, e.g. BEL311-X7K2</p>
           </div>
 
           {/* Description */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#8888a0]" htmlFor="desc">Description</label>
+            <label className="text-xs font-semibold text-[#6B6050]" htmlFor="desc">Description</label>
             <textarea
               id="desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of the course objectives..."
               rows={3}
-              className="rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#3a3a52] resize-none"
+              className="rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8] resize-none"
               style={inputStyle}
               onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
-              onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
+              onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
             />
           </div>
 

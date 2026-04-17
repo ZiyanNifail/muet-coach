@@ -44,6 +44,38 @@ class _TokenBucket:
 
 _rate_limiter = _TokenBucket(rate=25, period=60.0)
 
+
+async def _chat(prompt: str, max_tokens: int = 400, temperature: float = 0.4) -> str | None:
+    """
+    Generic single-turn Groq chat helper. Returns text content or None on failure.
+    Shares the same rate limiter as generate_feedback.
+    """
+    api_key = os.getenv("GROQ_API_KEY", "")
+    if not api_key or api_key == "your-groq-api-key":
+        return None
+    try:
+        from groq import Groq
+    except ImportError:
+        return None
+    try:
+        await _rate_limiter.acquire()
+        client = Groq(api_key=api_key)
+
+        def _call() -> object:
+            return client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+        chat = await asyncio.to_thread(_call)
+        return chat.choices[0].message.content or ""
+    except Exception:
+        logger.exception("_chat failed")
+        return None
+
+
 FALLBACK_ADVICE = [
     {"impact": "HIGH", "text": "Reduce filler words — pause briefly instead of saying 'um' or 'uh'."},
     {"impact": "MED",  "text": "Maintain eye contact above 70% — look directly at the camera consistently."},
@@ -69,9 +101,11 @@ CRITICAL RULES:
 - If WPM is <80 or >190, apply a 0.5 band penalty.
 - If eye contact is <30%, apply a 0.3 band penalty.
 - If transcript is empty or very short (<20 words), score MUST be 1.0 — the student did not speak.
-- The rule_band provided is a calibrated baseline. Your score MUST be within ±1.0 of rule_band.
-  If your linguistic assessment differs greatly from rule_band, explain why in an advice card.
+- The rule_band provided is a calibrated baseline. Your score MUST be within ±0.5 of rule_band.
+  Do not exceed this range even if the transcript sounds fluent — metrics are authoritative.
 - Do NOT default to Band 4–5 when data is ambiguous. When in doubt, score conservatively.
+- A score above 4.0 requires ALL of: filler density <5/min AND WPM 110–160 AND eye contact ≥50%.
+- A score above 3.0 requires filler density <10/min AND WPM ≥80.
 
 Your job:
 1. Predict the CEFR/MUET band score (a float from 1.0 to 6.0, one decimal place).

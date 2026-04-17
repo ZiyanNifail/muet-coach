@@ -57,8 +57,8 @@ export default function RegisterPage() {
       <div
         className="w-full max-w-sm flex flex-col gap-5 rounded-xl border p-8 text-center"
         style={{
-          background: 'rgba(14,14,22,0.55)',
-          borderColor: 'rgba(255,255,255,0.06)',
+          background: 'rgba(245,242,237,0.95)',
+          borderColor: 'rgba(180,165,148,0.22)',
           backdropFilter: 'blur(12px)',
         }}
       >
@@ -68,13 +68,13 @@ export default function RegisterPage() {
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: '#55556a',
+            color: '#9B8E80',
           }}
         >
           ACCOUNT CREATED
         </div>
-        <h2 className="text-xl font-semibold text-[#e8e8f0]">Pending admin review</h2>
-        <p className="text-[#8888a0] text-sm leading-6">
+        <h2 className="text-xl font-semibold text-[#1C1A17]">Pending admin review</h2>
+        <p className="text-[#6B6050] text-sm leading-6">
           Educator accounts require approval before Educator features are unlocked. You&apos;ll receive an
           email once your account is approved.
         </p>
@@ -99,8 +99,8 @@ export default function RegisterPage() {
     <div
       className="w-full max-w-md flex flex-col gap-6 rounded-xl border p-8"
       style={{
-        background: 'rgba(14,14,22,0.55)',
-        borderColor: 'rgba(255,255,255,0.06)',
+        background: 'rgba(245,242,237,0.95)',
+        borderColor: 'rgba(180,165,148,0.22)',
         backdropFilter: 'blur(12px)',
       }}
     >
@@ -111,13 +111,13 @@ export default function RegisterPage() {
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: '#55556a',
+            color: '#9B8E80',
             marginBottom: 8,
           }}
         >
           PRESENTATION COACH
         </div>
-        <h1 className="text-2xl font-semibold text-[#e8e8f0]">Create account</h1>
+        <h1 className="text-2xl font-semibold text-[#1C1A17]">Create account</h1>
       </div>
 
       {/* Role selection */}
@@ -128,7 +128,7 @@ export default function RegisterPage() {
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: '#55556a',
+            color: '#9B8E80',
           }}
         >
           SELECT YOUR ROLE
@@ -143,14 +143,14 @@ export default function RegisterPage() {
                 'text-left flex flex-col gap-2 p-4 rounded-lg border transition-all cursor-pointer',
                 role === opt.value
                   ? 'border-[#94a3b8] bg-[rgba(148,163,184,0.08)]'
-                  : 'border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.10)]'
+                  : 'border-[rgba(180,165,148,0.22)] bg-[rgba(180,165,148,0.08)] hover:border-[rgba(180,165,148,0.35)]'
               )}
             >
-              <opt.Icon size={22} style={{ color: role === opt.value ? '#94a3b8' : '#55556a' }} />
-              <span className="text-[10px] font-semibold text-[#55556a] tracking-widest uppercase">
+              <opt.Icon size={22} style={{ color: role === opt.value ? '#94a3b8' : '#9B8E80' }} />
+              <span className="text-[10px] font-semibold text-[#9B8E80] tracking-widest uppercase">
                 {opt.title}
               </span>
-              <span className="text-xs text-[#8888a0] leading-5">{opt.desc}</span>
+              <span className="text-xs text-[#6B6050] leading-5">{opt.desc}</span>
             </button>
           ))}
         </div>
@@ -202,7 +202,7 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p className="text-[#8888a0] text-sm text-center">
+      <p className="text-[#6B6050] text-sm text-center">
         Already have an account?{' '}
         <Link href="/login" className="text-[#94a3b8] hover:underline">
           Sign in

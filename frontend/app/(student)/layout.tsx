@@ -32,15 +32,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: '#0a0a0f' }}
+        style={{ background: '#FAF9F7' }}
       >
-        <span className="text-[#8888a0] text-sm">Loading...</span>
+        <span className="text-sm" style={{ color: '#9B8E80' }}>Loading...</span>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#0a0a0f' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#FAF9F7' }}>
       <Topbar userName={user?.full_name} role={user?.role} />
       <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 48px)' }}>
         <Sidebar />

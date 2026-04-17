@@ -80,6 +80,7 @@ export default function CourseDetailPage() {
   const [tab, setTab] = useState<Tab>('members')
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
   // Rubric upload
@@ -140,12 +141,18 @@ export default function CourseDetailPage() {
 
   async function handleMemberAction(memberId: string, action: 'approve' | 'reject') {
     setActionId(memberId)
+    setActionError(null)
     const authHdr: Record<string, string> = tokenRef.current
       ? { Authorization: `Bearer ${tokenRef.current}` } : {}
-    await fetch(`${API_URL}/api/courses/${id}/members/${memberId}/${action}`, {
+    const res = await fetch(`${API_URL}/api/courses/${id}/members/${memberId}/${action}`, {
       method: 'POST', headers: authHdr,
     })
-    setMembers((prev) => prev.map((m) => m.id === memberId ? { ...m, status: action === 'approve' ? 'approved' : 'rejected' } : m))
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setActionError(data.detail || `Failed to ${action} member.`)
+    } else {
+      setMembers((prev) => prev.map((m) => m.id === memberId ? { ...m, status: action === 'approve' ? 'approved' : 'rejected' } : m))
+    }
     setActionId(null)
   }
 
@@ -250,7 +257,7 @@ export default function CourseDetailPage() {
   const approved = members.filter((m) => m.status === 'approved')
 
   if (loading) {
-    return <div className="p-6 text-[#55556a] text-sm">Loading...</div>
+    return <div className="p-6 text-[#9B8E80] text-sm">Loading...</div>
   }
 
   if (!course) {
@@ -270,8 +277,8 @@ export default function CourseDetailPage() {
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b6050', marginBottom: 4 }}>
             COURSE · <span style={{ color: '#f59e0b' }}>{course.subject_code}</span>
           </div>
-          <h1 className="text-2xl font-semibold text-[#e8e8f0]">{course.name}</h1>
-          {course.description && <p className="text-[#8888a0] text-sm mt-1">{course.description}</p>}
+          <h1 className="text-2xl font-semibold text-[#1C1A17]">{course.name}</h1>
+          {course.description && <p className="text-[#6B6050] text-sm mt-1">{course.description}</p>}
         </div>
         <Link href={`/educator/courses/${id}/assignments/new`}>
           <Button variant="secondary">
@@ -311,8 +318,8 @@ export default function CourseDetailPage() {
           ) : rubricFile ? (
             <div className="flex items-center gap-2">
               <FileText size={16} style={{ color: '#94a3b8' }} />
-              <span className="text-sm text-[#8888a0] truncate flex-1">{rubricFile.name}</span>
-              <button onClick={() => setRubricFile(null)}><X size={14} style={{ color: '#55556a' }} /></button>
+              <span className="text-sm text-[#6B6050] truncate flex-1">{rubricFile.name}</span>
+              <button onClick={() => setRubricFile(null)}><X size={14} style={{ color: '#9B8E80' }} /></button>
             </div>
           ) : (
             <button
@@ -370,15 +377,15 @@ export default function CourseDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               {/* Presentation type */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold" style={{ color: '#8888a0' }}>Presentation Type</label>
+                <label className="text-xs font-semibold" style={{ color: '#6B6050' }}>Presentation Type</label>
                 <select
                   value={presentationType}
                   onChange={(e) => setPresentationType(e.target.value)}
                   className="rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors"
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
+                    background: 'rgba(180,165,148,0.08)',
                     borderColor: 'rgba(245,158,11,0.15)',
-                    color: '#e8e8f0',
+                    color: '#1C1A17',
                     colorScheme: 'dark',
                   }}
                 >
@@ -390,15 +397,15 @@ export default function CourseDetailPage() {
 
               {/* Band count */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold" style={{ color: '#8888a0' }}>Band Levels</label>
+                <label className="text-xs font-semibold" style={{ color: '#6B6050' }}>Band Levels</label>
                 <select
                   value={String(bandCount)}
                   onChange={(e) => setBandCount(Number(e.target.value) as 4 | 5)}
                   className="rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors"
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
+                    background: 'rgba(180,165,148,0.08)',
                     borderColor: 'rgba(245,158,11,0.15)',
-                    color: '#e8e8f0',
+                    color: '#1C1A17',
                     colorScheme: 'dark',
                   }}
                 >
@@ -410,7 +417,7 @@ export default function CourseDetailPage() {
 
             {/* Focus areas */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold" style={{ color: '#8888a0' }}>
+              <label className="text-xs font-semibold" style={{ color: '#6B6050' }}>
                 Assessment Criteria <span style={{ color: '#4a4035' }}>(select all that apply)</span>
               </label>
               <div className="flex flex-wrap gap-2">
@@ -423,11 +430,11 @@ export default function CourseDetailPage() {
                       onClick={() => toggleFocus(area)}
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                       style={{
-                        background: active ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)',
+                        background: active ? 'rgba(245,158,11,0.15)' : 'rgba(180,165,148,0.08)',
                         borderWidth: 1,
                         borderStyle: 'solid',
-                        borderColor: active ? 'rgba(245,158,11,0.30)' : 'rgba(255,255,255,0.06)',
-                        color: active ? '#f59e0b' : '#55556a',
+                        borderColor: active ? 'rgba(245,158,11,0.30)' : 'rgba(180,165,148,0.22)',
+                        color: active ? '#f59e0b' : '#9B8E80',
                       }}
                     >
                       {active && <span className="mr-1">✓</span>}
@@ -491,7 +498,7 @@ export default function CourseDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg p-1" style={{ background: 'rgba(255,255,255,0.04)', width: 'fit-content' }}>
+      <div className="flex gap-1 rounded-lg p-1" style={{ background: 'rgba(180,165,148,0.08)', width: 'fit-content' }}>
         {(['members', 'assignments', 'submissions'] as Tab[]).map((t) => (
           <button
             key={t}
@@ -499,7 +506,7 @@ export default function CourseDetailPage() {
             className="px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize"
             style={tab === t
               ? { background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }
-              : { color: '#55556a' }}
+              : { color: '#9B8E80' }}
           >
             {t}
             {t === 'members' && pending.length > 0 && (
@@ -526,8 +533,8 @@ export default function CourseDetailPage() {
                 placeholder="student@example.com"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                className="flex-1 rounded-lg border px-3.5 py-2 text-sm text-[#e8e8f0] outline-none placeholder:text-[#3a3a52]"
-                style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(245,158,11,0.15)' }}
+                className="flex-1 rounded-lg border px-3.5 py-2 text-sm text-[#1C1A17] outline-none placeholder:text-[#C4B8A8]"
+                style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(245,158,11,0.15)' }}
                 onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
                 onBlur={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.15)')}
                 onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
@@ -541,6 +548,16 @@ export default function CourseDetailPage() {
             )}
           </div>
 
+          {/* Action error */}
+          {actionError && (
+            <div className="flex items-center gap-2 rounded-lg border px-3 py-2.5"
+              style={{ background: 'rgba(239,68,68,0.06)', borderColor: 'rgba(239,68,68,0.2)' }}>
+              <AlertCircle size={13} style={{ color: '#ef4444', flexShrink: 0 }} />
+              <p className="text-xs text-[#ef4444] flex-1">{actionError}</p>
+              <button onClick={() => setActionError(null)} className="text-[#ef4444] opacity-60 hover:opacity-100"><X size={12} /></button>
+            </div>
+          )}
+
           {/* Pending requests */}
           {pending.length > 0 && (
             <div className="flex flex-col gap-2">
@@ -551,8 +568,8 @@ export default function CourseDetailPage() {
                 <div key={m.id} className="flex items-center gap-4 rounded-lg border px-4 py-3"
                   style={{ background: 'rgba(245,158,11,0.04)', borderColor: 'rgba(245,158,11,0.15)' }}>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-[#e8e8f0]">{m.users?.full_name}</span>
-                    <span className="text-xs text-[#55556a] ml-2">{m.users?.email}</span>
+                    <span className="text-sm font-semibold text-[#1C1A17]">{m.users?.full_name}</span>
+                    <span className="text-xs text-[#9B8E80] ml-2">{m.users?.email}</span>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleMemberAction(m.id, 'approve')} disabled={actionId === m.id}
@@ -583,10 +600,10 @@ export default function CourseDetailPage() {
             ) : (
               approved.map((m) => (
                 <div key={m.id} className="flex items-center gap-4 rounded-lg border px-4 py-3"
-                  style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
-                  <Users size={14} style={{ color: '#55556a', flexShrink: 0 }} />
-                  <span className="text-sm text-[#e8e8f0] flex-1">{m.users?.full_name}</span>
-                  <span className="text-xs text-[#55556a]">{m.users?.email}</span>
+                  style={{ background: 'rgba(180,165,148,0.04)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                  <Users size={14} style={{ color: '#9B8E80', flexShrink: 0 }} />
+                  <span className="text-sm text-[#1C1A17] flex-1">{m.users?.full_name}</span>
+                  <span className="text-xs text-[#9B8E80]">{m.users?.email}</span>
                   <Badge variant="green">Enrolled</Badge>
                 </div>
               ))
@@ -599,7 +616,7 @@ export default function CourseDetailPage() {
       {tab === 'assignments' && (
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <span className="text-[#55556a] text-sm">{assignments.length} assignment{assignments.length !== 1 ? 's' : ''}</span>
+            <span className="text-[#9B8E80] text-sm">{assignments.length} assignment{assignments.length !== 1 ? 's' : ''}</span>
             <Link href={`/educator/courses/${id}/assignments/new`}>
               <Button variant="secondary">
                 <PlusCircle size={14} className="mr-2" />
@@ -619,12 +636,12 @@ export default function CourseDetailPage() {
                 style={{ background: 'rgba(14,9,4,0.50)', borderColor: 'rgba(245,158,11,0.08)' }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold text-[#e8e8f0]">{a.title}</span>
+                    <span className="text-sm font-semibold text-[#1C1A17]">{a.title}</span>
                     {a.exam_mode && <Badge variant="amber">Exam Mode</Badge>}
                   </div>
-                  {a.description && <p className="text-xs text-[#55556a] mb-2">{a.description}</p>}
+                  {a.description && <p className="text-xs text-[#9B8E80] mb-2">{a.description}</p>}
                   {a.deadline && (
-                    <p className="text-xs text-[#3a3a52]">
+                    <p className="text-xs text-[#C4B8A8]">
                       Due: {new Date(a.deadline).toLocaleDateString('en-MY', { dateStyle: 'medium' })}
                     </p>
                   )}
@@ -638,7 +655,7 @@ export default function CourseDetailPage() {
       {/* Tab: Submissions */}
       {tab === 'submissions' && (
         <div className="flex flex-col gap-3">
-          <span className="text-[#55556a] text-sm">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</span>
+          <span className="text-[#9B8E80] text-sm">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</span>
           {submissions.length === 0 ? (
             <div className="flex items-center justify-center h-32 rounded-xl border" style={{ borderColor: 'rgba(245,158,11,0.08)' }}>
               <p className="text-xs" style={{ color: '#4a4035' }}>No submissions yet.</p>
@@ -653,14 +670,14 @@ export default function CourseDetailPage() {
                   style={{ background: 'rgba(14,9,4,0.50)', borderColor: 'rgba(245,158,11,0.08)' }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-[#e8e8f0]">{anonLabel}</span>
+                      <span className="text-sm font-semibold text-[#1C1A17]">{anonLabel}</span>
                       <Badge variant={s.status === 'complete' ? 'green' : s.status === 'failed' ? 'red' : 'amber'}>
                         {s.status}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-[#55556a]">
+                    <div className="flex items-center gap-4 text-xs text-[#9B8E80]">
                       {s.assignments && <span>Assignment: {s.assignments.title}</span>}
-                      {r?.band_score != null && <span>Band: <strong className="text-[#e8e8f0]">{r.band_score.toFixed(1)}</strong></span>}
+                      {r?.band_score != null && <span>Band: <strong className="text-[#1C1A17]">{r.band_score.toFixed(1)}</strong></span>}
                       <span>{new Date(s.uploaded_at).toLocaleDateString('en-MY', { dateStyle: 'medium' })}</span>
                     </div>
                   </div>

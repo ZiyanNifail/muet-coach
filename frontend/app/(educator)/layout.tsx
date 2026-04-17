@@ -22,14 +22,14 @@ export default function EducatorLayout({ children }: { children: React.ReactNode
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0f' }}>
-        <span className="text-[#8888a0] text-sm">Loading...</span>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAF9F7' }}>
+        <span className="text-[#6B6050] text-sm">Loading...</span>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#0a0a0f' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#FAF9F7' }}>
       <Topbar userName={user?.full_name} role={user?.role} />
       <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 48px)' }}>
         <EducatorSidebar />

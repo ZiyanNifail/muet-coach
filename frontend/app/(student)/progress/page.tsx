@@ -40,9 +40,9 @@ function SparkLine({
   return (
     <div
       className="flex flex-col gap-2 rounded-xl border p-4"
-      style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}
+      style={{ background: 'rgba(180,165,148,0.06)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a' }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9B8E80' }}>
         {label}
       </div>
       <ResponsiveContainer width="100%" height={70}>
@@ -50,7 +50,7 @@ function SparkLine({
           <XAxis dataKey="date" hide />
           <YAxis hide domain={['auto', 'auto']} />
           <Tooltip
-            contentStyle={{ background: 'rgba(14,14,22,0.9)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#e8e8f0', fontSize: 11 }}
+            contentStyle={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(180,165,148,0.30)', borderRadius: 8, color: '#1C1A17', fontSize: 11 }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={((v: number | undefined) => [`${v ?? '—'}${unit}`, label]) as any}
             labelFormatter={(l) => l}
@@ -132,11 +132,11 @@ export default function ProgressPage() {
     <div className="p-6 flex flex-col gap-6 max-w-4xl">
       {/* Header */}
       <div>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
           PROGRESS
         </div>
-        <h1 className="text-2xl font-semibold text-[#e8e8f0]">Band Timeline</h1>
-        <p className="text-[#8888a0] text-sm mt-1">Track your CEFR band score and metrics across all sessions.</p>
+        <h1 className="text-2xl font-semibold text-[#1C1A17]">Band Timeline</h1>
+        <p className="text-[#6B6050] text-sm mt-1">Track your CEFR band score and metrics across all sessions.</p>
       </div>
 
       {/* Summary strip */}
@@ -148,8 +148,8 @@ export default function ProgressPage() {
             { label: 'IMPROVEMENT', value: improvement != null ? (Number(improvement) >= 0 ? `+${improvement}` : improvement) : '—', color: Number(improvement) >= 0 ? '#22c55e' : '#ef4444' },
           ].map((m) => (
             <div key={m.label} className="flex flex-col gap-1 rounded-lg border p-3"
-              style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>{m.label}</span>
+              style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>{m.label}</span>
               <span className="font-mono text-xl font-semibold" style={{ color: m.color }}>{m.value}</span>
             </div>
           ))}
@@ -158,16 +158,16 @@ export default function ProgressPage() {
 
       {/* Band score timeline */}
       {loading ? (
-        <div className="flex items-center justify-center h-48 rounded-xl border" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-          <span className="text-[#55556a] text-sm">Loading progress...</span>
+        <div className="flex items-center justify-center h-48 rounded-xl border" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+          <span className="text-[#9B8E80] text-sm">Loading progress...</span>
         </div>
       ) : error ? (
-        <div className="flex items-center justify-center h-32 rounded-xl border" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center justify-center h-32 rounded-xl border" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
           <p className="text-[#ef4444] text-sm">{error}</p>
         </div>
       ) : !hasSessions ? (
-        <div className="flex flex-col items-center justify-center h-48 rounded-xl border gap-3" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-          <p className="text-[#55556a] text-sm">Complete at least 2 sessions to see your progress trend.</p>
+        <div className="flex flex-col items-center justify-center h-48 rounded-xl border gap-3" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+          <p className="text-[#9B8E80] text-sm">Complete at least 2 sessions to see your progress trend.</p>
           <Link href="/practice" className="text-[#94a3b8] text-sm hover:underline">Start a session →</Link>
         </div>
       ) : (
@@ -176,18 +176,18 @@ export default function ProgressPage() {
           {bandData.length >= 2 && (
             <div
               className="flex flex-col gap-3 rounded-xl border p-5"
-              style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+              style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
             >
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
                 BAND SCORE OVER TIME
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={bandData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                  <XAxis dataKey="date" tick={{ fill: '#55556a', fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: '#55556a', fontSize: 10 }} axisLine={false} tickLine={false} domain={[1, 6]} ticks={[1, 2, 3, 4, 5, 6]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(180,165,148,0.08)" />
+                  <XAxis dataKey="date" tick={{ fill: '#9B8E80', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#9B8E80', fontSize: 10 }} axisLine={false} tickLine={false} domain={[1, 6]} ticks={[1, 2, 3, 4, 5, 6]} />
                   <Tooltip
-                    contentStyle={{ background: 'rgba(14,14,22,0.9)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#e8e8f0', fontSize: 12 }}
+                    contentStyle={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(180,165,148,0.30)', borderRadius: 8, color: '#1C1A17', fontSize: 12 }}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     formatter={((v: number | undefined) => [`Band ${(v ?? 0).toFixed(1)}`, 'Score']) as any}
                   />
@@ -200,7 +200,7 @@ export default function ProgressPage() {
 
           {/* Sparklines grid */}
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 12 }}>
               PER-METRIC TRENDS
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -11,6 +11,7 @@ import {
   History,
   BookOpen,
   LayoutDashboard,
+  Volume2,
 } from 'lucide-react'
 
 const studentNav = [
@@ -33,6 +34,10 @@ const studentNav = [
   {
     section: 'COURSES',
     items: [{ label: 'My Courses', href: '/courses', icon: BookOpen }],
+  },
+  {
+    section: 'IMPROVE',
+    items: [{ label: 'Pronunciation', href: '/pronunciation', icon: Volume2 }],
   },
 ]
 
@@ -57,7 +62,7 @@ function SidebarNav() {
         <div key={group.section}>
           <div
             className="px-4 mb-1"
-            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#3a3a52' }}
+            style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#C4B8A8' }}
           >
             {group.section}
           </div>
@@ -72,9 +77,13 @@ function SidebarNav() {
                   className={clsx(
                     'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all no-underline',
                     active
-                      ? 'bg-[rgba(255,255,255,0.08)] text-[#e8e8f0]'
-                      : 'text-[#55556a] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#8888a0]'
+                      ? 'font-medium'
+                      : 'hover:bg-[rgba(180,165,148,0.10)]'
                   )}
+                  style={active
+                    ? { background: 'rgba(58,125,106,0.10)', color: '#3A7D6A' }
+                    : { color: '#9B8E80' }
+                  }
                 >
                   <Icon size={14} strokeWidth={1.75} />
                   {item.label}
@@ -95,15 +104,13 @@ export function Sidebar() {
       style={{
         width: 220,
         minWidth: 220,
-        background: 'rgba(10,10,18,0.50)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        background: '#F0EDE6',
+        borderRight: '1px solid rgba(180,165,148,0.25)',
       }}
     >
       {/* Logo */}
       <div className="px-4 pb-1">
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#e8e8f0' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#3A7D6A', fontFamily: 'var(--font-lora, Georgia, serif)' }}>
           PreCoach
         </span>
       </div>

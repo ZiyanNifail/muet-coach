@@ -103,8 +103,8 @@ export default function AllSubmissionsPage() {
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b6050', marginBottom: 4 }}>
             MANAGE
           </div>
-          <h1 className="text-2xl font-semibold text-[#e8e8f0]">All Submissions</h1>
-          <p className="text-[#8888a0] text-sm mt-1">
+          <h1 className="text-2xl font-semibold text-[#1C1A17]">All Submissions</h1>
+          <p className="text-[#6B6050] text-sm mt-1">
             Review and override AI assessments across all your courses.
           </p>
         </div>
@@ -113,12 +113,12 @@ export default function AllSubmissionsPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[#55556a] font-semibold">Course</span>
+          <span className="text-xs text-[#9B8E80] font-semibold">Course</span>
           <select
             value={filterCourse}
             onChange={(e) => setFilterCourse(e.target.value)}
             className="rounded-lg border px-3 py-1.5 text-xs outline-none transition-colors"
-            style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)', color: '#e8e8f0' }}
+            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: '#1C1A17' }}
           >
             <option value="all">All Courses</option>
             {courses.map((c) => (
@@ -127,12 +127,12 @@ export default function AllSubmissionsPage() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[#55556a] font-semibold">Status</span>
+          <span className="text-xs text-[#9B8E80] font-semibold">Status</span>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="rounded-lg border px-3 py-1.5 text-xs outline-none transition-colors"
-            style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)', color: '#e8e8f0' }}
+            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: '#1C1A17' }}
           >
             <option value="all">All Statuses</option>
             <option value="complete">Complete</option>
@@ -140,36 +140,36 @@ export default function AllSubmissionsPage() {
             <option value="failed">Failed</option>
           </select>
         </div>
-        <span className="text-xs text-[#3a3a52] ml-auto">
+        <span className="text-xs text-[#C4B8A8] ml-auto">
           {filtered.length} submission{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="flex items-center justify-center h-40 rounded-xl border" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-          <span className="text-[#55556a] text-sm">Loading submissions...</span>
+        <div className="flex items-center justify-center h-40 rounded-xl border" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+          <span className="text-[#9B8E80] text-sm">Loading submissions...</span>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-48 rounded-xl border gap-3"
-          style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-          <FileCheck size={28} style={{ color: '#55556a', opacity: 0.4 }} />
-          <p className="text-[#55556a] text-sm">
+          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+          <FileCheck size={28} style={{ color: '#9B8E80', opacity: 0.4 }} />
+          <p className="text-[#9B8E80] text-sm">
             {submissions.length === 0 ? 'No submissions yet across your courses.' : 'No submissions match the selected filters.'}
           </p>
         </div>
       ) : (
         <div className="flex flex-col gap-0 rounded-xl border overflow-hidden"
-          style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          style={{ borderColor: 'rgba(180,165,148,0.22)' }}>
           {/* Table header */}
           <div
             className="grid grid-cols-12 gap-3 px-4 py-2.5"
-            style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            style={{ background: 'rgba(180,165,148,0.06)', borderBottom: '1px solid rgba(180,165,148,0.22)' }}
           >
             {['STUDENT', 'COURSE', 'ASSIGNMENT', 'BAND', 'STATUS', 'DATE', ''].map((h, i) => (
               <div
                 key={i}
-                className={`text-[9px] font-bold tracking-widest uppercase text-[#3a3a52] ${
+                className={`text-[9px] font-bold tracking-widest uppercase text-[#C4B8A8] ${
                   i === 0 ? 'col-span-3' : i === 1 ? 'col-span-2' : i === 2 ? 'col-span-2' : i === 3 ? 'col-span-1' : i === 4 ? 'col-span-1' : i === 5 ? 'col-span-2' : 'col-span-1'
                 }`}
               >
@@ -188,14 +188,14 @@ export default function AllSubmissionsPage() {
               >
                 <div
                   className="grid grid-cols-12 gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.02] cursor-pointer items-center"
-                  style={{ borderTop: idx === 0 ? 'none' : '1px solid rgba(255,255,255,0.04)' }}
+                  style={{ borderTop: idx === 0 ? 'none' : '1px solid rgba(180,165,148,0.08)' }}
                 >
                   {/* Student */}
                   <div className="col-span-3 min-w-0">
-                    <div className="text-sm font-semibold text-[#e8e8f0] truncate">
+                    <div className="text-sm font-semibold text-[#1C1A17] truncate">
                       {sub.users?.full_name || '—'}
                     </div>
-                    <div className="text-xs text-[#55556a] truncate">{sub.users?.email}</div>
+                    <div className="text-xs text-[#9B8E80] truncate">{sub.users?.email}</div>
                   </div>
 
                   {/* Course */}
@@ -203,23 +203,23 @@ export default function AllSubmissionsPage() {
                     <BookOpen size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
                     <div className="min-w-0">
                       <div className="text-xs font-mono text-[#f59e0b]">{sub.course_subject_code}</div>
-                      <div className="text-[11px] text-[#55556a] truncate">{sub.course_name}</div>
+                      <div className="text-[11px] text-[#9B8E80] truncate">{sub.course_name}</div>
                     </div>
                   </div>
 
                   {/* Assignment */}
                   <div className="col-span-2 min-w-0">
-                    <span className="text-xs text-[#8888a0] truncate block">
-                      {sub.assignments?.title || <span className="text-[#3a3a52] italic">Free practice</span>}
+                    <span className="text-xs text-[#6B6050] truncate block">
+                      {sub.assignments?.title || <span className="text-[#C4B8A8] italic">Free practice</span>}
                     </span>
                     {sub.session_mode && (
-                      <span className="text-[10px] text-[#3a3a52]">{sub.session_mode}</span>
+                      <span className="text-[10px] text-[#C4B8A8]">{sub.session_mode}</span>
                     )}
                   </div>
 
                   {/* Band */}
                   <div className="col-span-1">
-                    <span className="font-mono text-sm font-semibold" style={{ color: band != null ? '#8b5cf6' : '#3a3a52' }}>
+                    <span className="font-mono text-sm font-semibold" style={{ color: band != null ? '#8b5cf6' : '#C4B8A8' }}>
                       {band != null ? band.toFixed(1) : '—'}
                     </span>
                   </div>
@@ -230,13 +230,13 @@ export default function AllSubmissionsPage() {
                   </div>
 
                   {/* Date */}
-                  <div className="col-span-2 text-xs text-[#55556a]">
+                  <div className="col-span-2 text-xs text-[#9B8E80]">
                     {new Date(sub.uploaded_at).toLocaleDateString('en-MY', { dateStyle: 'medium' })}
                   </div>
 
                   {/* Arrow */}
                   <div className="col-span-1 flex justify-end">
-                    <ChevronRight size={14} style={{ color: '#3a3a52' }} />
+                    <ChevronRight size={14} style={{ color: '#C4B8A8' }} />
                   </div>
                 </div>
               </Link>

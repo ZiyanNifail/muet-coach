@@ -124,7 +124,7 @@ function BandRing({ score }: { score: number }) {
 
   return (
     <svg width={140} height={140} viewBox="0 0 140 140">
-      <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={10} />
+      <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(180,165,148,0.22)" strokeWidth={10} />
       <circle
         cx={70} cy={70} r={R} fill="none"
         stroke={color} strokeWidth={10}
@@ -137,10 +137,10 @@ function BandRing({ score }: { score: number }) {
         fontSize={28} fontWeight={700} fontFamily="monospace">
         {score.toFixed(1)}
       </text>
-      <text x={70} y={83} textAnchor="middle" fill="#55556a" fontSize={9} letterSpacing="0.1em">
+      <text x={70} y={83} textAnchor="middle" fill="#9B8E80" fontSize={9} letterSpacing="0.1em">
         BAND
       </text>
-      <text x={70} y={97} textAnchor="middle" fill="#55556a" fontSize={9}>
+      <text x={70} y={97} textAnchor="middle" fill="#9B8E80" fontSize={9}>
         {bandDescriptor(score)}
       </text>
     </svg>
@@ -154,12 +154,12 @@ function PostureBar({ score }: { score: number }) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-[#8888a0]">Posture Score</span>
+        <span className="text-xs text-[#6B6050]">Posture Score</span>
         <span className="text-xs font-mono font-semibold" style={{ color }}>
           {Math.round(pct)}/100 · {postureLabel(score)}
         </span>
       </div>
-      <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(180,165,148,0.22)' }}>
         <div
           className="h-full rounded-full"
           style={{ width: `${pct}%`, background: color, transition: 'width 1s ease' }}
@@ -282,6 +282,38 @@ ${r.transcript ? `
   win.addEventListener('load', () => win.print())
 }
 
+// Threshold definitions for each sub-metric tooltip
+const METRIC_THRESHOLDS = {
+  'VOICE CLARITY': {
+    target: '≥ 75%',
+    description: 'Measures pronunciation and articulation clarity from Whisper confidence scores.',
+    check: (v: number) => v >= 75,
+    goodLabel: 'Meets target',
+    badLabel: 'Below target — work on clear enunciation',
+  },
+  'SENTIMENT': {
+    target: '≥ 60%',
+    description: 'Positive, confident delivery tone. Higher % = more engaging and enthusiastic.',
+    check: (v: number) => v >= 60,
+    goodLabel: 'Positive delivery',
+    badLabel: 'Tone sounds hesitant or flat — project more confidence',
+  },
+  'PITCH': {
+    target: '100 – 220 Hz',
+    description: 'Natural speaking pitch range. Outside this range may sound monotone or strained.',
+    check: (v: number) => v >= 100 && v <= 220,
+    goodLabel: 'Natural range',
+    badLabel: 'Outside natural range — vary your vocal pitch',
+  },
+  'ENERGY': {
+    target: '-30 to -15 dB',
+    description: 'Vocal loudness/projection. Too quiet (<-35 dB) or too loud (>-10 dB) is penalised.',
+    check: (v: number) => v >= -30 && v <= -15,
+    goodLabel: 'Good projection',
+    badLabel: 'Adjust volume — speak more clearly into the microphone',
+  },
+}
+
 function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
   score: number
   sentiment: number | null
@@ -289,16 +321,24 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
   pitch: number | null
   energy: number | null
 }) {
+  const [hoveredMetric, setHoveredMetric] = useState<string | null>(null)
   const color = score >= 70 ? '#22c55e' : score >= 50 ? '#94a3b8' : score >= 35 ? '#f59e0b' : '#ef4444'
   const label = score >= 70 ? 'Strong' : score >= 50 ? 'Developing' : score >= 35 ? 'Needs Work' : 'Weak'
   const pct = Math.max(0, Math.min(100, score))
 
+  const metrics = [
+    { key: 'VOICE CLARITY', value: clarity != null ? `${Math.round(clarity)}%` : '—', raw: clarity, color: '#8b5cf6' },
+    { key: 'SENTIMENT',     value: sentiment != null ? `${Math.round(sentiment * 100)}%` : '—', raw: sentiment != null ? sentiment * 100 : null, color: '#06b6d4' },
+    { key: 'PITCH',         value: pitch != null ? `${Math.round(pitch)} Hz` : '—', raw: pitch, color: '#f59e0b' },
+    { key: 'ENERGY',        value: energy != null ? `${energy.toFixed(1)} dB` : '—', raw: energy, color: '#f97316' },
+  ]
+
   return (
     <div
       className="flex flex-col gap-4 rounded-xl border p-5"
-      style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
         AI CONFIDENCE SCORE
       </div>
 
@@ -306,9 +346,9 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
       <div className="flex items-center gap-4">
         <div className="flex flex-col">
           <span className="font-mono text-3xl font-bold" style={{ color }}>{score.toFixed(1)}</span>
-          <span style={{ fontSize: 10, color: '#55556a' }}>/100 · {label}</span>
+          <span style={{ fontSize: 10, color: '#9B8E80' }}>/100 · {label}</span>
         </div>
-        <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'rgba(180,165,148,0.22)' }}>
           <div
             className="h-full rounded-full"
             style={{ width: `${pct}%`, background: color, transition: 'width 1.2s ease' }}
@@ -316,27 +356,77 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
         </div>
       </div>
 
-      {/* Sub-metrics row */}
+      {/* Sub-metrics row — hover for threshold tooltip */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {[
-          { label: 'VOICE CLARITY', value: clarity != null ? `${Math.round(clarity)}%` : '—', color: '#8b5cf6' },
-          { label: 'SENTIMENT', value: sentiment != null ? `${Math.round(sentiment * 100)}%` : '—', color: '#06b6d4' },
-          { label: 'PITCH', value: pitch != null ? `${Math.round(pitch)} Hz` : '—', color: '#f59e0b' },
-          { label: 'ENERGY', value: energy != null ? `${energy.toFixed(1)} dB` : '—', color: '#f97316' },
-        ].map((m) => (
-          <div
-            key={m.label}
-            className="flex flex-col gap-0.5 rounded-lg border p-2.5"
-            style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.05)' }}
-          >
-            <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#3a3a52' }}>
-              {m.label}
-            </span>
-            <span className="font-mono text-sm font-semibold" style={{ color: m.color }}>
-              {m.value}
-            </span>
-          </div>
-        ))}
+        {metrics.map((m) => {
+          const thresh = METRIC_THRESHOLDS[m.key as keyof typeof METRIC_THRESHOLDS]
+          const met = m.raw != null ? thresh.check(m.raw) : null
+          const isHovered = hoveredMetric === m.key
+          return (
+            <div
+              key={m.key}
+              className="relative flex flex-col gap-0.5 rounded-lg border p-2.5 cursor-default"
+              style={{
+                background: isHovered ? 'rgba(180,165,148,0.22)' : 'rgba(180,165,148,0.06)',
+                borderColor: isHovered ? `${m.color}44` : 'rgba(255,255,255,0.05)',
+                transition: 'background 0.15s, border-color 0.15s',
+              }}
+              onMouseEnter={() => setHoveredMetric(m.key)}
+              onMouseLeave={() => setHoveredMetric(null)}
+            >
+              <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#C4B8A8' }}>
+                {m.key}
+              </span>
+              <span className="font-mono text-sm font-semibold" style={{ color: m.color }}>
+                {m.value}
+              </span>
+              {/* Status dot — green if met, amber if not, nothing if no data */}
+              {met !== null && (
+                <span
+                  className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
+                  style={{ background: met ? '#22c55e' : '#f59e0b' }}
+                />
+              )}
+
+              {/* Hover tooltip */}
+              {isHovered && (
+                <div
+                  className="absolute z-30 bottom-full left-0 mb-2 w-52 rounded-lg border p-3 flex flex-col gap-1.5"
+                  style={{
+                    background: 'rgba(12,10,20,0.97)',
+                    borderColor: `${m.color}44`,
+                    boxShadow: `0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px ${m.color}22`,
+                  }}
+                >
+                  <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: m.color }}>
+                    {m.key}
+                  </p>
+                  <p style={{ fontSize: 11, color: '#6B6050', lineHeight: 1.5 }}>
+                    {thresh.description}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span style={{ fontSize: 10, color: '#9B8E80' }}>Target:</span>
+                    <span className="font-mono text-xs font-semibold" style={{ color: '#1C1A17' }}>{thresh.target}</span>
+                  </div>
+                  {met !== null && (
+                    <div
+                      className="flex items-center gap-1.5 rounded px-2 py-1"
+                      style={{ background: met ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${met ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)'}` }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: met ? '#22c55e' : '#f59e0b' }} />
+                      <span style={{ fontSize: 10, color: met ? '#4ade80' : '#fbbf24' }}>
+                        {met ? thresh.goodLabel : thresh.badLabel}
+                      </span>
+                    </div>
+                  )}
+                  {m.raw == null && (
+                    <p style={{ fontSize: 10, color: '#9B8E80' }}>No data recorded for this metric.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -427,7 +517,7 @@ export default function ResultsPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div
           className="max-w-sm w-full flex flex-col items-center gap-4 rounded-xl border p-8 text-center"
-          style={{ background: 'rgba(14,14,22,0.55)', borderColor: 'rgba(255,255,255,0.06)' }}
+          style={{ background: 'rgba(245,242,237,0.95)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           <span
             style={{
@@ -436,8 +526,8 @@ export default function ResultsPage() {
               animation: 'pulse 2s ease-in-out infinite', display: 'inline-block',
             }}
           />
-          <h2 className="text-lg font-semibold text-[#e8e8f0]">Waiting for analysis...</h2>
-          <p className="text-[#8888a0] text-sm">The AI is still processing your session.</p>
+          <h2 className="text-lg font-semibold text-[#1C1A17]">Waiting for analysis...</h2>
+          <p className="text-[#6B6050] text-sm">The AI is still processing your session.</p>
         </div>
       </div>
     )
@@ -448,12 +538,12 @@ export default function ResultsPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div
           className="max-w-md w-full flex flex-col gap-4 rounded-xl border p-8 text-center"
-          style={{ background: 'rgba(14,14,22,0.55)', borderColor: 'rgba(239,68,68,0.2)' }}
+          style={{ background: 'rgba(245,242,237,0.95)', borderColor: 'rgba(239,68,68,0.2)' }}
         >
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ef4444' }}>
             REPORT ERROR
           </div>
-          <p className="text-[#e8e8f0] text-sm leading-6">{error}</p>
+          <p className="text-[#1C1A17] text-sm leading-6">{error}</p>
           <div className="flex gap-3 justify-center">
             <Link href="/practice"><Button variant="secondary">New Session</Button></Link>
             <Link href="/dashboard"><Button variant="ghost">Dashboard</Button></Link>
@@ -483,14 +573,14 @@ export default function ResultsPage() {
           <div
             style={{
               fontSize: 10, fontWeight: 600, letterSpacing: '0.12em',
-              textTransform: 'uppercase', color: '#55556a', marginBottom: 4,
+              textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4,
             }}
           >
             FEEDBACK REPORT{isDemo && ' · DEMO DATA'}
           </div>
-          <h1 className="text-xl font-semibold text-[#e8e8f0]">Presentation Analysis</h1>
+          <h1 className="text-xl font-semibold text-[#1C1A17]">Presentation Analysis</h1>
           {(r.topic_text || r.session_mode) && (
-            <p className="text-[#55556a] text-xs mt-1">
+            <p className="text-[#9B8E80] text-xs mt-1">
               {r.topic_text && <span>{r.topic_text}</span>}
               {r.session_mode && (
                 <span className="ml-2 capitalize">{r.session_mode.replace('_', ' ')} session</span>
@@ -524,7 +614,7 @@ export default function ResultsPage() {
       {/* Band ring + metrics */}
       <div
         className="flex gap-5 rounded-xl border p-5"
-        style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+        style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
       >
         {/* Band ring */}
         {r.band_score != null && (
@@ -544,15 +634,15 @@ export default function ResultsPage() {
               <div
                 key={m.label}
                 className="flex flex-col gap-1 rounded-lg border p-3"
-                style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)' }}
+                style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}
               >
-                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#55556a' }}>
+                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#9B8E80' }}>
                   {m.label}
                 </span>
                 <span className="font-mono text-xl font-semibold" style={{ color: m.color }}>
                   {m.value}
                 </span>
-                {m.sub && <span style={{ fontSize: 10, color: '#3a3a52' }}>{m.sub}</span>}
+                {m.sub && <span style={{ fontSize: 10, color: '#C4B8A8' }}>{m.sub}</span>}
               </div>
             ))}
           </div>
@@ -561,7 +651,7 @@ export default function ResultsPage() {
           {r.posture_score != null && (
             <div
               className="rounded-lg border p-3"
-              style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)' }}
+              style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}
             >
               <PostureBar score={r.posture_score} />
             </div>
@@ -584,24 +674,24 @@ export default function ResultsPage() {
       {chartData && (
         <div
           className="flex flex-col gap-3 rounded-xl border p-5"
-          style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           <div className="flex items-center justify-between">
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
               SPEAKING PACE (WPM)
             </div>
-            <div className="flex items-center gap-3 text-[10px]" style={{ color: '#55556a' }}>
+            <div className="flex items-center gap-3 text-[10px]" style={{ color: '#9B8E80' }}>
               <span className="flex items-center gap-1"><span style={{ width: 16, height: 1, background: '#f59e0b', display: 'inline-block' }} /> 130 WPM min</span>
               <span className="flex items-center gap-1"><span style={{ width: 16, height: 1, background: '#ef4444', display: 'inline-block' }} /> 150 WPM max</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="t" tick={{ fill: '#55556a', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#55556a', fontSize: 10 }} axisLine={false} tickLine={false} domain={['auto', 'auto']} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(180,165,148,0.08)" />
+              <XAxis dataKey="t" tick={{ fill: '#9B8E80', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#9B8E80', fontSize: 10 }} axisLine={false} tickLine={false} domain={['auto', 'auto']} />
               <Tooltip
-                contentStyle={{ background: 'rgba(14,14,22,0.9)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#e8e8f0', fontSize: 12 }}
+                contentStyle={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(180,165,148,0.30)', borderRadius: 8, color: '#1C1A17', fontSize: 12 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={((v: number | undefined) => [`${v ?? '—'} WPM`, 'Pace']) as any}
               />
@@ -642,22 +732,22 @@ export default function ResultsPage() {
       {r.advice_cards && r.advice_cards.length > 0 && (
         <div
           className="flex flex-col gap-3 rounded-xl border p-5"
-          style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           <div className="flex items-center justify-between">
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
               INSIGHTS
             </div>
-            <span className="text-[#55556a] text-xs">{r.advice_cards.length} NODES</span>
+            <span className="text-[#9B8E80] text-xs">{r.advice_cards.length} NODES</span>
           </div>
           {r.advice_cards.map((card, i) => (
             <div
               key={i}
               className="flex items-start gap-3 rounded-lg border p-3"
-              style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)' }}
+              style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}
             >
-              <span className="text-[#55556a] text-sm mt-0.5 shrink-0">▸</span>
-              <p className="flex-1 text-sm text-[#8888a0]">{card.text}</p>
+              <span className="text-[#9B8E80] text-sm mt-0.5 shrink-0">▸</span>
+              <p className="flex-1 text-sm text-[#6B6050]">{card.text}</p>
               <Badge variant={IMPACT_VARIANT[card.impact]}>{card.impact}</Badge>
             </div>
           ))}

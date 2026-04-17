@@ -31,11 +31,11 @@ export function TranscriptViewer({
   return (
     <div
       className="flex flex-col gap-4 rounded-xl border p-5"
-      style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
           TRANSCRIPT
         </div>
         {fillerCount != null && fillerCount > 0 && (
@@ -47,7 +47,7 @@ export function TranscriptViewer({
       </div>
 
       {/* Transcript text — fillers highlighted in amber */}
-      <p className="text-sm leading-7" style={{ color: '#8888a0' }}>
+      <p className="text-sm leading-7" style={{ color: '#6B6050' }}>
         {transcript.split(/(\[[^\]]+\])/).map((part, i) =>
           /^\[.+\]$/.test(part) ? (
             <mark
@@ -66,7 +66,7 @@ export function TranscriptViewer({
       {/* Per-filler breakdown */}
       {breakdown.length > 0 && (
         <div className="flex flex-col gap-2">
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3a3a52' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C4B8A8' }}>
             FILLER BREAKDOWN
           </div>
           <div className="flex flex-wrap gap-2">

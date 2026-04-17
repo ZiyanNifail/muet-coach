@@ -1,11 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Lora } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
+  variable: "--font-inter",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-lora",
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -24,18 +32,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.className} h-full`}>
-      <body className="min-h-full bg-bg-base text-text-base antialiased">
+    <html lang="en" className={`${inter.variable} ${lora.variable} h-full`}>
+      <body className="min-h-full antialiased" style={{ background: '#FAF9F7', color: '#1C1A17', fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
         {children}
         <Toaster
           position="bottom-right"
-          theme="dark"
+          theme="light"
           toastOptions={{
             style: {
-              background: 'rgba(18, 18, 28, 0.95)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: '#e8e8f0',
+              background: '#FFFFFF',
+              border: '1px solid rgba(180,165,148,0.3)',
+              color: '#1C1A17',
               fontSize: 13,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
             },
           }}
         />

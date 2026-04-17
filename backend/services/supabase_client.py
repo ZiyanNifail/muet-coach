@@ -285,13 +285,14 @@ def db_get_course_members(course_id: str) -> list:
     try:
         res = (
             sb.table("course_members")
-            .select("*, users(full_name, email)")
+            .select("*, users!course_members_student_id_fkey(full_name, email)")
             .eq("course_id", course_id)
             .order("requested_at", desc=True)
             .execute()
         )
         return res.data or []
     except Exception:
+        logger.exception("db_get_course_members failed for course=%s", course_id)
         return []
 
 
@@ -311,14 +312,18 @@ def db_join_course_by_code(student_id: str, invite_code: str) -> dict | None:
         if not course_res.data:
             return None
         course_id = course_res.data["id"]
-        # Upsert — ignore if already requested
+        # Upsert — reset to pending if previously rejected, ignore if already pending/approved
         res = sb.table("course_members").upsert({
             "course_id": course_id,
             "student_id": student_id,
             "status": "pending",
         }, on_conflict="course_id,student_id").execute()
-        return res.data[0] if res.data else {"course_id": course_id, "status": "pending"}
+        if not res.data:
+            logger.error("db_join_course_by_code: upsert returned no data for student=%s course=%s", student_id, course_id)
+            return None
+        return res.data[0]
     except Exception:
+        logger.exception("db_join_course_by_code failed for student=%s invite=%s", student_id, invite_code)
         return None
 
 

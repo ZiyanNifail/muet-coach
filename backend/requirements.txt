@@ -12,12 +12,12 @@ mediapipe==0.10.14
 numpy==1.26.4
 opencv-python==4.8.1.78
 
-# Sentiment analysis — optional heavy dependency (~2 GB with CUDA).
-# The sentiment_service.py loads these lazily and degrades gracefully
-# if they are not installed. Comment out to skip on resource-constrained
-# deployments (Railway free tier, etc.).
-# transformers==4.46.3
-# torch==2.2.2
+# Sentiment analysis — lightweight VADER (no PyTorch/GPU required).
+vaderSentiment==3.3.2
+
+# Pronunciation Trainer
+pyphen==0.14.0
+jellyfish==1.0.4
 
 # Local Whisper fallback (uses Groq Whisper API by default).
 # Uncomment only if you need offline transcription:

@@ -112,7 +112,7 @@ export default function EducatorDashboard() {
   const totalStudents = courses.reduce((acc, c) => acc + (c.course_members?.[0]?.count ?? 0), 0)
 
   function bandColor(b: number | null) {
-    if (b == null) return '#3a3a52'
+    if (b == null) return '#C4B8A8'
     if (b >= 4.5) return '#22c55e'
     if (b >= 3.5) return '#94a3b8'
     if (b >= 2.5) return '#f59e0b'
@@ -124,11 +124,11 @@ export default function EducatorDashboard() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
             EDUCATOR PORTAL
           </div>
-          <h1 className="text-2xl font-semibold text-[#e8e8f0]">Dashboard</h1>
-          <p className="text-[#8888a0] text-sm mt-1">Overview of your courses, students, and submissions.</p>
+          <h1 className="text-2xl font-semibold text-[#1C1A17]">Dashboard</h1>
+          <p className="text-[#6B6050] text-sm mt-1">Overview of your courses, students, and submissions.</p>
         </div>
         <div className="flex gap-2">
           <Link href="/educator/analytics">
@@ -157,10 +157,10 @@ export default function EducatorDashboard() {
           const Icon = m.icon
           return (
             <div key={m.label} className="flex items-center gap-4 rounded-xl border p-4"
-              style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}>
+              style={{ background: 'rgba(180,165,148,0.06)', borderColor: 'rgba(180,165,148,0.22)' }}>
               <Icon size={20} style={{ color: m.color, opacity: 0.7, flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>{m.label}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>{m.label}</div>
                 <div className="font-mono text-xl font-semibold" style={{ color: m.color }}>{m.value}</div>
               </div>
             </div>
@@ -173,20 +173,20 @@ export default function EducatorDashboard() {
         <div className="col-span-2 flex flex-col gap-5">
           {/* My Courses */}
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 10 }}>
               MY COURSES
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center h-28 rounded-xl border"
-                style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-                <span className="text-[#55556a] text-sm">Loading...</span>
+                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                <span className="text-[#9B8E80] text-sm">Loading...</span>
               </div>
             ) : courses.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-36 rounded-xl border gap-4"
-                style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-                <BookOpen size={24} style={{ color: '#55556a', opacity: 0.5 }} />
-                <p className="text-[#55556a] text-sm">No courses yet.</p>
+                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                <BookOpen size={24} style={{ color: '#9B8E80', opacity: 0.5 }} />
+                <p className="text-[#9B8E80] text-sm">No courses yet.</p>
                 <Link href="/educator/courses/new"><Button variant="secondary">Create First Course</Button></Link>
               </div>
             ) : (
@@ -194,25 +194,25 @@ export default function EducatorDashboard() {
                 {courses.map((course) => (
                   <Link key={course.id} href={`/educator/courses/${course.id}`} className="no-underline">
                     <div className="flex items-center gap-4 rounded-xl border p-4 transition-colors hover:border-white/10 cursor-pointer"
-                      style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
                       <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
                         style={{ background: 'rgba(245,158,11,0.10)' }}>
                         <BookOpen size={16} style={{ color: '#f59e0b' }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm font-semibold text-[#e8e8f0] truncate">{course.name}</span>
+                          <span className="text-sm font-semibold text-[#1C1A17] truncate">{course.name}</span>
                           <Badge variant="amber">{course.subject_code}</Badge>
                           {course.rubric_path && <Badge variant="green">Rubric</Badge>}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-[#55556a]">
+                        <div className="flex items-center gap-3 text-xs text-[#9B8E80]">
                           <span className="flex items-center gap-1">
                             <Users size={10} /> {course.course_members?.[0]?.count ?? 0} students
                           </span>
-                          <span>Code: <code className="font-mono text-[#8888a0]">{course.invite_code}</code></span>
+                          <span>Code: <code className="font-mono text-[#6B6050]">{course.invite_code}</code></span>
                         </div>
                       </div>
-                      <ChevronRight size={14} style={{ color: '#3a3a52', flexShrink: 0 }} />
+                      <ChevronRight size={14} style={{ color: '#C4B8A8', flexShrink: 0 }} />
                     </div>
                   </Link>
                 ))}
@@ -224,7 +224,7 @@ export default function EducatorDashboard() {
           {recentSubs.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2.5">
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
                   RECENT SUBMISSIONS
                 </div>
                 <Link href="/educator/submissions">
@@ -232,14 +232,14 @@ export default function EducatorDashboard() {
                 </Link>
               </div>
               <div className="rounded-xl border overflow-hidden"
-                style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
                 {recentSubs.map((s, i) => (
                   <Link key={s.id} href={`/educator/courses/${s.course_id}/submissions/${s.id}`} className="no-underline">
                     <div className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.02] transition-colors cursor-pointer"
-                      style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.04)' }}>
+                      style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(180,165,148,0.08)' }}>
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-[#e8e8f0]">{s.student}</span>
-                        <span className="text-xs text-[#55556a] ml-2">
+                        <span className="text-sm font-semibold text-[#1C1A17]">{s.student}</span>
+                        <span className="text-xs text-[#9B8E80] ml-2">
                           {new Date(s.date).toLocaleDateString('en-MY', { dateStyle: 'medium' })}
                         </span>
                       </div>
@@ -250,7 +250,7 @@ export default function EducatorDashboard() {
                         style={{ color: bandColor(s.band) }}>
                         {s.band != null ? s.band.toFixed(1) : '—'}
                       </span>
-                      <ChevronRight size={13} style={{ color: '#3a3a52' }} />
+                      <ChevronRight size={13} style={{ color: '#C4B8A8' }} />
                     </div>
                   </Link>
                 ))}
@@ -263,9 +263,9 @@ export default function EducatorDashboard() {
         <div className="flex flex-col gap-4">
           {/* Pending actions */}
           <div className="flex flex-col gap-3 rounded-xl border p-4"
-            style={{ background: 'rgba(14,14,22,0.45)', borderColor: pendingItems.length > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)' }}>
+            style={{ background: 'rgba(255,255,255,0.80)', borderColor: pendingItems.length > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(180,165,148,0.22)' }}>
             <div className="flex items-center justify-between">
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
                 PENDING ACTIONS
               </div>
               {pendingItems.length > 0 && (
@@ -278,7 +278,7 @@ export default function EducatorDashboard() {
             {pendingItems.length === 0 ? (
               <div className="flex items-center gap-2 py-2">
                 <CheckCircle size={14} style={{ color: '#22c55e' }} />
-                <span className="text-xs text-[#55556a]">All caught up!</span>
+                <span className="text-xs text-[#9B8E80]">All caught up!</span>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -288,14 +288,14 @@ export default function EducatorDashboard() {
                       style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.1)' }}>
                       <AlertCircle size={12} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-[#e8e8f0] truncate">{item.label}</div>
-                        <div className="text-[10px] text-[#55556a]">{item.detail} · <span className="font-mono text-[#f59e0b]">{item.subject_code}</span></div>
+                        <div className="text-xs font-semibold text-[#1C1A17] truncate">{item.label}</div>
+                        <div className="text-[10px] text-[#9B8E80]">{item.detail} · <span className="font-mono text-[#f59e0b]">{item.subject_code}</span></div>
                       </div>
                     </div>
                   </Link>
                 ))}
                 {pendingItems.length > 6 && (
-                  <p className="text-[10px] text-[#3a3a52] text-center">+{pendingItems.length - 6} more</p>
+                  <p className="text-[10px] text-[#C4B8A8] text-center">+{pendingItems.length - 6} more</p>
                 )}
               </div>
             )}
@@ -303,8 +303,8 @@ export default function EducatorDashboard() {
 
           {/* Quick links */}
           <div className="flex flex-col gap-2 rounded-xl border p-4"
-            style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
+            style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
               QUICK ACTIONS
             </div>
             {[
@@ -316,7 +316,7 @@ export default function EducatorDashboard() {
               const Icon = link.icon
               return (
                 <Link key={link.href} href={link.href} className="no-underline">
-                  <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-[#55556a] hover:text-[#8888a0] hover:bg-white/[0.03] transition-all cursor-pointer">
+                  <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-[#9B8E80] hover:text-[#6B6050] hover:bg-white/[0.03] transition-all cursor-pointer">
                     <Icon size={13} />
                     {link.label}
                   </div>

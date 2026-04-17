@@ -6,44 +6,56 @@ Pure-Python; no external AI dependencies.
 import re
 from typing import Any
 
-# Filler patterns (case-insensitive whole-word match)
-FILLER_PATTERNS = re.compile(
-    r"\b(um+|uh+|ah+|er+|like|you know|you know what i mean|so|basically|actually|right|okay|ok)\b",
+# Single-word fillers (matched after stripping punctuation)
+STANDALONE_FILLERS = {"um", "uh", "ah", "er", "hmm", "like", "so", "basically",
+                      "actually", "right", "okay", "ok", "well", "literally"}
+
+# Multi-word filler phrases — checked first via regex substitution
+PHRASE_FILLERS = re.compile(
+    r"\b(you know what i mean|you know|i mean|sort of|kind of)\b",
     re.IGNORECASE,
 )
-
-# Words that are likely filler "like/so/actually/right/okay" — only count standalone
-STANDALONE_FILLERS = {"um", "uh", "ah", "er", "like", "you know"}
 
 
 def detect_fillers(transcript: str) -> dict:
     """
-    Count filler words in transcript.
-    Returns { filler_count: int, filler_positions: list[int], marked_transcript: str }
+    Count filler words/phrases in transcript.
+    Returns { filler_count: int, marked_transcript: str }
     where marked_transcript wraps each filler in [brackets].
+
+    Multi-word phrases are matched first (regex), then single words.
     """
     if not transcript:
-        return {"filler_count": 0, "filler_positions": [], "marked_transcript": ""}
+        return {"filler_count": 0, "marked_transcript": ""}
 
-    positions: list[int] = []
-    marked = transcript
+    filler_count = 0
 
-    # Simple word-level pass for core fillers
-    words = transcript.split()
-    core_filler_count = 0
-    marked_words: list[str] = []
-    for w in words:
-        clean = re.sub(r"[^\w]", "", w).lower()
+    # Step 1: replace multi-word filler phrases with [phrase] tokens
+    def _replace_phrase(m: re.Match) -> str:
+        nonlocal filler_count
+        filler_count += 1
+        return f"[{m.group(0).lower()}]"
+
+    marked = PHRASE_FILLERS.sub(_replace_phrase, transcript)
+
+    # Step 2: word-level pass for single-word fillers
+    tokens = marked.split()
+    result_tokens: list[str] = []
+    for tok in tokens:
+        if tok.startswith("["):
+            # Already a tagged phrase — preserve it
+            result_tokens.append(tok)
+            continue
+        clean = re.sub(r"[^\w]", "", tok).lower()
         if clean in STANDALONE_FILLERS:
-            marked_words.append(f"[{clean}]")
-            core_filler_count += 1
+            result_tokens.append(f"[{clean}]")
+            filler_count += 1
         else:
-            marked_words.append(w)
-    marked = " ".join(marked_words)
+            result_tokens.append(tok)
 
     return {
-        "filler_count": core_filler_count,
-        "marked_transcript": marked,
+        "filler_count": filler_count,
+        "marked_transcript": " ".join(result_tokens),
     }
 
 

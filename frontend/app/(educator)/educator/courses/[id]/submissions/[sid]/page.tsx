@@ -112,7 +112,7 @@ export default function SubmissionReviewPage() {
     }
   }
 
-  if (loading) return <div className="p-6 text-[#55556a] text-sm">Loading submission...</div>
+  if (loading) return <div className="p-6 text-[#9B8E80] text-sm">Loading submission...</div>
   if (!submission) return <div className="p-6 text-[#ef4444] text-sm">Submission not found.</div>
 
   const report: Report | null = Array.isArray(submission.feedback_reports)
@@ -130,18 +130,18 @@ export default function SubmissionReviewPage() {
       {/* Header */}
       <div className="flex items-start gap-4">
         <Link href={`/educator/courses/${courseId}`}>
-          <button className="mt-1 text-[#55556a] hover:text-[#8888a0] transition-colors">
+          <button className="mt-1 text-[#9B8E80] hover:text-[#6B6050] transition-colors">
             <ArrowLeft size={18} />
           </button>
         </Link>
         <div className="flex-1">
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
             SUBMISSION REVIEW
           </div>
-          <h1 className="text-xl font-semibold text-[#e8e8f0]">{submission.users?.full_name}</h1>
+          <h1 className="text-xl font-semibold text-[#1C1A17]">{submission.users?.full_name}</h1>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs text-[#55556a]">{submission.users?.email}</span>
-            {submission.assignments && <span className="text-xs text-[#55556a]">· {submission.assignments.title}</span>}
+            <span className="text-xs text-[#9B8E80]">{submission.users?.email}</span>
+            {submission.assignments && <span className="text-xs text-[#9B8E80]">· {submission.assignments.title}</span>}
             <Badge variant={submission.status === 'complete' ? 'green' : submission.status === 'failed' ? 'red' : 'amber'}>
               {submission.status}
             </Badge>
@@ -154,7 +154,7 @@ export default function SubmissionReviewPage() {
         {/* Left: video + metrics */}
         <div className="col-span-3 flex flex-col gap-4">
           {/* Video player */}
-          <div className="rounded-xl border overflow-hidden" style={{ background: '#000', borderColor: 'rgba(255,255,255,0.06)' }}>
+          <div className="rounded-xl border overflow-hidden" style={{ background: '#000', borderColor: 'rgba(180,165,148,0.22)' }}>
             {videoUrl ? (
               <video
                 src={videoUrl}
@@ -164,16 +164,16 @@ export default function SubmissionReviewPage() {
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-48 gap-2">
-                <span className="text-[#55556a] text-sm">Video not available for remote review.</span>
-                <span className="text-[#3a3a52] text-xs">Configure Supabase Storage (T4.06) to enable video playback.</span>
+                <span className="text-[#9B8E80] text-sm">Video not available for remote review.</span>
+                <span className="text-[#C4B8A8] text-xs">Configure Supabase Storage (T4.06) to enable video playback.</span>
               </div>
             )}
           </div>
 
           {/* AI Metrics */}
           {report && (
-            <div className="flex flex-col gap-4 rounded-xl border p-4" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a' }}>
+            <div className="flex flex-col gap-4 rounded-xl border p-4" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9B8E80' }}>
                 AI ANALYSIS
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -183,11 +183,11 @@ export default function SubmissionReviewPage() {
                   { label: 'Eye Contact', value: report.eye_contact_pct != null ? `${Math.round(report.eye_contact_pct)}%` : '—', color: '#22c55e' },
                   { label: 'Posture', value: postureLabel(report.posture_score), color: '#f59e0b' },
                   { label: 'Filler Words', value: report.filler_count ?? '—', color: '#f59e0b' },
-                  { label: 'Session Mode', value: submission.session_mode || '—', color: '#55556a' },
+                  { label: 'Session Mode', value: submission.session_mode || '—', color: '#9B8E80' },
                 ].map((m) => (
                   <div key={m.label} className="flex flex-col gap-0.5 rounded-lg border p-2.5"
-                    style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)' }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#55556a' }}>{m.label}</span>
+                    style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#9B8E80' }}>{m.label}</span>
                     <span className="font-mono text-base font-semibold" style={{ color: m.color }}>{String(m.value)}</span>
                   </div>
                 ))}
@@ -196,10 +196,10 @@ export default function SubmissionReviewPage() {
               {/* Transcript */}
               {report.transcript && (
                 <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a', marginBottom: 8 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 8 }}>
                     TRANSCRIPT
                   </div>
-                  <p className="text-[#8888a0] text-xs leading-6 max-h-36 overflow-y-auto">
+                  <p className="text-[#6B6050] text-xs leading-6 max-h-36 overflow-y-auto">
                     {report.transcript.split(/(\[[^\]]+\])/).map((part, i) =>
                       /^\[.+\]$/.test(part) ? (
                         <mark key={i} className="rounded px-0.5 not-italic" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>
@@ -214,13 +214,13 @@ export default function SubmissionReviewPage() {
               {/* Advice cards */}
               {report.advice_cards && report.advice_cards.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a', marginBottom: 8 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 8 }}>
                     AI INSIGHTS
                   </div>
                   {report.advice_cards.slice(0, 3).map((card, i) => (
                     <div key={i} className="flex items-start gap-2 rounded-lg border p-2.5 mb-2"
-                      style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.06)' }}>
-                      <p className="flex-1 text-xs text-[#8888a0]">{card.text}</p>
+                      style={{ background: 'rgba(180,165,148,0.06)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                      <p className="flex-1 text-xs text-[#6B6050]">{card.text}</p>
                       <Badge variant={IMPACT_VARIANT[card.impact as keyof typeof IMPACT_VARIANT] || 'blue'}>{card.impact}</Badge>
                     </div>
                   ))}
@@ -234,10 +234,10 @@ export default function SubmissionReviewPage() {
         <div className="col-span-2 flex flex-col gap-4">
           <div
             className="flex flex-col gap-4 rounded-xl border p-4 sticky top-4"
-            style={{ background: 'rgba(14,14,22,0.55)', borderColor: overrideSuccess ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.06)' }}
+            style={{ background: 'rgba(245,242,237,0.95)', borderColor: overrideSuccess ? 'rgba(34,197,94,0.3)' : 'rgba(180,165,148,0.22)' }}
           >
             <div className="flex items-center justify-between">
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9B8E80' }}>
                 HITL OVERRIDE
               </div>
               {existingOverride && (
@@ -249,8 +249,8 @@ export default function SubmissionReviewPage() {
               <div className="flex flex-col items-center gap-3 py-4">
                 <CheckCircle size={28} style={{ color: '#22c55e' }} />
                 <p className="text-sm text-[#22c55e] font-semibold">Override saved successfully.</p>
-                <p className="text-xs text-[#55556a] text-center">
-                  Band score updated to <strong className="text-[#e8e8f0]">{overrideBand}</strong>. The student&apos;s results page will reflect this change.
+                <p className="text-xs text-[#9B8E80] text-center">
+                  Band score updated to <strong className="text-[#1C1A17]">{overrideBand}</strong>. The student&apos;s results page will reflect this change.
                 </p>
               </div>
             ) : (
@@ -263,7 +263,7 @@ export default function SubmissionReviewPage() {
 
                 {/* Band selector */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-semibold text-[#8888a0]">
+                  <label className="text-xs font-semibold text-[#6B6050]">
                     Override Band Score
                     <span className="ml-2 font-mono text-[#f59e0b]">{overrideBand.toFixed(1)}</span>
                   </label>
@@ -275,32 +275,32 @@ export default function SubmissionReviewPage() {
                         onClick={() => setOverrideBand(b)}
                         className="rounded-md py-1.5 text-xs font-mono font-semibold transition-all"
                         style={{
-                          background: overrideBand === b ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${overrideBand === b ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.06)'}`,
-                          color: overrideBand === b ? '#f59e0b' : '#55556a',
+                          background: overrideBand === b ? 'rgba(245,158,11,0.2)' : 'rgba(180,165,148,0.08)',
+                          border: `1px solid ${overrideBand === b ? 'rgba(245,158,11,0.5)' : 'rgba(180,165,148,0.22)'}`,
+                          color: overrideBand === b ? '#f59e0b' : '#9B8E80',
                         }}
                       >
                         {b.toFixed(1)}
                       </button>
                     ))}
                   </div>
-                  <p className="text-[#3a3a52] text-xs">
-                    AI band: <strong className="text-[#55556a]">{report?.band_score != null ? report.band_score.toFixed(1) : '—'}</strong>
+                  <p className="text-[#C4B8A8] text-xs">
+                    AI band: <strong className="text-[#9B8E80]">{report?.band_score != null ? report.band_score.toFixed(1) : '—'}</strong>
                   </p>
                 </div>
 
                 {/* Feedback */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-semibold text-[#8888a0]">Written Feedback *</label>
+                  <label className="text-xs font-semibold text-[#6B6050]">Written Feedback *</label>
                   <textarea
                     value={overrideFeedback}
                     onChange={(e) => setOverrideFeedback(e.target.value)}
                     placeholder="Provide your assessment rationale and personalised advice for the student..."
                     rows={6}
-                    className="rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-[#3a3a52] resize-none"
-                    style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)', color: '#e8e8f0' }}
+                    className="rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8] resize-none"
+                    style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: '#1C1A17' }}
                     onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
-                    onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
+                    onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
                   />
                 </div>
 
@@ -313,7 +313,7 @@ export default function SubmissionReviewPage() {
                   {submitting ? 'Saving...' : 'Save Override →'}
                 </Button>
 
-                <p className="text-[#3a3a52] text-xs">
+                <p className="text-[#C4B8A8] text-xs">
                   Overrides update the student&apos;s band score immediately. An audit trail is kept in <code>educator_overrides</code>.
                 </p>
               </>

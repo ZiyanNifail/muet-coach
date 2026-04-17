@@ -124,7 +124,7 @@ export function LearningPathPanel({ studentId }: { studentId: string }) {
   return (
     <div
       className="flex flex-col gap-3 rounded-xl border p-5"
-      style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(139,92,246,0.25)' }}
+      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(139,92,246,0.25)' }}
     >
       <div className="flex items-center justify-between">
         <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8b5cf6' }}>
@@ -138,7 +138,7 @@ export function LearningPathPanel({ studentId }: { studentId: string }) {
         </span>
       </div>
 
-      <p className="text-xs" style={{ color: '#55556a' }}>
+      <p className="text-xs" style={{ color: '#9B8E80' }}>
         Based on your last {sessionCount} session{sessionCount > 1 ? 's' : ''}, your weakest area is{' '}
         <span style={{ color: '#c4b5fd' }}>{title}</span>. Here are 3 targeted drills.
       </p>
@@ -148,7 +148,7 @@ export function LearningPathPanel({ studentId }: { studentId: string }) {
           <div
             key={i}
             className="flex gap-3 rounded-lg border p-3"
-            style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(139,92,246,0.1)' }}
+            style={{ background: 'rgba(180,165,148,0.04)', borderColor: 'rgba(139,92,246,0.1)' }}
           >
             <span
               className="shrink-0 font-mono text-xs font-bold mt-0.5"
@@ -156,7 +156,7 @@ export function LearningPathPanel({ studentId }: { studentId: string }) {
             >
               {String(i + 1).padStart(2, '0')}
             </span>
-            <p className="text-sm leading-relaxed" style={{ color: '#8888a0' }}>{drill}</p>
+            <p className="text-sm leading-relaxed" style={{ color: '#6B6050' }}>{drill}</p>
           </div>
         ))}
       </div>

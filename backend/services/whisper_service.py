@@ -47,6 +47,7 @@ def _transcribe_chunk_groq(chunk_path: str, with_clarity: bool = False) -> tuple
                 model="whisper-large-v3-turbo",
                 language="en",
                 response_format="verbose_json",
+                prompt="um, uh, ah, er, like, you know, so, basically, right, okay",
             )
             text = getattr(result, "text", "") or ""
             segments = getattr(result, "segments", None) or []
@@ -66,6 +67,7 @@ def _transcribe_chunk_groq(chunk_path: str, with_clarity: bool = False) -> tuple
                 model="whisper-large-v3-turbo",
                 language="en",
                 response_format="text",
+                prompt="um, uh, ah, er, like, you know, so, basically, right, okay",
             )
             # response_format="text" returns a plain string
             text = result if isinstance(result, str) else getattr(result, "text", str(result))

@@ -98,23 +98,23 @@ export default function LoginPage() {
               width: 36,
               height: 36,
               borderRadius: '50%',
-              background: 'rgba(18,18,28,0.7)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(240,237,230,0.85)',
+              border: '1px solid rgba(180,165,148,0.30)',
               backdropFilter: 'blur(12px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#55556a',
+              color: '#9B8E80',
               transition: 'border-color 0.2s, color 0.2s',
             }}
             onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.18)'
-              ;(e.currentTarget as HTMLButtonElement).style.color = '#8888a0'
+              ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(180,165,148,0.50)'
+              ;(e.currentTarget as HTMLButtonElement).style.color = '#6B6050'
             }}
             onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.08)'
-              ;(e.currentTarget as HTMLButtonElement).style.color = '#55556a'
+              ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(180,165,148,0.30)'
+              ;(e.currentTarget as HTMLButtonElement).style.color = '#9B8E80'
             }}
           >
             <ShieldCheck size={15} />
@@ -124,7 +124,7 @@ export default function LoginPage() {
             style={{
               width: 240,
               borderRadius: 12,
-              background: 'rgba(14,14,22,0.85)',
+              background: 'rgba(255,255,255,0.92)',
               border: '1px solid rgba(255,255,255,0.1)',
               backdropFilter: 'blur(20px)',
               padding: '14px 16px',
@@ -134,14 +134,14 @@ export default function LoginPage() {
             {/* Popover header */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <ShieldCheck size={13} style={{ color: '#8888a0' }} />
+                <ShieldCheck size={13} style={{ color: '#6B6050' }} />
                 <span
                   style={{
                     fontSize: 10,
                     fontWeight: 600,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color: '#55556a',
+                    color: '#9B8E80',
                   }}
                 >
                   Admin Access
@@ -149,7 +149,7 @@ export default function LoginPage() {
               </div>
               <button
                 onClick={() => { setAdminOpen(false); setAdminError('') }}
-                style={{ color: '#55556a', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                style={{ color: '#9B8E80', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
               >
                 <X size={13} />
               </button>
@@ -158,7 +158,7 @@ export default function LoginPage() {
             {/* Popover form */}
             <form onSubmit={handleAdminLogin} className="flex flex-col gap-2.5">
               <div className="flex flex-col gap-1">
-                <label style={{ fontSize: 10, color: '#55556a', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <label style={{ fontSize: 10, color: '#9B8E80', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   ID
                 </label>
                 <input
@@ -168,19 +168,19 @@ export default function LoginPage() {
                   autoComplete="off"
                   required
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(180,165,148,0.08)',
+                    border: '1px solid rgba(180,165,148,0.30)',
                     borderRadius: 6,
                     padding: '6px 10px',
                     fontSize: 13,
-                    color: '#e8e8f0',
+                    color: '#1C1A17',
                     outline: 'none',
                     width: '100%',
                   }}
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label style={{ fontSize: 10, color: '#55556a', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <label style={{ fontSize: 10, color: '#9B8E80', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   Password
                 </label>
                 <input
@@ -189,12 +189,12 @@ export default function LoginPage() {
                   onChange={(e) => setAdminPassword(e.target.value)}
                   required
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(180,165,148,0.08)',
+                    border: '1px solid rgba(180,165,148,0.30)',
                     borderRadius: 6,
                     padding: '6px 10px',
                     fontSize: 13,
-                    color: '#e8e8f0',
+                    color: '#1C1A17',
                     outline: 'none',
                     width: '100%',
                   }}
@@ -231,8 +231,8 @@ export default function LoginPage() {
       <div
         className="w-full max-w-sm flex flex-col gap-6 rounded-xl border p-8"
         style={{
-          background: 'rgba(14,14,22,0.55)',
-          borderColor: 'rgba(255,255,255,0.06)',
+          background: 'rgba(245,242,237,0.95)',
+          borderColor: 'rgba(180,165,148,0.22)',
           backdropFilter: 'blur(12px)',
         }}
       >
@@ -243,14 +243,14 @@ export default function LoginPage() {
               fontWeight: 600,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: '#55556a',
+              color: '#9B8E80',
               marginBottom: 8,
             }}
           >
             PRESENTATION COACH
           </div>
-          <h1 className="text-2xl font-semibold text-[#e8e8f0]">Sign in</h1>
-          <p className="text-[#8888a0] text-sm mt-1">AI-powered presentation coaching</p>
+          <h1 className="text-2xl font-semibold text-[#1C1A17]">Sign in</h1>
+          <p className="text-[#6B6050] text-sm mt-1">AI-powered presentation coaching</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -278,7 +278,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-[#8888a0] text-sm text-center">
+        <p className="text-[#6B6050] text-sm text-center">
           Don&apos;t have an account?{' '}
           <Link href="/register" className="text-[#94a3b8] hover:underline">
             Create one

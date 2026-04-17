@@ -1,68 +1,70 @@
 """
 Sentiment analysis service — T2.12B.
 
-Analyses sentiment of a text string using distilbert.
-Lazy-loads transformers; returns None gracefully if not installed or on any error.
+Uses VADER (Valence Aware Dictionary and sEntiment Reasoner) — a lightweight,
+pure-Python sentiment analyser that requires no GPU and installs in seconds.
+VADER is well-suited to spoken/informal English (vs. SST-2 which was trained on
+movie reviews and often mislabels presentation speech).
+
+Returns a float 0.0–1.0 where 1.0 is fully positive delivery.
 """
 import logging
 
 logger = logging.getLogger(__name__)
 
-_pipeline = None
-_pipeline_failed = False  # avoid repeated load attempts after a failure
+_analyzer = None
+_load_failed = False
 
 
-def _load_pipeline():
-    """Lazy-load the sentiment pipeline. Returns None if unavailable."""
-    global _pipeline, _pipeline_failed
-    if _pipeline is not None:
-        return _pipeline
-    if _pipeline_failed:
+def _load_analyzer():
+    """Lazy-load VADER. Returns None if vaderSentiment is not installed."""
+    global _analyzer, _load_failed
+    if _analyzer is not None:
+        return _analyzer
+    if _load_failed:
         return None
     try:
-        from transformers import pipeline as hf_pipeline
-        _pipeline = hf_pipeline(
-            "sentiment-analysis",
-            model="distilbert-base-uncased-finetuned-sst-2-english",
-            truncation=True,
-            max_length=512,
-        )
-        logger.info("Sentiment pipeline loaded (distilbert-base-uncased-finetuned-sst-2-english)")
-        return _pipeline
+        from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+        _analyzer = SentimentIntensityAnalyzer()
+        logger.info("VADER sentiment analyser loaded")
+        return _analyzer
     except ImportError:
-        logger.warning("transformers not installed — sentiment analysis unavailable. Install with: pip install transformers torch")
-        _pipeline_failed = True
+        logger.warning(
+            "vaderSentiment not installed — sentiment analysis unavailable. "
+            "Install with: pip install vaderSentiment"
+        )
+        _load_failed = True
         return None
     except Exception as exc:
-        logger.warning("Failed to load sentiment pipeline: %s", exc)
-        _pipeline_failed = True
+        logger.warning("Failed to load VADER analyser: %s", exc)
+        _load_failed = True
         return None
 
 
 def analyse_sentiment(text: str) -> float | None:
     """
-    Analyse sentiment of text.
+    Analyse the sentiment of a transcript.
 
-    Returns a float 0.0–1.0 where 1.0 is fully positive,
-    or None if the analysis cannot be performed.
+    Returns a float 0.0–1.0 where:
+      1.0 = very positive / confident delivery
+      0.5 = neutral
+      0.0 = very negative / hesitant
+
+    VADER compound score is in [-1, 1]; we map it to [0, 1].
+    Returns None if the analysis cannot be performed.
     Never raises.
     """
     if not text or not text.strip():
         return None
     try:
-        pipe = _load_pipeline()
-        if pipe is None:
+        analyzer = _load_analyzer()
+        if analyzer is None:
             return None
-        results = pipe(text[:512])  # extra safety truncation
-        if not results:
-            return None
-        result = results[0]
-        label = result.get("label", "").upper()
-        score = float(result.get("score", 0.5))
-        # Normalise: NEGATIVE => invert score so 1.0 = fully positive
-        if label == "NEGATIVE":
-            score = 1.0 - score
-        return round(score, 4)
+        scores = analyzer.polarity_scores(text)
+        compound = scores.get("compound", 0.0)  # -1.0 to 1.0
+        # Map [-1, 1] → [0, 1]
+        normalised = round((compound + 1.0) / 2.0, 4)
+        return normalised
     except Exception as exc:
         logger.warning("Sentiment analysis failed: %s", exc)
         return None

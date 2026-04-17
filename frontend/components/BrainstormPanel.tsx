@@ -36,8 +36,8 @@ export function BrainstormPanel({ topic, onReady, onSkip }: BrainstormPanelProps
       <div
         className="w-full max-w-xl flex flex-col gap-4 rounded-2xl border p-6"
         style={{
-          background: 'rgba(14,14,22,0.55)',
-          borderColor: 'rgba(255,255,255,0.08)',
+          background: 'rgba(245,242,237,0.95)',
+          borderColor: 'rgba(180,165,148,0.30)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
         }}
@@ -50,15 +50,15 @@ export function BrainstormPanel({ topic, onReady, onSkip }: BrainstormPanelProps
                 fontWeight: 600,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: '#55556a',
+                color: '#9B8E80',
                 marginBottom: 6,
               }}
             >
               Brainstorm
             </div>
-            <p className="text-[#8888a0] text-sm">
+            <p className="text-[#6B6050] text-sm">
               Topic:{' '}
-              <span className="text-[#e8e8f0] font-medium">{topic}</span>
+              <span className="text-[#1C1A17] font-medium">{topic}</span>
             </p>
           </div>
 
@@ -77,9 +77,9 @@ export function BrainstormPanel({ topic, onReady, onSkip }: BrainstormPanelProps
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Jot down your key points..."
           rows={6}
-          className="w-full resize-none rounded-xl border px-4 py-3 text-sm text-[#e8e8f0] placeholder:text-[#3a3a52] outline-none transition-colors"
+          className="w-full resize-none rounded-xl border px-4 py-3 text-sm text-[#1C1A17] placeholder:text-[#C4B8A8] outline-none transition-colors"
           style={{
-            background: 'rgba(255,255,255,0.03)',
+            background: 'rgba(180,165,148,0.06)',
             borderColor: 'rgba(255,255,255,0.07)',
           }}
           onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.16)')}

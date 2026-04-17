@@ -129,13 +129,7 @@ The platform fuses Computer Vision (gaze and posture tracking via MediaPipe), Au
 | **Version Control** | GitHub | Free | Source of truth; triggers auto-deploy on Vercel (frontend) and Railway (backend) |
 | **Survey Tool** | Google Forms | Free | Distributes FLCAS + SUS surveys to pilot cohort |
 
-### 6.2 Why Vercel Cannot Host the Backend
-
-Vercel serverless functions have a **10-second timeout** on the free tier. Whisper transcription of a 5-minute recording takes 60–90 seconds on CPU. MediaPipe processes hundreds of video frames. These jobs will consistently time out on Vercel.
-
-**Solution:** Frontend on Vercel, backend on Railway. The Next.js app calls the FastAPI backend via environment variable `NEXT_PUBLIC_API_URL=https://your-app.railway.app`.
-
-### 6.3 Whisper Model Selection
+### 6.2 Whisper Model Selection
 
 | Model | RAM Required | WER (general) | Recommendation |
 |---|---|---|---|

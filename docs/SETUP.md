@@ -351,21 +351,6 @@ WHISPER_MODEL=tiny
 2. Create an API key
 3. Add to `backend/.env` as `GROQ_API_KEY`
 
-### Vercel (Frontend Deploy)
-1. Go to https://vercel.com → sign up with GitHub
-2. Click **Import Project** → select your GitHub repo → select `frontend` folder
-3. Add environment variables (same as `.env.local` above)
-4. Deploy — Vercel gives you a public URL like `https://presentation-coach.vercel.app`
-
-### Railway (Backend Deploy)
-1. Go to https://railway.app → sign up with GitHub
-2. Click **New Project** → Deploy from GitHub repo → select your repo
-3. Set root directory to `backend`
-4. Add environment variables from `backend/.env`
-5. Add start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-6. Railway gives you a URL like `https://presentation-coach.railway.app`
-7. Update Vercel's `NEXT_PUBLIC_API_URL` to point to this Railway URL
-
 ---
 
 ## Part 7 — Development Workflow (Day-to-Day)

@@ -84,17 +84,17 @@ function ExamPrepStep({ topic, onReady }: { topic: string; onReady: () => void }
     <div className="flex-1 flex items-center justify-center p-6">
       <div
         className="w-full max-w-lg flex flex-col gap-5 rounded-2xl border p-8"
-        style={{ background: 'rgba(14,14,22,0.55)', borderColor: 'rgba(255,255,255,0.08)' }}
+        style={{ background: 'rgba(245,242,237,0.95)', borderColor: 'rgba(180,165,148,0.30)' }}
       >
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#f59e0b' }}>
           MUET PART 1 · PREPARATION PHASE
         </div>
         <div>
-          <p className="text-[#55556a] text-xs mb-2">Your topic:</p>
-          <h2 className="text-xl font-semibold text-[#e8e8f0]">{topic}</h2>
+          <p className="text-[#9B8E80] text-xs mb-2">Your topic:</p>
+          <h2 className="text-xl font-semibold text-[#1C1A17]">{topic}</h2>
         </div>
-        <p className="text-[#8888a0] text-sm leading-6">
-          You have <strong className="text-[#e8e8f0]">2 minutes</strong> to prepare your response.
+        <p className="text-[#6B6050] text-sm leading-6">
+          You have <strong className="text-[#1C1A17]">2 minutes</strong> to prepare your response.
           Take notes mentally. When the timer ends, delivery begins automatically.
         </p>
 
@@ -102,7 +102,7 @@ function ExamPrepStep({ topic, onReady }: { topic: string; onReady: () => void }
           <>
             <div className="flex flex-col items-center gap-3">
               <span className="font-mono text-5xl font-semibold" style={{ color }}>{timeStr}</span>
-              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(180,165,148,0.22)' }}>
                 <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: color }} />
               </div>
             </div>
@@ -146,19 +146,19 @@ function SlideUploadStep({
   return (
     <div className="p-6 flex flex-col gap-6 max-w-2xl">
       <div>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
           SLIDES (OPTIONAL)
         </div>
-        <h1 className="text-2xl font-semibold text-[#e8e8f0]">Upload your slide deck</h1>
-        <p className="text-[#8888a0] text-sm mt-1">PDF only · Max 20 MB · Optional — skip if not needed</p>
+        <h1 className="text-2xl font-semibold text-[#1C1A17]">Upload your slide deck</h1>
+        <p className="text-[#6B6050] text-sm mt-1">PDF only · Max 20 MB · Optional — skip if not needed</p>
       </div>
 
       {/* Drop zone */}
       <div
         className="flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-10 transition-colors"
         style={{
-          borderColor: dragging ? '#94a3b8' : file ? '#22c55e' : 'rgba(255,255,255,0.10)',
-          background: dragging ? 'rgba(148,163,184,0.05)' : 'rgba(255,255,255,0.02)',
+          borderColor: dragging ? '#94a3b8' : file ? '#22c55e' : 'rgba(180,165,148,0.35)',
+          background: dragging ? 'rgba(148,163,184,0.05)' : 'rgba(180,165,148,0.04)',
           cursor: 'pointer',
         }}
         onClick={() => inputRef.current?.click()}
@@ -181,8 +181,8 @@ function SlideUploadStep({
         {file ? (
           <div className="flex flex-col items-center gap-2">
             <FileText size={32} style={{ color: '#22c55e' }} />
-            <span className="text-sm text-[#e8e8f0] font-semibold">{file.name}</span>
-            <span className="text-xs text-[#55556a]">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
+            <span className="text-sm text-[#1C1A17] font-semibold">{file.name}</span>
+            <span className="text-xs text-[#9B8E80]">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
             <button
               className="flex items-center gap-1 text-xs text-[#ef4444] hover:underline"
               onClick={(e) => { e.stopPropagation(); setFile(null) }}
@@ -192,10 +192,10 @@ function SlideUploadStep({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 pointer-events-none">
-            <Upload size={28} style={{ color: '#55556a' }} />
+            <Upload size={28} style={{ color: '#9B8E80' }} />
             <div className="text-center">
-              <p className="text-sm text-[#8888a0]">Drag and drop your PDF here</p>
-              <p className="text-xs text-[#3a3a52] mt-1">or click to browse</p>
+              <p className="text-sm text-[#6B6050]">Drag and drop your PDF here</p>
+              <p className="text-xs text-[#C4B8A8] mt-1">or click to browse</p>
             </div>
           </div>
         )}
@@ -328,11 +328,11 @@ export function PracticeContent() {
       {step === 'mode' && (
         <div className="p-6 flex flex-col gap-6 max-w-2xl">
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
               PRACTICE
             </div>
-            <h1 className="text-2xl font-semibold text-[#e8e8f0]">Choose session mode</h1>
-            <p className="text-[#8888a0] text-sm mt-1">Select how you want to practise today.</p>
+            <h1 className="text-2xl font-semibold text-[#1C1A17]">Choose session mode</h1>
+            <p className="text-[#6B6050] text-sm mt-1">Select how you want to practise today.</p>
           </div>
           <div className="flex flex-col gap-3">
             {MODE_OPTIONS.map((opt) => {
@@ -360,7 +360,7 @@ export function PracticeContent() {
                         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: opt.color }}>
                           {opt.title}
                         </div>
-                        <p className="text-[#8888a0] text-sm mt-0.5 leading-5 max-w-lg">{opt.desc}</p>
+                        <p className="text-[#6B6050] text-sm mt-0.5 leading-5 max-w-lg">{opt.desc}</p>
                       </div>
                     </div>
                     {opt.badge && (
@@ -379,7 +379,7 @@ export function PracticeContent() {
                       {opt.features.map(f => (
                         <div key={f} className="flex items-center gap-1.5">
                           <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: opt.color, opacity: 0.6 }} />
-                          <span style={{ fontSize: 11, color: '#55556a' }}>{f}</span>
+                          <span style={{ fontSize: 11, color: '#9B8E80' }}>{f}</span>
                         </div>
                       ))}
                     </div>
@@ -398,10 +398,10 @@ export function PracticeContent() {
       {step === 'topic' && (
         <>
           <div className="p-6">
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
               PRACTICE · {mode.toUpperCase()}
             </div>
-            <h1 className="text-2xl font-semibold text-[#e8e8f0]">Selecting your topic...</h1>
+            <h1 className="text-2xl font-semibold text-[#1C1A17]">Selecting your topic...</h1>
           </div>
           <TopicWheel onSelect={handleTopicSelect} />
         </>
@@ -411,7 +411,7 @@ export function PracticeContent() {
       {step === 'brainstorm' && topic && (
         <>
           <div className="p-6">
-            <h1 className="text-2xl font-semibold text-[#e8e8f0]">Brainstorm</h1>
+            <h1 className="text-2xl font-semibold text-[#1C1A17]">Brainstorm</h1>
           </div>
           <BrainstormPanel topic={topic.topic} onReady={handleBrainstormReady} onSkip={handleBrainstormReady} />
         </>
@@ -442,7 +442,7 @@ export function PracticeContent() {
         <div className="flex-1 flex items-center justify-center p-6">
           <div
             className="max-w-sm w-full flex flex-col items-center gap-5 rounded-xl border p-8 text-center"
-            style={{ background: 'rgba(14,14,22,0.55)', borderColor: 'rgba(255,255,255,0.06)' }}
+            style={{ background: 'rgba(245,242,237,0.95)', borderColor: 'rgba(180,165,148,0.22)' }}
           >
             {lowBandwidth && (
               <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs w-full" style={{ background: 'rgba(245,158,11,0.08)', color: '#f59e0b' }}>
@@ -452,23 +452,23 @@ export function PracticeContent() {
             )}
             <div className="flex items-center gap-2">
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 6px #f59e0b', animation: 'pulse 2s ease-in-out infinite', display: 'inline-block' }} />
-              <span className="text-[11px] font-semibold text-[#e8e8f0] tracking-wider">
+              <span className="text-[11px] font-semibold text-[#1C1A17] tracking-wider">
                 {processingStatus === 'uploading' ? 'UPLOADING' : processingStatus === 'analysing' ? 'ANALYSING' : 'DONE'}
               </span>
             </div>
-            <h2 className="text-lg font-semibold text-[#e8e8f0]">
+            <h2 className="text-lg font-semibold text-[#1C1A17]">
               {processingStatus === 'uploading' ? 'Uploading your session...' : 'Analysing your session...'}
             </h2>
             {processingStatus === 'uploading' && (
               <div className="w-full">
-                <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(180,165,148,0.30)' }}>
                   <div className="h-full rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, background: 'linear-gradient(90deg, #94a3b8, #8b5cf6)' }} />
                 </div>
-                <p className="text-[#55556a] text-xs mt-1">{uploadProgress}%</p>
+                <p className="text-[#9B8E80] text-xs mt-1">{uploadProgress}%</p>
               </div>
             )}
             {processingStatus === 'analysing' && (
-              <p className="text-[#8888a0] text-sm">This may take up to 90 seconds. Please wait.</p>
+              <p className="text-[#6B6050] text-sm">This may take up to 90 seconds. Please wait.</p>
             )}
             {uploadError && <p className="text-xs text-red-400 mt-1">{uploadError}</p>}
           </div>

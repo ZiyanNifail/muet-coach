@@ -28,21 +28,36 @@ def _iris_gaze_on_camera(landmarks) -> bool:
     Falls back to True (non-penalising) when iris landmarks are absent.
     """
     lm = landmarks.landmark
-    if len(lm) < 478:
-        return True  # iris landmarks not available — don't penalise
 
-    def _ratio(iris_idx: int, outer_idx: int, inner_idx: int) -> float:
-        iris_x = lm[iris_idx].x
-        outer_x = lm[outer_idx].x
-        inner_x = lm[inner_idx].x
-        span = inner_x - outer_x
-        if abs(span) < 1e-6:
-            return 0.5
-        return (iris_x - outer_x) / span
+    if len(lm) >= 478:
+        # Primary: iris landmark gaze — most accurate
+        def _ratio(iris_idx: int, outer_idx: int, inner_idx: int) -> float:
+            iris_x = lm[iris_idx].x
+            outer_x = lm[outer_idx].x
+            inner_x = lm[inner_idx].x
+            span = inner_x - outer_x
+            if abs(span) < 1e-6:
+                return 0.5
+            return (iris_x - outer_x) / span
 
-    left_ratio = _ratio(468, 33, 133)
-    right_ratio = _ratio(473, 263, 362)
-    return 0.35 <= left_ratio <= 0.65 and 0.35 <= right_ratio <= 0.65
+        left_ratio = _ratio(468, 33, 133)
+        right_ratio = _ratio(473, 263, 362)
+        return 0.35 <= left_ratio <= 0.65 and 0.35 <= right_ratio <= 0.65
+
+    # Fallback: face-centering heuristic using nose tip (landmark 1) and
+    # midpoint of eye corners. If the nose is roughly centred horizontally
+    # the person is likely facing the camera.  This is less accurate than
+    # iris tracking but far better than unconditionally returning True.
+    if len(lm) >= 10:
+        nose_x = lm[1].x          # nose tip
+        # Left outer eye = 33, right outer eye = 263 (standard 468-landmark set)
+        left_eye_x  = lm[33].x
+        right_eye_x = lm[263].x
+        eye_mid_x   = (left_eye_x + right_eye_x) / 2
+        # Check nose is within ±0.15 of eye midpoint (normalised 0–1 frame width)
+        return abs(nose_x - eye_mid_x) < 0.15
+
+    return False  # no usable landmarks — assume looking away
 
 
 def _posture_score(pose_landmarks) -> float:

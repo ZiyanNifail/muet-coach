@@ -132,11 +132,11 @@ export default function CoursesPage() {
     <div className="p-6 flex flex-col gap-6 max-w-4xl">
       {/* Header */}
       <div>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a', marginBottom: 4 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
           COURSES
         </div>
-        <h1 className="text-2xl font-semibold text-[#e8e8f0]">My Courses</h1>
-        <p className="text-[#8888a0] text-sm mt-1">
+        <h1 className="text-2xl font-semibold text-[#1C1A17]">My Courses</h1>
+        <p className="text-[#6B6050] text-sm mt-1">
           Join a course using an invite code from your educator.
         </p>
       </div>
@@ -144,9 +144,9 @@ export default function CoursesPage() {
       {/* Join course */}
       <div
         className="flex flex-col gap-4 rounded-xl border p-5"
-        style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+        style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
       >
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
           JOIN A COURSE
         </div>
         <div className="flex gap-3">
@@ -155,10 +155,10 @@ export default function CoursesPage() {
             placeholder="Enter invite code (e.g. BEL311-X7K2)"
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-            className="flex-1 rounded-lg border px-3.5 py-2.5 text-sm text-[#e8e8f0] outline-none transition-colors placeholder:text-[#55556a] font-mono"
-            style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)' }}
-            onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.18)')}
-            onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.06)')}
+            className="flex-1 rounded-lg border px-3.5 py-2.5 text-sm text-[#1C1A17] outline-none transition-colors placeholder:text-[#9B8E80] font-mono"
+            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}
+            onFocus={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.50)')}
+            onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.22)')}
             onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
           />
           <Button onClick={handleJoin} disabled={!inviteCode.trim() || joining}>
@@ -173,7 +173,7 @@ export default function CoursesPage() {
       {/* Pending requests */}
       {pending.length > 0 && (
         <div className="flex flex-col gap-3">
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
             PENDING REQUESTS
           </div>
           {pending.map((m) => (
@@ -181,8 +181,8 @@ export default function CoursesPage() {
               style={{ background: 'rgba(245,158,11,0.04)', borderColor: 'rgba(245,158,11,0.15)' }}>
               <Clock size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-semibold text-[#e8e8f0]">{m.courses?.name}</span>
-                <span className="text-xs text-[#55556a] ml-2">{m.courses?.subject_code}</span>
+                <span className="text-sm font-semibold text-[#1C1A17]">{m.courses?.name}</span>
+                <span className="text-xs text-[#9B8E80] ml-2">{m.courses?.subject_code}</span>
               </div>
               <Badge variant="amber">Request Pending</Badge>
             </div>
@@ -192,17 +192,17 @@ export default function CoursesPage() {
 
       {/* Enrolled courses */}
       <div className="flex flex-col gap-3">
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
           ENROLLED COURSES {approved.length > 0 && `(${approved.length})`}
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-28 rounded-xl border" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-            <span className="text-[#55556a] text-sm">Loading...</span>
+          <div className="flex items-center justify-center h-28 rounded-xl border" style={{ borderColor: 'rgba(180,165,148,0.22)' }}>
+            <span className="text-[#9B8E80] text-sm">Loading...</span>
           </div>
         ) : approved.length === 0 ? (
-          <div className="flex items-center justify-center h-28 rounded-xl border" style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}>
-            <p className="text-[#55556a] text-sm">You are not enrolled in any courses yet.</p>
+          <div className="flex items-center justify-center h-28 rounded-xl border" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+            <p className="text-[#9B8E80] text-sm">You are not enrolled in any courses yet.</p>
           </div>
         ) : (
           approved.map((m) => {
@@ -214,7 +214,7 @@ export default function CoursesPage() {
               <div
                 key={m.id}
                 className="flex flex-col gap-4 rounded-xl border p-5"
-                style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
               >
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
@@ -223,18 +223,18 @@ export default function CoursesPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-sm font-semibold text-[#e8e8f0]">{course.name}</span>
+                      <span className="text-sm font-semibold text-[#1C1A17]">{course.name}</span>
                       <Badge variant="blue">{course.subject_code}</Badge>
                       <Badge variant="green">Enrolled</Badge>
                     </div>
                     {course.users && (
-                      <p className="text-xs text-[#55556a]">Educator: {course.users.full_name}</p>
+                      <p className="text-xs text-[#9B8E80]">Educator: {course.users.full_name}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Course actions */}
-                <div className="flex items-center gap-3 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                <div className="flex items-center gap-3 pt-2" style={{ borderTop: '1px solid rgba(180,165,148,0.08)' }}>
                   {hasRubric ? (
                     <Button
                       variant="ghost"
@@ -246,11 +246,11 @@ export default function CoursesPage() {
                       {rubricState !== 'loading' && rubricState !== 'error' && <ExternalLink size={11} className="ml-1.5 opacity-50" />}
                     </Button>
                   ) : (
-                    <span className="text-xs text-[#3a3a52] flex items-center gap-1">
+                    <span className="text-xs text-[#C4B8A8] flex items-center gap-1">
                       <FileText size={12} /> No rubric uploaded yet
                     </span>
                   )}
-                  <span className="text-[#3a3a52] text-xs ml-auto flex items-center gap-1">
+                  <span className="text-[#C4B8A8] text-xs ml-auto flex items-center gap-1">
                     <CheckCircle size={11} style={{ color: '#22c55e' }} />
                     Enrolled {new Date(m.requested_at).toLocaleDateString('en-MY', { dateStyle: 'medium' })}
                   </span>
@@ -261,29 +261,29 @@ export default function CoursesPage() {
                   const assignments = courseAssignments[course.id]
                   if (!assignments) return null
                   return (
-                    <div className="flex flex-col gap-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+                    <div className="flex flex-col gap-2 pt-2" style={{ borderTop: '1px solid rgba(180,165,148,0.08)' }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
                         ASSIGNMENTS {assignments.length > 0 && `(${assignments.length})`}
                       </div>
                       {assignments.length === 0 ? (
-                        <span className="text-xs text-[#3a3a52] flex items-center gap-1.5">
+                        <span className="text-xs text-[#C4B8A8] flex items-center gap-1.5">
                           <ClipboardList size={12} /> No assignments yet
                         </span>
                       ) : (
                         assignments.map((a) => (
                           <div key={a.id} className="flex items-start gap-3 rounded-lg border px-3 py-2.5"
-                            style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
-                            <ClipboardList size={13} style={{ color: '#8888a0', flexShrink: 0, marginTop: 1 }} />
+                            style={{ background: 'rgba(180,165,148,0.04)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                            <ClipboardList size={13} style={{ color: '#6B6050', flexShrink: 0, marginTop: 1 }} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-semibold text-[#e8e8f0]">{a.title}</span>
+                                <span className="text-xs font-semibold text-[#1C1A17]">{a.title}</span>
                                 {a.exam_mode && <Badge variant="amber">Exam Mode</Badge>}
                               </div>
                               {a.description && (
-                                <p className="text-[11px] text-[#55556a] mt-0.5 line-clamp-2">{a.description}</p>
+                                <p className="text-[11px] text-[#9B8E80] mt-0.5 line-clamp-2">{a.description}</p>
                               )}
                               {a.deadline && (
-                                <p className="text-[11px] text-[#3a3a52] mt-0.5">
+                                <p className="text-[11px] text-[#C4B8A8] mt-0.5">
                                   Due: {new Date(a.deadline).toLocaleDateString('en-MY', { dateStyle: 'medium' })}
                                 </p>
                               )}

@@ -73,11 +73,11 @@ export function VideoPlayer({ presentationId, eyeContactTimeline, duration }: Pr
   return (
     <div
       className="flex flex-col gap-3 rounded-xl border p-5"
-      style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#55556a' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
           SESSION REPLAY
         </div>
         {activeChunk != null && (
@@ -92,10 +92,10 @@ export function VideoPlayer({ presentationId, eyeContactTimeline, duration }: Pr
 
       {/* Video or states */}
       {fetchError ? (
-        <p className="text-xs text-center py-6" style={{ color: '#55556a' }}>{fetchError}</p>
+        <p className="text-xs text-center py-6" style={{ color: '#9B8E80' }}>{fetchError}</p>
       ) : !videoUrl ? (
         <div className="flex items-center justify-center h-32">
-          <span className="text-xs" style={{ color: '#55556a' }}>Loading video…</span>
+          <span className="text-xs" style={{ color: '#9B8E80' }}>Loading video…</span>
         </div>
       ) : (
         <video
@@ -113,10 +113,10 @@ export function VideoPlayer({ presentationId, eyeContactTimeline, duration }: Pr
       {eyeContactTimeline && eyeContactTimeline.length > 1 && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#3a3a52' }}>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C4B8A8' }}>
               EYE CONTACT TIMELINE
             </span>
-            <div className="flex items-center gap-3" style={{ fontSize: 9, color: '#55556a' }}>
+            <div className="flex items-center gap-3" style={{ fontSize: 9, color: '#9B8E80' }}>
               {[
                 { color: '#22c55e', label: '≥70%' },
                 { color: '#f59e0b', label: '40–70%' },
@@ -160,7 +160,7 @@ export function VideoPlayer({ presentationId, eyeContactTimeline, duration }: Pr
             />
           </div>
 
-          <p className="text-xs" style={{ color: '#3a3a52' }}>
+          <p className="text-xs" style={{ color: '#C4B8A8' }}>
             Click the timeline to seek · Red = low eye contact · Amber = moderate · Green = strong
           </p>
         </div>

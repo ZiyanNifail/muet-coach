@@ -51,7 +51,7 @@ const MODE_CONFIG = {
 const COACHING_RULES = [
   { icon: Mic,   label: 'Filler words',   desc: 'Alerts on um, uh, er, like…' },
   { icon: Clock, label: 'Pacing',         desc: 'Alerts below 90 or above 160 WPM' },
-  { icon: Eye,   label: 'Eye contact',    desc: 'Reminders every 45 s' },
+  { icon: Eye,   label: 'Eye contact',    desc: 'Gaze detection every 5 s' },
 ]
 
 export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: RecordingInterfaceProps) {
@@ -200,7 +200,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
         if (el) {
           if (displayText) {
             el.textContent = displayText
-            el.style.color = interimText ? 'rgba(232,232,240,0.6)' : '#e8e8f0'
+            el.style.color = interimText ? 'rgba(232,232,240,0.6)' : '#f0ede6'
             el.style.display = 'block'
           }
           if (!interimText && displayText) {
@@ -262,44 +262,64 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
     startRecognition('en-MY')
 
-    // ── Guided: periodic eye-contact reminders (honest — not fake detection) ──
-    // CRIT-03 fix: We cannot do real gaze tracking in the browser without a
-    // ML model. Instead we use timed reminders labelled honestly, plus a
-    // basic camera-blocked check (pixel darkness).
+    // ── Guided: real-time gaze detection via backend MediaPipe ──────────────
+    // Every 5 s, capture a video frame and POST it to /api/gaze-check.
+    // If the backend detects the face is looking away, show a warning immediately.
+    // Falls back to a camera-blocked check when the backend is unreachable.
     if (mode === 'guided') {
-      let reminderCount = 0
-      const REMINDERS = [
-        'Look directly at the camera — maintain eye contact',
-        'Keep steady eye contact with your audience',
-        'Remember to look at the camera, not the screen',
-        'Eye contact reminder — look toward the camera',
-      ]
+      let consecutiveOffCamera = 0
 
-      faceCheckRef.current = setInterval(() => {
+      faceCheckRef.current = setInterval(async () => {
         const video = videoRef.current
-        if (!video) return
+        if (!video || video.readyState < 2) return
 
-        // Check if camera appears blocked (nearly all-black frame)
+        // Capture a downscaled frame (320×240) as JPEG for the backend
         const canvas = document.createElement('canvas')
-        canvas.width = 80; canvas.height = 60
+        canvas.width = 320; canvas.height = 240
         const ctx = canvas.getContext('2d')
         if (!ctx) return
+
         try {
-          ctx.drawImage(video, 0, 0, 80, 60)
-          const { data } = ctx.getImageData(0, 0, 80, 60)
+          ctx.drawImage(video, 0, 0, 320, 240)
+
+          // Camera-blocked check (all-black frame)
+          const { data } = ctx.getImageData(0, 0, 320, 240)
           let bright = 0
           for (let i = 0; i < data.length; i += 4) {
             if (data[i] > 30 || data[i + 1] > 30 || data[i + 2] > 30) bright++
           }
-          if (bright / (80 * 60) < 0.05) {
+          if (bright / (320 * 240) < 0.05) {
             showWarning({ message: 'Camera appears blocked — check your webcam', isRed: true })
+            consecutiveOffCamera = 0
             return
           }
-        } catch { /* ignore cross-origin */ }
 
-        showWarning({ message: REMINDERS[reminderCount % REMINDERS.length], isRed: false })
-        reminderCount++
-      }, 45000)  // every 45 s — not too frequent
+          // Send frame to backend for MediaPipe gaze analysis
+          const b64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1]
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+          const res = await fetch(`${apiUrl}/api/gaze/check`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_base64: b64 }),
+          })
+          if (!res.ok) return
+
+          const { on_camera, face_detected } = await res.json()
+          if (!face_detected) {
+            consecutiveOffCamera++
+            if (consecutiveOffCamera >= 2) {
+              showWarning({ message: 'Face not visible — make sure you are in frame', isRed: true })
+            }
+          } else if (!on_camera) {
+            consecutiveOffCamera++
+            if (consecutiveOffCamera >= 2) {
+              showWarning({ message: 'Look at the camera — your gaze has drifted away', isRed: false })
+            }
+          } else {
+            consecutiveOffCamera = 0  // reset on good gaze
+          }
+        } catch { /* network error — skip silently */ }
+      }, 5000)  // every 5 s for responsive feedback
     }
 
     return () => {
@@ -449,13 +469,13 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
   const initRemSecs = maxSecs % 60
   const initRemStr = `${initRemMins}:${initRemSecs.toString().padStart(2, '0')}`
 
-  const dotColor = status === 'recording' ? cfg.accentColor : status === 'paused' ? '#f59e0b' : '#55556a'
+  const dotColor = status === 'recording' ? cfg.accentColor : status === 'paused' ? '#f59e0b' : '#9B8E80'
 
   if (error) {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-md w-full flex flex-col gap-4 rounded-2xl border p-6 text-center"
-          style={{ background: 'rgba(14,14,22,0.55)', borderColor: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
+          style={{ background: 'rgba(245,242,237,0.95)', borderColor: 'rgba(180,165,148,0.30)', backdropFilter: 'blur(20px)' }}>
           <Camera size={32} className="mx-auto" style={{ color: '#ef4444', opacity: 0.7 }} />
           <p className="text-[#ef4444] text-sm">{error}</p>
           <Button variant="secondary" onClick={() => window.location.reload()}>Try Again</Button>
@@ -495,9 +515,9 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             >
               {cfg.label}
             </span>
-            <span className="text-[10px] text-[#55556a] hidden sm:inline">{cfg.badge}</span>
+            <span className="text-[10px] text-[#9B8E80] hidden sm:inline">{cfg.badge}</span>
           </div>
-          <span className="text-xs text-[#8888a0] truncate max-w-[45%] text-right">{topic}</span>
+          <span className="text-xs text-[#6B6050] truncate max-w-[45%] text-right">{topic}</span>
         </div>
 
         {/* Video feed */}
@@ -508,17 +528,20 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
           {/* Guided warning overlay — slides in from top */}
           {warning && mode === 'guided' && (
             <div
-              className="warning-overlay flex items-center gap-2 text-sm"
+              className="warning-overlay flex items-center gap-2 text-sm font-medium"
               style={{
                 position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-                background: warning.isRed ? 'rgba(239,68,68,0.18)' : 'rgba(245,158,11,0.18)',
-                border: `1px solid ${warning.isRed ? 'rgba(239,68,68,0.45)' : 'rgba(245,158,11,0.45)'}`,
-                color: warning.isRed ? '#ef4444' : '#f59e0b',
-                backdropFilter: 'blur(10px)', borderRadius: 8, padding: '8px 16px',
+                background: warning.isRed ? 'rgba(30,5,5,0.92)' : 'rgba(28,18,0,0.92)',
+                border: `1px solid ${warning.isRed ? 'rgba(239,68,68,0.7)' : 'rgba(245,158,11,0.7)'}`,
+                color: warning.isRed ? '#fca5a5' : '#fcd34d',
+                borderRadius: 8, padding: '9px 18px',
                 whiteSpace: 'nowrap', zIndex: 20,
+                boxShadow: warning.isRed
+                  ? '0 4px 20px rgba(239,68,68,0.35)'
+                  : '0 4px 20px rgba(245,158,11,0.35)',
               }}
             >
-              <AlertTriangle size={14} />
+              <AlertTriangle size={14} style={{ flexShrink: 0 }} />
               {warning.message}
             </div>
           )}
@@ -551,7 +574,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             <p ref={subtitleDomRef} style={{
               display: 'none',
               fontSize: 14, fontWeight: 500, lineHeight: 1.4,
-              color: '#e8e8f0',
+              color: '#f0ede6',
               textShadow: '0 1px 4px rgba(0,0,0,0.8)',
               maxWidth: '100%', wordBreak: 'break-word',
             }} />
@@ -567,10 +590,10 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
         {/* Timer + progress */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span ref={timerDisplayRef} className="font-mono text-sm text-[#e8e8f0]">00:00</span>
-            <span ref={remDisplayRef} className="font-mono text-xs text-[#55556a]">{initRemStr} remaining</span>
+            <span ref={timerDisplayRef} className="font-mono text-sm text-[#1C1A17]">00:00</span>
+            <span ref={remDisplayRef} className="font-mono text-xs text-[#9B8E80]">{initRemStr} remaining</span>
           </div>
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(180,165,148,0.22)' }}>
             <div ref={progressFillRef} className="h-full rounded-full"
               style={{ width: '0%', background: cfg.accentColor }} />
           </div>
@@ -614,8 +637,8 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
                     <Icon size={12} style={{ color: '#22c55e' }} />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-[#e8e8f0]">{rule.label}</p>
-                    <p className="text-[11px] text-[#55556a]">{rule.desc}</p>
+                    <p className="text-xs font-medium text-[#1C1A17]">{rule.label}</p>
+                    <p className="text-[11px] text-[#9B8E80]">{rule.desc}</p>
                   </div>
                 </div>
               )
@@ -638,7 +661,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             {['No pausing allowed', 'No coaching interruptions', 'Timed delivery', 'MUET rubric scoring'].map(rule => (
               <div key={rule} className="flex items-center gap-2">
                 <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: '#f59e0b' }} />
-                <p className="text-[11px] text-[#8888a0]">{rule}</p>
+                <p className="text-[11px] text-[#6B6050]">{rule}</p>
               </div>
             ))}
           </div>
@@ -654,7 +677,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
             {['No interruptions during recording', 'Full AI analysis after you stop', 'Your natural delivery baseline'].map(rule => (
               <div key={rule} className="flex items-center gap-2">
                 <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: '#6b7280' }} />
-                <p className="text-[11px] text-[#8888a0]">{rule}</p>
+                <p className="text-[11px] text-[#6B6050]">{rule}</p>
               </div>
             ))}
           </div>
@@ -662,10 +685,10 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
 
         {/* Live transcript panel — all modes */}
         <div className="flex-1 rounded-xl border flex flex-col overflow-hidden"
-          style={{ background: 'rgba(14,14,22,0.5)', borderColor: 'rgba(255,255,255,0.06)', minHeight: 180, contain: 'layout' }}>
+          style={{ background: 'rgba(255,255,255,0.75)', borderColor: 'rgba(180,165,148,0.22)', minHeight: 180, contain: 'layout' }}>
           <div className="px-3 border-b flex items-center justify-between"
-            style={{ borderColor: 'rgba(255,255,255,0.06)', height: 32, flexShrink: 0 }}>
-            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#55556a' }}>
+            style={{ borderColor: 'rgba(180,165,148,0.22)', height: 32, flexShrink: 0 }}>
+            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9B8E80' }}>
               Live Transcript
             </p>
             {/* Fixed-width right slot prevents layout shift when badge appears */}
@@ -688,26 +711,26 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, onComplete }: R
               speechAvailable === false ? (
                 <div className="flex flex-col gap-2">
                   <p className="text-[11px] text-[#f59e0b]">Live transcript unavailable.</p>
-                  <p className="text-[10px] text-[#55556a] leading-4">
-                    Use <strong className="text-[#8888a0]">Chrome or Edge</strong> for live transcript.
+                  <p className="text-[10px] text-[#9B8E80] leading-4">
+                    Use <strong className="text-[#6B6050]">Chrome or Edge</strong> for live transcript.
                     Firefox, Safari, and Opera do not support this API.
                     Your recording is still saved — the AI will transcribe it after you stop.
                   </p>
                 </div>
               ) : (
-                <p className="text-[11px] text-[#55556a] italic">
+                <p className="text-[11px] text-[#9B8E80] italic">
                   {status === 'recording' ? 'Start speaking — transcript will appear here…' : 'Transcript will appear when recording starts.'}
                 </p>
               )
             ) : (
               transcript.map((line, i) => (
-                <p key={i} className="text-xs text-[#e8e8f0] leading-relaxed">{line}</p>
+                <p key={i} className="text-xs text-[#1C1A17] leading-relaxed">{line}</p>
               ))
             )}
           </div>
 
-          <div className="px-3 py-1.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)', height: 28, flexShrink: 0 }}>
-            <p className="text-[9px] text-[#55556a]">
+          <div className="px-3 py-1.5 border-t" style={{ borderColor: 'rgba(180,165,148,0.22)', height: 28, flexShrink: 0 }}>
+            <p className="text-[9px] text-[#9B8E80]">
               {transcript.length > 0 ? `${transcriptRef.current.split(/\s+/).filter(Boolean).length} words` : ''}
             </p>
           </div>

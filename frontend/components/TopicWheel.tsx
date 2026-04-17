@@ -115,8 +115,8 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
       <div
         className="w-full max-w-lg flex flex-col gap-5 rounded-2xl border p-6"
         style={{
-          background: 'rgba(14,14,22,0.55)',
-          borderColor: 'rgba(255,255,255,0.08)',
+          background: 'rgba(245,242,237,0.95)',
+          borderColor: 'rgba(180,165,148,0.30)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
         }}
@@ -141,7 +141,7 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
               fontWeight: 600,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              color: '#55556a',
+              color: '#9B8E80',
             }}
           >
             Selecting your topic
@@ -174,7 +174,7 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
             className="absolute inset-x-0 top-0 pointer-events-none z-10"
             style={{
               height: ITEM_H * 2.2,
-              background: 'linear-gradient(to bottom, rgba(10,10,18,0.92) 0%, transparent 100%)',
+              background: 'linear-gradient(to bottom, rgba(240,237,230,0.95) 0%, transparent 100%)',
             }}
           />
           {/* Bottom gradient fade */}
@@ -182,7 +182,7 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
             className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
             style={{
               height: ITEM_H * 2.2,
-              background: 'linear-gradient(to top, rgba(10,10,18,0.92) 0%, transparent 100%)',
+              background: 'linear-gradient(to top, rgba(240,237,230,0.95) 0%, transparent 100%)',
             }}
           />
 
@@ -203,7 +203,7 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
                   className="flex items-center justify-center px-8 text-center"
                   style={{
                     height: ITEM_H,
-                    color: isSelected ? '#e8e8f0' : '#3a3a52',
+                    color: isSelected ? '#1C1A17' : '#C4B8A8',
                     opacity: isSelected ? 1 : 0.5,
                     filter: isSelected ? 'none' : 'blur(1.5px)',
                     fontSize: isSelected ? 15 : 13,

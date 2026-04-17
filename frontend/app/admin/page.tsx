@@ -92,13 +92,13 @@ export default function AdminPage() {
           <div
             style={{
               fontSize: 10, fontWeight: 600, letterSpacing: '0.12em',
-              textTransform: 'uppercase', color: '#55556a', marginBottom: 4,
+              textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4,
             }}
           >
             ADMIN PANEL
           </div>
-          <h1 className="text-2xl font-semibold text-[#e8e8f0]">Educator Approvals</h1>
-          <p className="text-[#8888a0] text-sm mt-1">
+          <h1 className="text-2xl font-semibold text-[#1C1A17]">Educator Approvals</h1>
+          <p className="text-[#6B6050] text-sm mt-1">
             Review pending educator registration requests.
           </p>
         </div>
@@ -131,15 +131,15 @@ export default function AdminPage() {
       {/* Content */}
       <div
         className="rounded-xl border"
-        style={{ background: 'rgba(14,14,22,0.45)', borderColor: 'rgba(255,255,255,0.06)' }}
+        style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
       >
         {/* Table header */}
         <div
           className="grid gap-4 px-5 py-3 text-[10px] font-semibold tracking-widest uppercase"
           style={{
             gridTemplateColumns: '1fr 1fr auto auto auto',
-            color: '#55556a',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            color: '#9B8E80',
+            borderBottom: '1px solid rgba(180,165,148,0.22)',
           }}
         >
           <span>Name</span>
@@ -152,12 +152,12 @@ export default function AdminPage() {
         {/* Rows */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <span className="text-[#55556a] text-sm">Loading...</span>
+            <span className="text-[#9B8E80] text-sm">Loading...</span>
           </div>
         ) : approvals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <CheckCircle size={28} style={{ color: '#22c55e', opacity: 0.5 }} />
-            <p className="text-[#55556a] text-sm">No pending approvals.</p>
+            <p className="text-[#9B8E80] text-sm">No pending approvals.</p>
           </div>
         ) : (
           approvals.map((a, i) => (
@@ -166,16 +166,16 @@ export default function AdminPage() {
               className="grid gap-4 px-5 py-4 items-center"
               style={{
                 gridTemplateColumns: '1fr 1fr auto auto auto',
-                borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.04)',
+                borderTop: i === 0 ? 'none' : '1px solid rgba(180,165,148,0.08)',
               }}
             >
-              <span className="text-sm text-[#e8e8f0] truncate">
+              <span className="text-sm text-[#1C1A17] truncate">
                 {a.users?.full_name || 'Unknown'}
               </span>
-              <span className="text-sm text-[#8888a0] truncate">
+              <span className="text-sm text-[#6B6050] truncate">
                 {a.users?.email || a.educator_id}
               </span>
-              <span className="text-xs text-[#55556a] whitespace-nowrap">
+              <span className="text-xs text-[#9B8E80] whitespace-nowrap">
                 {a.submitted_at
                   ? new Date(a.submitted_at).toLocaleDateString('en-MY', { dateStyle: 'medium' })
                   : '—'}
@@ -209,9 +209,9 @@ export default function AdminPage() {
         )}
       </div>
 
-      <p className="text-[#3a3a52] text-xs">
-        Approving an educator sets their account role to <code className="text-[#55556a]">educator</code> in the database.
-        Rejected requests are hidden from this queue. All actions are logged via <code className="text-[#55556a]">educator_approvals.reviewed_at</code>.
+      <p className="text-[#C4B8A8] text-xs">
+        Approving an educator sets their account role to <code className="text-[#9B8E80]">educator</code> in the database.
+        Rejected requests are hidden from this queue. All actions are logged via <code className="text-[#9B8E80]">educator_approvals.reviewed_at</code>.
       </p>
     </div>
   )

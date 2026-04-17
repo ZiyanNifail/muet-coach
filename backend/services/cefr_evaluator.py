@@ -52,42 +52,45 @@ def compute_band_score(
 
     Returns a float between 1.0 and 6.0.
     """
-    score = 3.0  # baseline
+    score = 2.7  # lower baseline — bonuses must be earned, not assumed
 
-    # WPM
+    # WPM — only ideal range earns a bonus; acceptable is neutral; poor is penalised
     if wpm_avg is not None:
         if WPM_IDEAL_MIN <= wpm_avg <= WPM_IDEAL_MAX:
             score += 0.5
-        elif WPM_ACCEPTABLE_MIN <= wpm_avg < WPM_IDEAL_MIN or WPM_IDEAL_MAX < wpm_avg <= WPM_ACCEPTABLE_MAX:
-            score += 0.2
         elif wpm_avg < WPM_POOR_MIN or wpm_avg > WPM_POOR_MAX:
             score -= 0.5
+        # acceptable range (110–170 excl. ideal): no bonus — neutral
 
     # Eye contact — skipped entirely when face not detected (None)
     if eye_contact_pct is not None:
-        if eye_contact_pct >= EYE_CONTACT_GOOD:
+        if eye_contact_pct >= EYE_CONTACT_GOOD:       # ≥70 %
             score += 0.5
-        elif eye_contact_pct >= EYE_CONTACT_OK:
-            score += 0.2
-        elif eye_contact_pct < EYE_CONTACT_POOR:
+        elif eye_contact_pct >= EYE_CONTACT_OK:        # 50–70 %: neutral
+            pass
+        elif eye_contact_pct >= EYE_CONTACT_POOR:      # 30–50 %: mild penalty
+            score -= 0.2
+        else:                                           # <30 %: hard penalty
             score -= 0.5
 
-    # Filler density
+    # Filler density — 5–10/min is now penalised (was neutral at 0)
     if filler_density is not None:
-        if filler_density < FILLER_GOOD:
+        if filler_density < FILLER_GOOD:               # <3/min
             score += 0.5
-        elif filler_density < FILLER_OK:
-            score += 0.2
-        elif filler_density > FILLER_POOR:
+        elif filler_density < FILLER_OK:               # 3–5/min
+            score += 0.1
+        elif filler_density <= FILLER_POOR:            # 5–10/min: mild penalty
+            score -= 0.2
+        else:                                           # >10/min
             score -= 0.5
 
     # Posture — skipped entirely when pose not detected (None)
     if posture_score is not None:
-        if posture_score >= POSTURE_GOOD:
+        if posture_score >= POSTURE_GOOD:              # ≥80
             score += 0.3
-        elif posture_score >= POSTURE_OK:
-            score += 0.1
-        elif posture_score < POSTURE_POOR:
+        elif posture_score < POSTURE_OK:               # <60: neutral → only poor gets hit
+            pass
+        if posture_score < POSTURE_POOR:               # <40
             score -= 0.3
 
     # Lexical diversity (type-token ratio)
