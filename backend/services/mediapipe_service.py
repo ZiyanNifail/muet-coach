@@ -1,38 +1,63 @@
 """
-MediaPipe service — T2.14 (Face Mesh) and T2.15 (Pose).
+MediaPipe service — T2.14 (Face Landmark) and T2.15 (Pose).
+
+Uses MediaPipe Tasks API (0.10.x+). Models are downloaded on first use to
+backend/models/ and reused on subsequent calls.
 
 Analyses video frames to compute:
   - eye_contact_pct: proportion of frames where iris gaze is directed at camera
   - posture_score: 100 - head_tilt*2 - shoulder_diff/5 (clamped 0–100)
   - confidence_flags: { face_ok, pose_ok }
-
-Requires: mediapipe, opencv-python-headless
 """
 import math
+import os
+import urllib.request
+import logging
 from typing import Optional
 
+logger = logging.getLogger(__name__)
 
-def _iris_gaze_on_camera(landmarks) -> bool:
+_PROCESS_WIDTH = 640
+_PROCESS_HEIGHT = 360
+
+_MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
+_FACE_MODEL_PATH = os.path.join(_MODELS_DIR, "face_landmarker.task")
+_POSE_MODEL_PATH = os.path.join(_MODELS_DIR, "pose_landmarker_lite.task")
+_FACE_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+_POSE_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+
+
+def _ensure_model(path: str, url: str) -> bool:
+    """Download model file if not present. Returns True if available."""
+    if os.path.exists(path):
+        return True
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    try:
+        logger.info("Downloading MediaPipe model from %s ...", url)
+        tmp = path + ".tmp"
+        urllib.request.urlretrieve(url, tmp)
+        os.replace(tmp, path)
+        logger.info("Model saved to %s", path)
+        return True
+    except Exception as exc:
+        logger.warning("Could not download MediaPipe model: %s", exc)
+        return False
+
+
+def _iris_gaze_on_camera(lm: list) -> bool:
     """
-    Estimate gaze direction using iris landmark positions (requires refine_landmarks=True).
+    Estimate gaze direction using iris landmark positions.
 
-    Iris centres:      left=468, right=473
-    Eye corners (inner/outer):
-      Left eye:  inner=133, outer=33
-      Right eye: inner=362, outer=263
+    Tasks API: lm is a plain list of NormalizedLandmark (same indices as FaceMesh).
+    Iris centres:   left=468, right=473
+    Eye corners:    left outer=33, inner=133 / right outer=263, inner=362
 
-    Computes the normalised iris-X ratio for each eye:
-      ratio = (iris_x - corner_outer_x) / (corner_inner_x - corner_outer_x)
-    A ratio in [0.35, 0.65] means the iris is roughly centred → looking at camera.
-    Both eyes must pass for the frame to count as eye-contact.
-    Falls back to True (non-penalising) when iris landmarks are absent.
+    A normalised iris-X ratio in [0.35, 0.65] means looking at camera.
+    Falls back to nose-centering heuristic when iris landmarks are absent.
     """
-    lm = landmarks.landmark
-
     if len(lm) >= 478:
-        # Primary: iris landmark gaze — most accurate
         def _ratio(iris_idx: int, outer_idx: int, inner_idx: int) -> float:
-            iris_x = lm[iris_idx].x
+            iris_x  = lm[iris_idx].x
             outer_x = lm[outer_idx].x
             inner_x = lm[inner_idx].x
             span = inner_x - outer_x
@@ -40,47 +65,36 @@ def _iris_gaze_on_camera(landmarks) -> bool:
                 return 0.5
             return (iris_x - outer_x) / span
 
-        left_ratio = _ratio(468, 33, 133)
+        left_ratio  = _ratio(468, 33, 133)
         right_ratio = _ratio(473, 263, 362)
         return 0.35 <= left_ratio <= 0.65 and 0.35 <= right_ratio <= 0.65
 
-    # Fallback: face-centering heuristic using nose tip (landmark 1) and
-    # midpoint of eye corners. If the nose is roughly centred horizontally
-    # the person is likely facing the camera.  This is less accurate than
-    # iris tracking but far better than unconditionally returning True.
     if len(lm) >= 10:
-        nose_x = lm[1].x          # nose tip
-        # Left outer eye = 33, right outer eye = 263 (standard 468-landmark set)
+        nose_x      = lm[1].x
         left_eye_x  = lm[33].x
         right_eye_x = lm[263].x
         eye_mid_x   = (left_eye_x + right_eye_x) / 2
-        # Check nose is within ±0.15 of eye midpoint (normalised 0–1 frame width)
         return abs(nose_x - eye_mid_x) < 0.15
 
-    return False  # no usable landmarks — assume looking away
+    return False
 
 
-def _posture_score(pose_landmarks) -> float:
+def _posture_score(lm: list) -> float:
     """
     Score = 100 - head_tilt*2 - shoulder_diff/5, clamped 0–100.
-    head_tilt   = abs angle of nose (0) relative to mid-hip (23/24)
-    shoulder_diff = abs(left_shoulder.y - right_shoulder.y) * 100 (pct of frame)
+    Tasks API: lm is a plain list of NormalizedLandmark.
+    Nose=0, left_shoulder=11, right_shoulder=12.
     """
-    lm = pose_landmarks.landmark
-    # Nose = 0, left_shoulder = 11, right_shoulder = 12
     nose = lm[0]
-    ls = lm[11]
-    rs = lm[12]
+    ls   = lm[11]
+    rs   = lm[12]
 
     mid_shoulder_x = (ls.x + rs.x) / 2
     mid_shoulder_y = (ls.y + rs.y) / 2
 
-    # Head tilt: angle of nose relative to shoulder midpoint (degrees)
     dx = nose.x - mid_shoulder_x
     dy = nose.y - mid_shoulder_y
-    head_tilt = abs(math.degrees(math.atan2(dx, -dy)))  # 0° = perfectly upright
-
-    # Shoulder height difference (as % of frame)
+    head_tilt     = abs(math.degrees(math.atan2(dx, -dy)))
     shoulder_diff = abs(ls.y - rs.y) * 100
 
     score = 100 - head_tilt * 2 - shoulder_diff / 5
@@ -90,10 +104,11 @@ def _posture_score(pose_landmarks) -> float:
 async def analyse_video(video_path: str) -> dict:
     """
     Analyse video frames at 3 FPS for eye contact and posture.
-    Falls back gracefully if mediapipe or opencv is not installed.
+    Uses MediaPipe Tasks API. Falls back gracefully if models or packages unavailable.
 
     Returns:
-      { eye_contact_pct, posture_score, confidence_flags: { face_ok, pose_ok } }
+      { eye_contact_pct, posture_score, eye_contact_timeline,
+        confidence_flags: { face_ok, pose_ok } }
     """
     _EMPTY = {
         "eye_contact_pct": None,
@@ -105,46 +120,68 @@ async def analyse_video(video_path: str) -> dict:
     try:
         import cv2
         import mediapipe as mp
+        from mediapipe.tasks import python as mp_python
+        from mediapipe.tasks.python import vision as mp_vision
     except ImportError:
         return _EMPTY
 
-    mp_face = mp.solutions.face_mesh
-    mp_pose = mp.solutions.pose
+    face_model_ok = _ensure_model(_FACE_MODEL_PATH, _FACE_MODEL_URL)
+    pose_model_ok = _ensure_model(_POSE_MODEL_PATH, _POSE_MODEL_URL)
+
+    if not face_model_ok and not pose_model_ok:
+        logger.warning("No MediaPipe models available — skipping visual analysis")
+        return _EMPTY
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         return _EMPTY
 
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
-    native_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    total_frames  = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
+    native_fps    = cap.get(cv2.CAP_PROP_FPS) or 30.0
     duration_secs = total_frames / native_fps
 
-    # Sample at 3 FPS, capped at 120 frames — seek directly to avoid decoding every frame
-    target_fps = 3.0
-    n_samples = max(10, min(120, int(duration_secs * target_fps)))
+    if duration_secs < 120:
+        target_fps = 3.0
+    elif duration_secs < 300:
+        target_fps = 2.0
+    else:
+        target_fps = 1.5
+    n_samples        = max(10, min(120, int(duration_secs * target_fps)))
     sample_positions = [int(i * total_frames / n_samples) for i in range(n_samples)]
 
     eye_contact_frames = 0
     posture_scores: list[float] = []
-    face_detected = 0
-    pose_detected = 0
-    total_sampled = 0
+    face_detected  = 0
+    pose_detected  = 0
+    total_sampled  = 0
 
-    # IMP-03: per-10s chunk gaze tracking for session replay timeline
     CHUNK_SECS = 10
     chunk_gaze: dict[int, list[bool]] = {}
 
-    with mp_face.FaceMesh(
-        static_image_mode=True,   # static_image_mode=True is faster when seeking
-        max_num_faces=1,
-        refine_landmarks=True,    # enables 478 landmarks including iris (indices 468–477)
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5,
-    ) as face_mesh, mp_pose.Pose(
-        static_image_mode=True,
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5,
-    ) as pose:
+    face_lm = None
+    pose_lm = None
+    try:
+        if face_model_ok:
+            face_options = mp_vision.FaceLandmarkerOptions(
+                base_options=mp_python.BaseOptions(model_asset_path=_FACE_MODEL_PATH),
+                running_mode=mp_vision.RunningMode.IMAGE,
+                num_faces=1,
+                min_face_detection_confidence=0.5,
+                min_face_presence_confidence=0.5,
+                output_face_blendshapes=False,
+                output_facial_transformation_matrixes=False,
+            )
+            face_lm = mp_vision.FaceLandmarker.create_from_options(face_options)
+
+        if pose_model_ok:
+            pose_options = mp_vision.PoseLandmarkerOptions(
+                base_options=mp_python.BaseOptions(model_asset_path=_POSE_MODEL_PATH),
+                running_mode=mp_vision.RunningMode.IMAGE,
+                min_pose_detection_confidence=0.5,
+                min_pose_presence_confidence=0.5,
+            )
+            pose_lm = mp_vision.PoseLandmarker.create_from_options(pose_options)
+
         for frame_pos in sample_positions:
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame_pos)
             ret, frame = cap.read()
@@ -152,31 +189,37 @@ async def analyse_video(video_path: str) -> dict:
                 continue
 
             total_sampled += 1
-            t_sec = frame_pos / native_fps
+            t_sec     = frame_pos / native_fps
             chunk_key = int(t_sec / CHUNK_SECS)
-            img_h, img_w = frame.shape[:2]
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            # Face Mesh — eye contact via iris gaze
+            frame_small = cv2.resize(frame, (_PROCESS_WIDTH, _PROCESS_HEIGHT))
+            rgb         = cv2.cvtColor(frame_small, cv2.COLOR_BGR2RGB)
+            mp_image    = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+
             eye_on = False
-            face_results = face_mesh.process(rgb)
-            if face_results.multi_face_landmarks:
-                face_detected += 1
-                fl = face_results.multi_face_landmarks[0]
-                eye_on = _iris_gaze_on_camera(fl)
-                if eye_on:
-                    eye_contact_frames += 1
+            if face_lm is not None:
+                face_result = face_lm.detect(mp_image)
+                if face_result.face_landmarks:
+                    face_detected += 1
+                    lm     = face_result.face_landmarks[0]
+                    eye_on = _iris_gaze_on_camera(lm)
+                    if eye_on:
+                        eye_contact_frames += 1
             chunk_gaze.setdefault(chunk_key, []).append(eye_on)
 
-            # Pose — posture
-            pose_results = pose.process(rgb)
-            if pose_results.pose_landmarks:
-                pose_detected += 1
-                posture_scores.append(_posture_score(pose_results.pose_landmarks))
+            if pose_lm is not None:
+                pose_result = pose_lm.detect(mp_image)
+                if pose_result.pose_landmarks:
+                    pose_detected += 1
+                    posture_scores.append(_posture_score(pose_result.pose_landmarks[0]))
 
-    cap.release()
+    finally:
+        cap.release()
+        if face_lm is not None:
+            face_lm.close()
+        if pose_lm is not None:
+            pose_lm.close()
 
-    # Build eye contact timeline from chunk data
     eye_contact_timeline = [
         {"t": chunk_key * CHUNK_SECS, "value": round(sum(v) / len(v) * 100, 1)}
         for chunk_key, v in sorted(chunk_gaze.items())
@@ -186,12 +229,12 @@ async def analyse_video(video_path: str) -> dict:
     if total_sampled == 0:
         return _EMPTY
 
-    eye_pct = round((eye_contact_frames / total_sampled) * 100, 1) if face_detected > 0 else None
-    avg_posture = round(sum(posture_scores) / len(posture_scores), 1) if posture_scores else None
+    eye_pct      = round((eye_contact_frames / total_sampled) * 100, 1) if face_detected > 0 else None
+    avg_posture  = round(sum(posture_scores) / len(posture_scores), 1) if posture_scores else None
 
     return {
-        "eye_contact_pct": eye_pct,
-        "posture_score": avg_posture,
+        "eye_contact_pct":      eye_pct,
+        "posture_score":        avg_posture,
         "eye_contact_timeline": eye_contact_timeline if len(eye_contact_timeline) > 1 else None,
         "confidence_flags": {
             "face_ok": face_detected > 0,
