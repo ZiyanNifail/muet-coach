@@ -329,6 +329,10 @@ export function ExamContent() {
         mode="exam"
         maxSecs={120}
         onComplete={handleSpeakingComplete}
+        onCancel={(action) => {
+          if (action === 'restart') setStep('speaking_prep')
+          else setStep('speaking_prep')
+        }}
       />
     )
   }
