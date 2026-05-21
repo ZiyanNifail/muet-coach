@@ -42,7 +42,10 @@ from services.supabase_client import (
     db_create_assignment,
     db_get_course_submissions,
     db_get_educator_analytics,
+    db_get_all_students,
+    db_get_students_overview,
 )
+from typing import List
 from services.storage_service import upload_rubric, get_rubric_signed_url
 
 logger = logging.getLogger(__name__)
@@ -129,6 +132,28 @@ async def create_course(
     if not course:
         raise HTTPException(500, "Failed to create course — insert returned no data.")
     return {"course": course}
+
+
+# ── Educator: all registered students (for exam invite workflows) ─────────────
+
+@router.get("/all-students")
+async def list_all_students(user_id: str = Depends(get_current_user_id)):
+    """Returns every registered student in the system — used by invite modals."""
+    students = db_get_all_students()
+    return {"students": students}
+
+
+# ── Educator: students overview (with band stats + course list) ───────────────
+
+@router.get("/students-overview")
+async def students_overview(
+    educator_id: str = Query(...),
+    user_id: str = Depends(get_current_user_id),
+):
+    if educator_id != user_id:
+        raise HTTPException(403, "Access denied.")
+    students = db_get_students_overview(educator_id)
+    return {"students": students}
 
 
 # ── Educator: analytics ───────────────────────────────────────────────────────
@@ -297,6 +322,18 @@ async def invite_student(
 
 # ── Educator: assignments ─────────────────────────────────────────────────────
 
+@router.get("/assignment/{assignment_id}")
+async def get_assignment(
+    assignment_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    from services.supabase_client import db_get_assignment
+    assignment = db_get_assignment(assignment_id)
+    if not assignment:
+        raise HTTPException(404, "Assignment not found.")
+    return {"assignment": assignment}
+
+
 @router.get("/{course_id}/assignments")
 async def list_assignments(
     course_id: str,
@@ -311,6 +348,10 @@ class CreateAssignmentBody(BaseModel):
     description: Optional[str] = ""
     deadline: Optional[str] = None
     exam_mode: bool = False
+    slide_required: bool = False
+    scheduled_at: Optional[str] = None
+    exam_duration_mins: Optional[int] = None
+    exam_topic_id: Optional[str] = None
 
 
 @router.post("/{course_id}/assignments")
@@ -321,11 +362,65 @@ async def create_assignment(
 ):
     assignment = db_create_assignment(
         course_id, body.title, body.description or "",
-        body.deadline, body.exam_mode,
+        body.deadline, body.exam_mode, body.slide_required,
+        scheduled_at=body.scheduled_at,
+        exam_duration_mins=body.exam_duration_mins,
+        exam_topic_id=body.exam_topic_id,
     )
     if not assignment:
         raise HTTPException(500, "Failed to create assignment.")
     return {"assignment": assignment}
+
+
+# ── Student: per-assignment submission status ─────────────────────────────────
+
+@router.get("/{course_id}/my-assignment-status")
+async def my_assignment_status(
+    course_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Returns the student's submission state for every assignment in the course.
+    Each entry: { assignment_id, presentation_id, status, grade_released }
+    """
+    sb = get_supabase()
+    if sb is None:
+        return {"statuses": []}
+    try:
+        assign_res = sb.table("assignments").select("id").eq("course_id", course_id).execute()
+        assignment_ids = [a["id"] for a in (assign_res.data or [])]
+        if not assignment_ids:
+            return {"statuses": []}
+
+        pres_res = (
+            sb.table("presentations")
+            .select("id, assignment_id, status, educator_overrides(released_at)")
+            .eq("student_id", user_id)
+            .in_("assignment_id", assignment_ids)
+            .order("uploaded_at", desc=True)
+            .execute()
+        )
+
+        seen: dict = {}
+        for p in (pres_res.data or []):
+            aid = p["assignment_id"]
+            if aid in seen:
+                continue
+            overrides = p.get("educator_overrides") or []
+            if isinstance(overrides, dict):
+                overrides = [overrides]
+            grade_released = any(o.get("released_at") for o in overrides)
+            seen[aid] = {
+                "assignment_id": aid,
+                "presentation_id": p["id"],
+                "status": p["status"],
+                "grade_released": grade_released,
+            }
+
+        return {"statuses": list(seen.values())}
+    except Exception as exc:
+        logger.warning("my_assignment_status error: %s", exc)
+        return {"statuses": []}
 
 
 # ── Educator: submissions ─────────────────────────────────────────────────────

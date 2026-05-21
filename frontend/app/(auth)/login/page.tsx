@@ -4,14 +4,15 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { signIn, signOut, getAppUser, getEducatorApprovalStatus } from '@/lib/auth'
-import { ShieldCheck, X } from 'lucide-react'
+import { signIn, signOut, signInWithGoogle, getAppUser, getEducatorApprovalStatus } from '@/lib/auth'
+import { ShieldCheck, X, ArrowLeft } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const router = useRouter()
 
   // Admin bubble state
@@ -231,26 +232,66 @@ export default function LoginPage() {
       <div
         className="w-full max-w-sm flex flex-col gap-6 rounded-xl border p-8"
         style={{
-          background: 'rgba(245,242,237,0.95)',
-          borderColor: 'rgba(180,165,148,0.22)',
-          backdropFilter: 'blur(12px)',
+          background: 'rgba(18, 42, 36, 0.55)',
+          borderColor: 'rgba(58,125,106,0.30)',
+          backdropFilter: 'blur(24px)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.40)',
         }}
       >
         <div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-[#7AB5A8] text-xs hover:text-[#5BB5A0] transition-colors mb-4"
+          >
+            <ArrowLeft size={13} />
+            Back to home
+          </Link>
           <div
             style={{
               fontSize: 10,
               fontWeight: 600,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: '#9B8E80',
+              color: '#7AB5A8',
               marginBottom: 8,
             }}
           >
-            PRESENTATION COACH
+            FLUENCY.MY
           </div>
-          <h1 className="text-2xl font-semibold text-[#1C1A17]">Sign in</h1>
-          <p className="text-[#6B6050] text-sm mt-1">AI-powered presentation coaching</p>
+          <h1 className="text-2xl font-semibold text-[#E8F5F1]">Sign in</h1>
+          <p className="text-[#A8C5BC] text-sm mt-1">AI-powered presentation coaching</p>
+        </div>
+
+        {/* Google sign-in */}
+        <button
+          type="button"
+          onClick={async () => {
+            setGoogleLoading(true)
+            try { await signInWithGoogle() } catch { setGoogleLoading(false) }
+          }}
+          disabled={googleLoading}
+          className="w-full flex items-center justify-center gap-3 rounded-lg border py-2.5 text-sm font-medium transition-colors"
+          style={{
+            background: 'rgba(255,255,255,0.07)',
+            borderColor: 'rgba(58,125,106,0.35)',
+            color: '#E8F5F1',
+            cursor: googleLoading ? 'not-allowed' : 'pointer',
+            opacity: googleLoading ? 0.6 : 1,
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
+            <path d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.332 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+            <path d="M6.306 14.691l6.571 4.819C14.655 15.108 19.001 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+            <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.316 0-9.828-3.337-11.558-8H6.306A19.946 19.946 0 0 0 24 44z" fill="#4CAF50"/>
+            <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l6.19 5.238C42.021 35.625 44 30.138 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+          </svg>
+          {googleLoading ? 'Redirecting…' : 'Continue with Google'}
+        </button>
+
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px" style={{ background: 'rgba(58,125,106,0.25)' }} />
+          <span className="text-[#7AB5A8] text-xs">or</span>
+          <div className="flex-1 h-px" style={{ background: 'rgba(58,125,106,0.25)' }} />
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -262,6 +303,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
+            style={{ color: '#E8F5F1', background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(58,125,106,0.35)' }}
           />
           <Input
             label="Password"
@@ -271,16 +313,17 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
+            style={{ color: '#E8F5F1', background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(58,125,106,0.35)' }}
           />
-          {error && <p className="text-[#ef4444] text-sm">{error}</p>}
+          {error && <p className="text-[#ff8080] text-sm">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign in →'}
           </Button>
         </form>
 
-        <p className="text-[#6B6050] text-sm text-center">
+        <p className="text-[#A8C5BC] text-sm text-center">
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-[#94a3b8] hover:underline">
+          <Link href="/register" className="text-[#5BB5A0] hover:underline">
             Create one
           </Link>
         </p>

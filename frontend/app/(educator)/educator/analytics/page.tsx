@@ -84,9 +84,9 @@ export default function AnalyticsPage() {
     : 1
 
   return (
-    <div className="p-6 flex flex-col gap-6 max-w-5xl">
+    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-5xl">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <Link href="/educator/dashboard">
             <button className="mt-1 text-[#6b6050] hover:text-[#c08830] transition-colors">
@@ -128,7 +128,7 @@ export default function AnalyticsPage() {
       ) : data ? (
         <>
           {/* Stat cards */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: 'COURSES', value: String(data.totals.course_count), icon: BookOpen, color: '#f59e0b' },
               { label: 'TOTAL STUDENTS', value: String(data.totals.student_count), icon: Users, color: '#94a3b8' },
@@ -154,9 +154,9 @@ export default function AnalyticsPage() {
             })}
           </div>
 
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* Course breakdown */}
-            <div className="col-span-2 flex flex-col gap-3">
+            <div className="lg:col-span-2 flex flex-col gap-3">
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
                 COURSE BREAKDOWN
               </div>
@@ -167,8 +167,9 @@ export default function AnalyticsPage() {
                   <p className="text-[#C4B8A8] text-sm">No courses yet.</p>
                 </div>
               ) : (
-                <div className="rounded-xl border overflow-hidden"
+                <div className="overflow-x-auto rounded-xl border"
                   style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                <div className="min-w-[520px]">
                   {/* Table header */}
                   <div className="grid px-4 py-2.5"
                     style={{
@@ -207,6 +208,7 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                   ))}
+                </div>
                 </div>
               )}
             </div>

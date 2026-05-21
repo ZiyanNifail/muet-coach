@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { RefreshCw, ArrowRight } from 'lucide-react'
+import { RefreshCw, ArrowRight, X } from 'lucide-react'
 import { Button } from './ui/Button'
 import { supabase } from '@/lib/supabase'
 
@@ -11,21 +11,21 @@ interface Topic {
 }
 
 const FALLBACK_TOPICS: Topic[] = [
-  { id: '1', topic: 'Education in Malaysia', category: 'education' },
-  { id: '2', topic: 'Climate Change & Environment', category: 'environment' },
-  { id: '3', topic: 'Social Media and Society', category: 'technology' },
-  { id: '4', topic: 'Health and Wellness', category: 'health' },
-  { id: '5', topic: 'Technology in the Workplace', category: 'technology' },
-  { id: '6', topic: 'Youth Unemployment', category: 'economy' },
-  { id: '7', topic: 'Public Transportation', category: 'social' },
-  { id: '8', topic: 'Mental Health Awareness', category: 'health' },
-  { id: '9', topic: 'Online Learning', category: 'education' },
-  { id: '10', topic: 'Food Security', category: 'social' },
-  { id: '11', topic: 'Renewable Energy', category: 'environment' },
-  { id: '12', topic: 'Digital Economy', category: 'economy' },
-  { id: '13', topic: 'Cultural Diversity in Malaysia', category: 'social' },
-  { id: '14', topic: 'Urbanisation Challenges', category: 'social' },
-  { id: '15', topic: 'English Proficiency Among Youth', category: 'education' },
+  { id: '1', topic: 'How effective is the Malaysian education system in preparing students for the modern workforce?', category: 'education' },
+  { id: '2', topic: 'What steps should Malaysia take to combat climate change and protect its natural environment?', category: 'environment' },
+  { id: '3', topic: 'How is social media negatively impacting the mental health and social behaviour of Malaysian youth?', category: 'technology' },
+  { id: '4', topic: 'Why should promoting a healthy lifestyle be made a national priority among young Malaysians?', category: 'health' },
+  { id: '5', topic: 'How is the rise of artificial intelligence transforming the workplace and what skills do workers need to adapt?', category: 'technology' },
+  { id: '6', topic: 'What are the root causes of youth unemployment in Malaysia and how can the government address them?', category: 'economy' },
+  { id: '7', topic: 'To what extent does Malaysia\'s public transportation system meet the daily needs of its urban population?', category: 'social' },
+  { id: '8', topic: 'Why is mental health awareness among university students a growing crisis that demands immediate action?', category: 'health' },
+  { id: '9', topic: 'Has the shift to online learning improved or worsened the quality of education for Malaysian students?', category: 'education' },
+  { id: '10', topic: 'How can Malaysia ensure long-term food security for its growing population in the face of climate change?', category: 'social' },
+  { id: '11', topic: 'Should Malaysia invest more heavily in renewable energy to reduce its dependence on fossil fuels?', category: 'environment' },
+  { id: '12', topic: 'How can Malaysian graduates position themselves to thrive in the rapidly evolving digital economy?', category: 'economy' },
+  { id: '13', topic: 'How does Malaysia\'s cultural diversity strengthen its national identity and drive economic growth?', category: 'social' },
+  { id: '14', topic: 'What are the most pressing challenges brought about by rapid urbanisation in Malaysian cities today?', category: 'social' },
+  { id: '15', topic: 'Why is improving English proficiency among Malaysian youth critical for their future career success?', category: 'education' },
 ]
 
 const ITEM_H = 56
@@ -33,18 +33,19 @@ const VISIBLE = 5
 
 interface TopicWheelProps {
   onSelect: (topic: Topic) => void
+  onClose?: () => void
 }
 
 function computeOffset(topicsLen: number, idx: number) {
-  // Center the item at `idx` in the middle copy of the repeated list
   const startCopy = topicsLen
   return -(startCopy + idx) * ITEM_H + Math.floor(VISIBLE / 2) * ITEM_H
 }
 
-export function TopicWheel({ onSelect }: TopicWheelProps) {
+export function TopicWheel({ onSelect, onClose }: TopicWheelProps) {
   const [topics, setTopics] = useState<Topic[]>(FALLBACK_TOPICS)
+  // Keep a ref always in sync so spin() closures always see the latest topics
+  const topicsRef = useRef<Topic[]>(FALLBACK_TOPICS)
 
-  // Pick a valid random index at initialisation time so the wheel is never blank
   const [selectedIdx, setSelectedIdx] = useState(() =>
     Math.floor(Math.random() * FALLBACK_TOPICS.length)
   )
@@ -59,23 +60,23 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
     if (spinning) return
     if (spinTimeout.current) clearTimeout(spinTimeout.current)
 
-    const idx = Math.floor(Math.random() * topics.length)
+    const currentTopics = topicsRef.current
+    const idx = Math.floor(Math.random() * currentTopics.length)
     const duration = 1600 + Math.random() * 900
 
-    // Briefly remove transition so it can be re-applied cleanly
     setAnimate(false)
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setAnimate(true)
         setSelectedIdx(idx)
-        setOffset(computeOffset(topics.length, idx))
+        setOffset(computeOffset(currentTopics.length, idx))
         setSpinning(true)
         spinTimeout.current = setTimeout(() => setSpinning(false), duration)
       })
     })
   }
 
-  // Fetch live topics from Supabase, then auto-spin once loaded (WARN-05 fix)
+  // Fetch live topics — update ref first so the delayed spin() sees the right length
   useEffect(() => {
     supabase
       .from('muet_topics')
@@ -84,12 +85,12 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
       .then(({ data }) => {
         if (data && data.length > 0) {
           const t = data as Topic[]
+          topicsRef.current = t
           setTopics(t)
           const idx = Math.floor(Math.random() * t.length)
           setSelectedIdx(idx)
           setOffset(computeOffset(t.length, idx))
         }
-        // Auto-spin once after topics are ready (or after mount with fallback topics)
         setTimeout(() => spin(), 80)
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,10 +102,7 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
     }
   }, [])
 
-  // Middle copy index of the selected topic
   const centerIdx = topics.length + selectedIdx
-
-  // Repeated list: 3 copies for seamless visual scroll
   const repeated = [...topics, ...topics, ...topics]
 
   return (
@@ -115,37 +113,51 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
       <div
         className="w-full max-w-lg flex flex-col gap-5 rounded-2xl border p-6"
         style={{
-          background: 'rgba(245,242,237,0.95)',
-          borderColor: 'rgba(180,165,148,0.30)',
+          background: 'var(--bg-panel)',
+          borderColor: 'var(--border-medium)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
+          transition: 'background 0.3s ease, color 0.3s ease',
         }}
       >
         {/* Header */}
-        <div className="flex items-center gap-2.5">
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: '#22c55e',
-              boxShadow: '0 0 8px #22c55e',
-              animation: 'pulse 2s ease-in-out infinite',
-              display: 'inline-block',
-              flexShrink: 0,
-            }}
-          />
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: '#9B8E80',
-            }}
-          >
-            Selecting your topic
-          </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: '#22c55e',
+                boxShadow: '0 0 8px #22c55e',
+                animation: 'pulse 2s ease-in-out infinite',
+                display: 'inline-block',
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--text-tertiary)',
+              }}
+            >
+              Selecting your topic
+            </span>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="flex items-center justify-center w-7 h-7 rounded-full transition-colors"
+              style={{ background: 'var(--bg-surface)', color: 'var(--text-tertiary)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--border-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-surface)')}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
         {/* Wheel */}
@@ -157,7 +169,6 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
             border: '1px solid rgba(255,255,255,0.07)',
           }}
         >
-          {/* Selection highlight band */}
           <div
             className="absolute inset-x-0 pointer-events-none z-10"
             style={{
@@ -168,31 +179,25 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
               background: 'rgba(148,163,184,0.06)',
             }}
           />
-
-          {/* Top gradient fade */}
           <div
             className="absolute inset-x-0 top-0 pointer-events-none z-10"
             style={{
               height: ITEM_H * 2.2,
-              background: 'linear-gradient(to bottom, rgba(240,237,230,0.95) 0%, transparent 100%)',
+              background: 'linear-gradient(to bottom, var(--bg-panel) 0%, transparent 100%)',
             }}
           />
-          {/* Bottom gradient fade */}
           <div
             className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
             style={{
               height: ITEM_H * 2.2,
-              background: 'linear-gradient(to top, rgba(240,237,230,0.95) 0%, transparent 100%)',
+              background: 'linear-gradient(to top, var(--bg-panel) 0%, transparent 100%)',
             }}
           />
 
-          {/* Scrolling items */}
           <div
             style={{
               transform: `translateY(${offset}px)`,
-              transition: animate
-                ? `transform 2200ms cubic-bezier(0.15, 0.85, 0.4, 1)`
-                : 'none',
+              transition: animate ? `transform 2200ms cubic-bezier(0.15, 0.85, 0.4, 1)` : 'none',
             }}
           >
             {repeated.map((topic, i) => {
@@ -203,7 +208,7 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
                   className="flex items-center justify-center px-8 text-center"
                   style={{
                     height: ITEM_H,
-                    color: isSelected ? '#1C1A17' : '#C4B8A8',
+                    color: isSelected ? 'var(--text-primary)' : 'var(--text-tertiary)',
                     opacity: isSelected ? 1 : 0.5,
                     filter: isSelected ? 'none' : 'blur(1.5px)',
                     fontSize: isSelected ? 15 : 13,
@@ -220,19 +225,16 @@ export function TopicWheel({ onSelect }: TopicWheelProps) {
           </div>
         </div>
 
-        <p
-          style={{ fontSize: 11, color: '#44445a', textAlign: 'center', letterSpacing: '0.02em' }}
-        >
+        <p style={{ fontSize: 11, color: 'var(--text-secondary)', textAlign: 'center', letterSpacing: '0.02em' }}>
           Topics are drawn from the MUET topic bank
         </p>
 
-        {/* Actions */}
         <div className="flex gap-3 justify-center">
           <Button variant="secondary" onClick={spin} disabled={spinning}>
             <RefreshCw size={14} className="mr-2" />
             {spinning ? 'Spinning...' : 'Spin Again'}
           </Button>
-          <Button onClick={() => onSelect(topics[selectedIdx])} disabled={spinning}>
+          <Button onClick={() => onSelect(topicsRef.current[selectedIdx])} disabled={spinning}>
             Use This Topic
             <ArrowRight size={14} className="ml-2" />
           </Button>

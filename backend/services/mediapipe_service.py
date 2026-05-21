@@ -166,8 +166,8 @@ async def analyse_video(video_path: str) -> dict:
                 base_options=mp_python.BaseOptions(model_asset_path=_FACE_MODEL_PATH),
                 running_mode=mp_vision.RunningMode.IMAGE,
                 num_faces=1,
-                min_face_detection_confidence=0.5,
-                min_face_presence_confidence=0.5,
+                min_face_detection_confidence=0.3,
+                min_face_presence_confidence=0.3,
                 output_face_blendshapes=False,
                 output_facial_transformation_matrixes=False,
             )
@@ -177,8 +177,8 @@ async def analyse_video(video_path: str) -> dict:
             pose_options = mp_vision.PoseLandmarkerOptions(
                 base_options=mp_python.BaseOptions(model_asset_path=_POSE_MODEL_PATH),
                 running_mode=mp_vision.RunningMode.IMAGE,
-                min_pose_detection_confidence=0.5,
-                min_pose_presence_confidence=0.5,
+                min_pose_detection_confidence=0.3,
+                min_pose_presence_confidence=0.3,
             )
             pose_lm = mp_vision.PoseLandmarker.create_from_options(pose_options)
 

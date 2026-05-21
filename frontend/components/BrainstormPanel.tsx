@@ -1,15 +1,16 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Clock, ArrowRight, SkipForward } from 'lucide-react'
+import { Clock, ArrowRight, SkipForward, X } from 'lucide-react'
 import { Button } from './ui/Button'
 
 interface BrainstormPanelProps {
   topic: string
   onReady: (notes: string) => void
   onSkip: () => void
+  onClose?: () => void
 }
 
-export function BrainstormPanel({ topic, onReady, onSkip }: BrainstormPanelProps) {
+export function BrainstormPanel({ topic, onReady, onSkip, onClose }: BrainstormPanelProps) {
   const [notes, setNotes] = useState('')
   const [timeLeft, setTimeLeft] = useState(60)
 
@@ -36,10 +37,11 @@ export function BrainstormPanel({ topic, onReady, onSkip }: BrainstormPanelProps
       <div
         className="w-full max-w-xl flex flex-col gap-4 rounded-2xl border p-6"
         style={{
-          background: 'rgba(245,242,237,0.95)',
-          borderColor: 'rgba(180,165,148,0.30)',
+          background: 'var(--bg-panel)',
+          borderColor: 'var(--border-medium)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
+          transition: 'background 0.3s ease, color 0.3s ease',
         }}
       >
         <div className="flex items-start justify-between gap-4">
@@ -50,25 +52,37 @@ export function BrainstormPanel({ topic, onReady, onSkip }: BrainstormPanelProps
                 fontWeight: 600,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: '#9B8E80',
+                color: 'var(--text-tertiary)',
                 marginBottom: 6,
               }}
             >
               Brainstorm
             </div>
-            <p className="text-[#6B6050] text-sm">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               Topic:{' '}
-              <span className="text-[#1C1A17] font-medium">{topic}</span>
+              <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{topic}</span>
             </p>
           </div>
 
-          {/* Timer */}
-          <div
-            className="flex items-center gap-1.5 font-mono text-2xl font-semibold shrink-0"
-            style={{ color: timerColor, transition: 'color 0.3s ease' }}
-          >
-            <Clock size={20} style={{ color: timerColor, transition: 'color 0.3s ease' }} />
-            {timeStr}
+          <div className="flex items-center gap-3 shrink-0">
+            <div
+              className="flex items-center gap-1.5 font-mono text-2xl font-semibold"
+              style={{ color: timerColor, transition: 'color 0.3s ease' }}
+            >
+              <Clock size={20} style={{ color: timerColor, transition: 'color 0.3s ease' }} />
+              {timeStr}
+            </div>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="flex items-center justify-center w-7 h-7 rounded-full transition-colors"
+                style={{ background: 'var(--bg-surface)', color: 'var(--text-tertiary)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--border-subtle)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-surface)')}
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -77,16 +91,17 @@ export function BrainstormPanel({ topic, onReady, onSkip }: BrainstormPanelProps
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Jot down your key points..."
           rows={6}
-          className="w-full resize-none rounded-xl border px-4 py-3 text-sm text-[#1C1A17] placeholder:text-[#C4B8A8] outline-none transition-colors"
+          className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none transition-colors"
           style={{
-            background: 'rgba(180,165,148,0.06)',
-            borderColor: 'rgba(255,255,255,0.07)',
+            background: 'var(--bg-surface)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)',
           }}
-          onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.16)')}
-          onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.07)')}
+          onFocus={(e) => (e.target.style.borderColor = 'var(--border-medium)')}
+          onBlur={(e) => (e.target.style.borderColor = 'var(--border-subtle)')}
         />
 
-        <p style={{ fontSize: 11, color: '#44445a', letterSpacing: '0.01em' }}>
+        <p style={{ fontSize: 11, color: 'var(--text-secondary)', letterSpacing: '0.01em' }}>
           Your notes are for your reference only — the AI does not assess written notes.
         </p>
 

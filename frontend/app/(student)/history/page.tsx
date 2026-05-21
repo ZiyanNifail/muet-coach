@@ -46,20 +46,20 @@ function MetricDiff({ label, a, b, unit = '', lowerBetter = false }: {
 }) {
   if (a == null || b == null) return (
     <div className="flex flex-col gap-0.5">
-      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>{label}</span>
-      <span className="text-[#6B6050] text-sm">—</span>
+      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>{label}</span>
+      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>—</span>
     </div>
   )
   const diff = b - a
   const improved = lowerBetter ? diff < 0 : diff > 0
-  const color = diff === 0 ? '#9B8E80' : improved ? '#22c55e' : '#ef4444'
+  const color = diff === 0 ? 'var(--text-tertiary)' : improved ? '#22c55e' : '#ef4444'
   return (
     <div className="flex flex-col gap-0.5">
-      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>{label}</span>
+      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>{label}</span>
       <div className="flex items-baseline gap-2">
-        <span className="font-mono text-sm text-[#6B6050]">{typeof a === 'number' ? a.toFixed(a % 1 ? 1 : 0) : a}{unit}</span>
-        <span className="text-xs" style={{ color: '#C4B8A8' }}>→</span>
-        <span className="font-mono text-sm font-semibold text-[#1C1A17]">{typeof b === 'number' ? b.toFixed(b % 1 ? 1 : 0) : b}{unit}</span>
+        <span className="font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>{typeof a === 'number' ? a.toFixed(a % 1 ? 1 : 0) : a}{unit}</span>
+        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>→</span>
+        <span className="font-mono text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{typeof b === 'number' ? b.toFixed(b % 1 ? 1 : 0) : b}{unit}</span>
         <span className="text-xs font-semibold" style={{ color }}>
           {diff > 0 ? '+' : ''}{typeof diff === 'number' ? diff.toFixed(diff % 1 ? 1 : 0) : diff}{unit}
         </span>
@@ -108,24 +108,24 @@ export default function HistoryPage() {
   const rB = sessionB?.feedback_reports
 
   return (
-    <div className="p-6 flex flex-col gap-6 max-w-4xl">
+    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-4xl">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>
             PROGRESS
           </div>
-          <h1 className="text-2xl font-semibold text-[#1C1A17]">Session History</h1>
-          <p className="text-[#6B6050] text-sm mt-1">All your past practice sessions.</p>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Session History</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>All your past practice sessions.</p>
         </div>
         {sessions.length >= 2 && !comparing && (
-          <Button variant="ghost" onClick={() => setComparing(true)} disabled={selected.length < 2}>
+          <Button variant="ghost" onClick={() => setComparing(true)} disabled={selected.length < 2} className="min-h-[44px]">
             <GitCompare size={14} className="mr-2" />
             Compare {selected.length}/2
           </Button>
         )}
         {comparing && (
-          <Button variant="ghost" onClick={() => { setComparing(false); setSelected([]) }}>
+          <Button variant="ghost" onClick={() => { setComparing(false); setSelected([]) }} className="min-h-[44px]">
             ← Back to list
           </Button>
         )}
@@ -135,30 +135,30 @@ export default function HistoryPage() {
       {comparing && selected.length === 2 && rA && rB && (
         <div
           className="rounded-xl border p-5 flex flex-col gap-5"
-          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
+          style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}
         >
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
             SESSION COMPARISON
           </div>
-          <div className="grid grid-cols-2 gap-4 pb-4" style={{ borderBottom: '1px solid rgba(180,165,148,0.22)' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
             <div>
-              <span style={{ fontSize: 9, color: '#9B8E80', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Session A</span>
-              <p className="text-[#1C1A17] text-sm mt-1">
+              <span style={{ fontSize: 9, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Session A</span>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-primary)' }}>
                 {sessionA?.feedback_reports?.generated_at
                   ? new Date(sessionA.feedback_reports.generated_at).toLocaleDateString('en-MY', { dateStyle: 'medium' })
                   : new Date(sessionA?.session_date || '').toLocaleDateString('en-MY', { dateStyle: 'medium' })}
               </p>
             </div>
             <div>
-              <span style={{ fontSize: 9, color: '#9B8E80', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Session B (latest)</span>
-              <p className="text-[#1C1A17] text-sm mt-1">
+              <span style={{ fontSize: 9, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Session B (latest)</span>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-primary)' }}>
                 {sessionB?.feedback_reports?.generated_at
                   ? new Date(sessionB.feedback_reports.generated_at).toLocaleDateString('en-MY', { dateStyle: 'medium' })
                   : new Date(sessionB?.session_date || '').toLocaleDateString('en-MY', { dateStyle: 'medium' })}
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
             <MetricDiff label="Band Score" a={rA.band_score} b={rB.band_score} unit="" />
             <MetricDiff label="Avg WPM" a={rA.wpm_avg != null ? Math.round(rA.wpm_avg) : null} b={rB.wpm_avg != null ? Math.round(rB.wpm_avg) : null} unit=" wpm" />
             <MetricDiff label="Eye Contact" a={rA.eye_contact_pct != null ? Math.round(rA.eye_contact_pct) : null} b={rB.eye_contact_pct != null ? Math.round(rB.eye_contact_pct) : null} unit="%" />
@@ -170,28 +170,28 @@ export default function HistoryPage() {
 
       {/* Sessions list */}
       {loading ? (
-        <div className="flex items-center justify-center h-32 rounded-xl border" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
-          <span className="text-[#9B8E80] text-sm">Loading sessions...</span>
+        <div className="flex items-center justify-center h-32 rounded-xl border" style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}>
+          <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Loading sessions...</span>
         </div>
       ) : error ? (
-        <div className="flex items-center justify-center h-32 rounded-xl border" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
-          <p className="text-[#ef4444] text-sm">{error}</p>
+        <div className="flex items-center justify-center h-32 rounded-xl border" style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}>
+          <p className="text-sm" style={{ color: 'var(--accent-red)' }}>{error}</p>
         </div>
       ) : sessions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-32 rounded-xl border gap-3" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
-          <p className="text-[#9B8E80] text-sm">No sessions yet. Complete your first practice session to see history here.</p>
-          <Link href="/practice" className="text-[#94a3b8] text-sm hover:underline">Start a session →</Link>
+        <div className="flex flex-col items-center justify-center h-32 rounded-xl border gap-3" style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}>
+          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No sessions yet. Complete your first practice session to see history here.</p>
+          <Link href="/practice" className="text-sm hover:underline" style={{ color: 'var(--text-tertiary)' }}>Start a session →</Link>
         </div>
       ) : (
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(180,165,148,0.22)' }}>
+        <div className="rounded-xl border overflow-x-auto" style={{ borderColor: 'var(--border-subtle)' }}>
           {/* Table header */}
           <div
             className="grid gap-4 px-5 py-3"
             style={{
               gridTemplateColumns: comparing ? 'auto 1fr auto auto auto' : '1fr auto auto auto auto',
-              background: 'rgba(245,242,237,0.95)',
-              borderBottom: '1px solid rgba(180,165,148,0.22)',
-              fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9B8E80',
+              background: 'var(--bg-surface)',
+              borderBottom: '1px solid var(--border-subtle)',
+              fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)',
             }}
           >
             {comparing && <span>SEL</span>}
@@ -213,7 +213,7 @@ export default function HistoryPage() {
                 style={{
                   gridTemplateColumns: comparing ? 'auto 1fr auto auto auto auto' : '1fr auto auto auto auto',
                   background: isSelected ? 'rgba(148,163,184,0.06)' : 'transparent',
-                  borderTop: i === 0 ? 'none' : '1px solid rgba(180,165,148,0.08)',
+                  borderTop: i === 0 ? 'none' : '1px solid var(--border-subtle)',
                   cursor: comparing ? 'pointer' : 'default',
                 }}
                 onClick={() => comparing && toggleSelect(s.id)}
@@ -229,34 +229,35 @@ export default function HistoryPage() {
                     {isSelected && <span style={{ color: '#fff', fontSize: 10 }}>✓</span>}
                   </div>
                 )}
-                <span className="text-sm text-[#6B6050]">
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {date ? new Date(date).toLocaleDateString('en-MY', { dateStyle: 'medium' }) : '—'}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-semibold text-[#1C1A17]">
+                  <span className="font-mono text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {r?.band_score != null ? r.band_score.toFixed(1) : '—'}
                   </span>
                   {r?.band_score != null && (
                     <Badge variant={bandVariant(r.band_score)}>{bandLabel(r.band_score)}</Badge>
                   )}
                 </div>
-                <span className="font-mono text-sm text-[#6B6050]">
+                <span className="font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {r?.wpm_avg != null ? `${Math.round(r.wpm_avg)} wpm` : '—'}
                 </span>
-                <span className="font-mono text-sm text-[#6B6050]">
+                <span className="font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {r?.eye_contact_pct != null ? `${Math.round(r.eye_contact_pct)}%` : '—'}
                 </span>
                 {r?.presentation_id ? (
                   <Link
                     href={`/results/${r.presentation_id}`}
-                    className="flex items-center gap-1 text-[#94a3b8] text-xs hover:underline"
+                    className="flex items-center gap-1 text-xs hover:underline"
+                    style={{ color: 'var(--text-tertiary)' }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <ExternalLink size={12} />
                     View
                   </Link>
                 ) : (
-                  <span className="text-[#C4B8A8] text-xs">—</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>—</span>
                 )}
               </div>
             )
@@ -265,8 +266,8 @@ export default function HistoryPage() {
       )}
 
       {sessions.length >= 2 && !comparing && (
-        <p className="text-[#C4B8A8] text-xs">
-          Click <strong className="text-[#9B8E80]">Compare</strong> then select 2 sessions to see a side-by-side metric diff.
+        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+          Click <strong style={{ color: 'var(--text-tertiary)' }}>Compare</strong> then select 2 sessions to see a side-by-side metric diff.
         </p>
       )}
     </div>

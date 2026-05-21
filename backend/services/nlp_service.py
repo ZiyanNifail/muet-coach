@@ -115,3 +115,33 @@ def compute_lexical_diversity(transcript: str) -> float:
     if len(words) == 0:
         return 0.5
     return round(len(set(words)) / len(words), 3)
+
+
+_DISCOURSE_MARKERS = re.compile(
+    r"\b(firstly|secondly|thirdly|finally|furthermore|moreover|however|therefore|"
+    r"in addition|in conclusion|to summarise|to summarize|to conclude|for example|"
+    r"for instance|on the other hand|in contrast|as a result|consequently|"
+    r"in my opinion|to begin with|additionally|nevertheless|nonetheless|"
+    r"having said that|that said|in other words|to illustrate)\b",
+    re.IGNORECASE,
+)
+
+
+def count_discourse_markers(transcript: str) -> int:
+    """Count occurrences of discourse markers/cohesive devices in transcript."""
+    if not transcript:
+        return 0
+    return len(_DISCOURSE_MARKERS.findall(transcript))
+
+
+def compute_sentence_stats(transcript: str) -> dict:
+    """Return sentence_count and sentence_length_variance for grammatical range scoring."""
+    if not transcript:
+        return {"sentence_count": 0, "sentence_length_variance": 0.0}
+    sentences = [s.strip() for s in re.split(r"[.!?]+", transcript) if s.strip()]
+    if not sentences:
+        return {"sentence_count": 0, "sentence_length_variance": 0.0}
+    lengths = [len(s.split()) for s in sentences]
+    mean = sum(lengths) / len(lengths)
+    variance = sum((l - mean) ** 2 for l in lengths) / len(lengths) if len(lengths) > 1 else 0.0
+    return {"sentence_count": len(sentences), "sentence_length_variance": round(variance, 1)}

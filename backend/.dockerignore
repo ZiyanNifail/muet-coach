@@ -1,0 +1,16 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.wav
+*.webm
+*.mp4
+uploads/
+models/
+.git/
+*.egg-info/
+dist/
+build/

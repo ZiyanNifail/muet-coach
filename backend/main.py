@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 import logging
 import os
 
-from routers import auth, presentations, reports, courses, admin, submissions, gaze, pronunciation
+from routers import auth, presentations, reports, courses, admin, submissions, gaze, pronunciation, drills, listening, writing, exams
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,10 @@ app.include_router(submissions.router,   prefix="/api/submissions",    tags=["su
 app.include_router(admin.router,         prefix="/api/admin",          tags=["admin"])
 app.include_router(gaze.router,          prefix="/api/gaze",            tags=["gaze"])
 app.include_router(pronunciation.router, prefix="/api/pronunciation",   tags=["pronunciation"])
+app.include_router(drills.router,        prefix="/api/drills",          tags=["drills"])
+app.include_router(listening.router,     prefix="/api/listening",        tags=["listening"])
+app.include_router(writing.router,       prefix="/api/writing",          tags=["writing"])
+app.include_router(exams.router,         prefix="/api/exams",             tags=["exams"])
 
 
 @app.get("/", include_in_schema=False)

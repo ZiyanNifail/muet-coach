@@ -103,7 +103,7 @@ async def check_syllable_endpoint(
     try:
         result = await transcribe(tmp_path)
         transcript_text = (
-            result.get("text", "").strip()
+            result.get("transcript", "").strip()
             if isinstance(result, dict)
             else str(result).strip()
         )
@@ -165,7 +165,7 @@ async def check_sentence_endpoint(
     try:
         result = await transcribe(tmp_path)
         transcript_text = (
-            result.get("text", "").strip()
+            result.get("transcript", "").strip()
             if isinstance(result, dict)
             else str(result).strip()
         )

@@ -2,23 +2,24 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { Marquee } from "@/components/ui/marquee"
+import { VoxReadyLogo } from "@/components/ui/voxready-logo"
+import { HeroLogo } from "@/components/ui/hero-logo"
 import {
   motion,
   useInView,
-  useScroll,
-  useTransform,
-  AnimatePresence,
   useReducedMotion,
+  AnimatePresence,
 } from "framer-motion"
-import { ShaderAnimation } from "@/components/ui/shader-animation"
-import { Mic, Menu, X, ArrowUpRight, ChevronRight } from "lucide-react"
-
-// ─── Reduced Motion Hook ──────────────────────────────────────────────────────
-// Respects user's OS accessibility preference — no animation if requested
+import { RotatingText } from "@/components/ui/rotating-text"
+import { ShaderBackground } from "@/components/ui/shader-background"
+import {
+  Mic2, Eye, TrendingUp, BookOpen, BarChart2,
+  Menu, X, ChevronRight,
+} from "lucide-react"
 
 function useMotionSafe() {
-  const shouldReduce = useReducedMotion()
-  return shouldReduce
+  return useReducedMotion()
 }
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
@@ -36,43 +37,43 @@ function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
-          scrolled ? "bg-[#0c0a09]/95 backdrop-blur-sm border-b border-[#2a2520]" : "bg-transparent"
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
+        style={{
+          background: scrolled ? "var(--bg-panel)" : "transparent",
+          borderBottom: scrolled ? "1px solid var(--border-subtle)" : "none",
+          backdropFilter: scrolled ? "blur(12px)" : "none",
+        }}
       >
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Mic className="w-4 h-4 text-[#c4a882]" strokeWidth={1.5} />
-            <span className="text-[#f0ece4] text-sm font-medium tracking-tight">PresentCoach</span>
+          <div className="flex items-center gap-2">
+            <VoxReadyLogo iconSize={22} />
           </div>
 
-          <div className="hidden md:flex items-center gap-7">
-            {["How it works", "Features", "About"].map((link) => (
-              <a
-                key={link}
-                href={`#${link.toLowerCase().replace(/\s+/g, "-")}`}
-                className="text-xs text-[#7a7265] hover:text-[#f0ece4] transition-colors duration-200"
-              >
-                {link}
-              </a>
-            ))}
-          </div>
+          <div className="hidden md:flex items-center gap-7" />
 
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/login" className="text-xs text-[#7a7265] hover:text-[#f0ece4] transition-colors duration-200">
+            <Link href="/login" className="text-xs transition-colors duration-200"
+              style={{ color: "var(--text-tertiary)" }}
+              onMouseEnter={e => (e.currentTarget.style.color = "var(--text-primary)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "var(--text-tertiary)")}
+            >
               Sign in
             </Link>
             <Link
-              href="/register"
-              className="text-xs bg-[#d4622b] text-white px-4 py-2 rounded-sm font-medium hover:bg-[#bf5524] transition-colors duration-200"
+              href="/login"
+              className="text-xs px-4 py-2 rounded-lg font-semibold transition-colors duration-200"
+              style={{ background: "var(--accent-teal)", color: "#fff" }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
             >
-              Start free
+              Log in
             </Link>
           </div>
 
           <button
-            className="md:hidden text-[#7a7265] hover:text-[#f0ece4] cursor-pointer"
-            onClick={() => setMobileOpen((v) => !v)}
+            className="md:hidden cursor-pointer"
+            style={{ color: "var(--text-tertiary)" }}
+            onClick={() => setMobileOpen(v => !v)}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -87,24 +88,13 @@ function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
-            className="fixed top-14 left-0 right-0 z-40 bg-[#0c0a09] border-b border-[#2a2520] flex flex-col px-6 py-5 gap-4"
+            className="fixed top-14 left-0 right-0 z-40 flex flex-col px-6 py-5 gap-4"
+            style={{ background: "var(--bg-base)", borderBottom: "1px solid var(--border-subtle)", transition: "background 0.3s ease" }}
           >
-            {["How it works", "Features", "About"].map((link) => (
-              <a
-                key={link}
-                href={`#${link.toLowerCase().replace(/\s+/g, "-")}`}
-                onClick={() => setMobileOpen(false)}
-                className="text-sm text-[#f0ece4]"
-              >
-                {link}
-              </a>
-            ))}
-            <Link
-              href="/register"
-              onClick={() => setMobileOpen(false)}
-              className="text-sm bg-[#d4622b] text-white px-4 py-2.5 rounded-sm font-medium text-center"
-            >
-              Start free
+            <Link href="/login" onClick={() => setMobileOpen(false)}
+              className="text-sm px-4 py-2.5 rounded-lg font-semibold text-center"
+              style={{ background: "var(--accent-teal)", color: "#fff" }}>
+              Log in
             </Link>
           </motion.div>
         )}
@@ -115,144 +105,239 @@ function Navbar() {
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 
+const FEATURE_BOXES = [
+  {
+    icon: Mic2,
+    prefix: "Speak",
+    words: ["Better", "Clearly", "Naturally"],
+    desc: "Real-time filler word detection, WPM coaching, and Groq Whisper transcription on every session.",
+    color: "#3A7D6A",
+    bg: "rgba(58,125,106,0.06)",
+    border: "rgba(58,125,106,0.18)",
+  },
+  {
+    icon: Eye,
+    prefix: "Speak",
+    words: ["Confident", "Boldly", "With Impact"],
+    desc: "Live eye gaze overlay and posture scoring powered by MediaPipe — feedback as you present.",
+    color: "#3A7D6A",
+    bg: "rgba(58,125,106,0.06)",
+    border: "rgba(58,125,106,0.18)",
+  },
+  {
+    icon: TrendingUp,
+    prefix: "Score",
+    words: ["Higher", "Band 6", "Your Best"],
+    desc: "MUET-calibrated Band 1–6 assessment with AI advice cards generated after every session.",
+    color: "#1a5c3a",
+    bg: "rgba(26,92,58,0.06)",
+    border: "rgba(26,92,58,0.18)",
+  },
+  {
+    icon: BookOpen,
+    prefix: "Practice",
+    words: ["Smarter", "Anywhere", "Daily"],
+    desc: "Listening, Writing, Speaking and Pronunciation modules — complete MUET coverage in one place.",
+    color: "#3A7D6A",
+    bg: "rgba(58,125,106,0.06)",
+    border: "rgba(58,125,106,0.18)",
+  },
+  {
+    icon: BarChart2,
+    prefix: "Track",
+    words: ["Progress", "Growth", "Your Journey"],
+    desc: "Band timeline and session history so you can measure improvement week by week.",
+    color: "#1a5c3a",
+    bg: "rgba(26,92,58,0.06)",
+    border: "rgba(26,92,58,0.18)",
+  },
+]
+
 function Hero() {
-  const containerRef = useRef(null)
   const shouldReduce = useMotionSafe()
-  const { scrollYProgress } = useScroll({ target: containerRef })
-  const overlayOpacity = useTransform(scrollYProgress, [0, 0.6], [0.6, 0.96])
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   return (
-    <section ref={containerRef} className="relative min-h-screen flex flex-col justify-end overflow-hidden">
-      <ShaderAnimation />
+    <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-16 overflow-hidden"
+      style={{ background: "transparent" }}>
 
+      {/* Subtle radial glow */}
+      <div className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(ellipse 70% 50% at 50% 30%, rgba(58,125,106,0.08) 0%, transparent 70%)" }} />
+
+      {/* ── Hero logo ── */}
       <motion.div
-        className="absolute inset-0 z-10 pointer-events-none"
-        style={{
-          opacity: overlayOpacity,
-          background:
-            "linear-gradient(to bottom, rgba(12,10,9,0.3) 0%, rgba(12,10,9,0.4) 30%, rgba(12,10,9,0.75) 65%, #0c0a09 100%)",
-        }}
-      />
-
-      {/* Content — bottom-left aligned, not centered */}
-      <div className="relative z-20 max-w-6xl mx-auto px-6 pb-20 pt-32 w-full">
-        {/* Institutional line — small, plain, no pill badges */}
-        <div className="flex items-center gap-3 mb-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/moe.jpg" alt="Kementerian Pendidikan Malaysia" width={18} height={18} className="object-contain opacity-60" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/mpm.png" alt="Majlis Peperiksaan Malaysia" width={18} height={18} className="object-contain opacity-60" />
-          <span className="text-[11px] text-[#7a7265] font-mono tracking-wide">
-            MSU · KPM · MUET aligned
-          </span>
-        </div>
-
-        {/* Headline — left aligned, no gradient text */}
-        <motion.h1
-          initial={shouldReduce ? false : { opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[clamp(2.8rem,7vw,5.5rem)] font-bold leading-[1.05] tracking-tight text-[#f0ece4] mb-6 max-w-3xl"
+        initial={shouldReduce ? false : { opacity: 0, scale: 0.85 }}
+        animate={shouldReduce || mounted ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.85 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col items-center gap-3 mb-4"
+      >
+        <HeroLogo size={160} />
+        <span
+          className="select-none leading-none tracking-tight"
+          style={{
+            fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+            fontFamily: 'var(--font-lora, Georgia, serif)',
+          }}
         >
-          Stop guessing how
-          <br />
-          your presentation
-          <br />
-          <span className="text-[#c4a882] font-light italic">actually lands.</span>
-        </motion.h1>
+          <span style={{ color: 'var(--accent-teal)', fontWeight: 700 }}>fluency</span>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 400 }}>.my</span>
+        </span>
+      </motion.div>
 
-        <motion.p
-          initial={shouldReduce ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[#7a7265] text-base leading-relaxed max-w-md mb-10"
-        >
-          Record once. Get a timestamped breakdown of your filler words,
-          posture, eye contact, and pacing — calibrated to MUET band criteria.
-        </motion.p>
+      {/* ── Logo marquee (below heading) ── */}
+      <motion.div
+        initial={shouldReduce ? false : { opacity: 0, y: 10 }}
+        animate={shouldReduce || mounted ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+        className="w-full max-w-lg mb-8"
+      >
+        <Marquee duration={18} pauseOnHover fade fadeAmount={15}>
+          {[
+            { src: "/msu.png", alt: "Management and Science University" },
+            { src: "/moe.jpg", alt: "Kementerian Pendidikan Malaysia" },
+            { src: "/mpm.png", alt: "Majlis Peperiksaan Malaysia" },
+          ].map(({ src, alt }) => (
+            <div key={src} className="mx-10 flex items-center justify-center" style={{ width: 72, height: 72 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt={alt} style={{ maxWidth: 72, maxHeight: 72, width: "auto", height: "auto", objectFit: "contain", opacity: 0.75 }} />
+            </div>
+          ))}
+        </Marquee>
+      </motion.div>
 
+      {/* ── Subtitle ── */}
+      <motion.p
+        initial={shouldReduce ? false : { opacity: 0, y: 12 }}
+        animate={shouldReduce || mounted ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+        transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        className="text-center max-w-md mb-12 leading-relaxed"
+        style={{ color: "var(--text-tertiary)", fontSize: 15 }}
+      >
+        AI-powered MUET speaking practice. Record once — get your band score,
+        eye contact analysis, posture feedback, and personalised coaching instantly.
+      </motion.p>
+
+      {/* ── Feature boxes: 3 + 2 ── */}
+      <div className="w-full max-w-4xl">
+        {/* Row 1 — 3 boxes */}
         <motion.div
-          initial={shouldReduce ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-5"
+          initial={shouldReduce ? false : { opacity: 0, y: 24 }}
+          animate={shouldReduce || mounted ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          transition={{ duration: 0.6, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4"
         >
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 bg-[#d4622b] text-white text-sm px-6 py-3 rounded-sm font-medium hover:bg-[#bf5524] transition-colors duration-200 group"
-          >
-            Analyse my first recording
-            <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-          </Link>
-          <a
-            href="#how-it-works"
-            className="text-sm text-[#7a7265] hover:text-[#c4a882] transition-colors duration-200 underline underline-offset-4 decoration-[#3a3530]"
-          >
-            See a sample report
-          </a>
+          {FEATURE_BOXES.slice(0, 3).map((box, i) => (
+            <FeatureBox key={i} box={box} index={i} />
+          ))}
         </motion.div>
 
-        {/* Single specific stat — no card grid, just inline */}
-        <motion.p
-          initial={shouldReduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.7 }}
-          className="mt-10 text-[11px] text-[#4a4540] font-mono"
+        {/* Row 2 — 2 boxes centered */}
+        <motion.div
+          initial={shouldReduce ? false : { opacity: 0, y: 24 }}
+          animate={shouldReduce || mounted ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          transition={{ duration: 0.6, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="flex justify-center gap-4"
         >
-          94 of 112 pilot students improved their MUET band score within 3 weeks.
-        </motion.p>
+          {FEATURE_BOXES.slice(3).map((box, i) => (
+            <div key={i} className="w-full sm:w-[calc(33.333%-8px)]">
+              <FeatureBox box={box} index={i + 3} />
+            </div>
+          ))}
+        </motion.div>
       </div>
     </section>
   )
 }
 
+function FeatureBox({ box, index }: { box: typeof FEATURE_BOXES[0]; index: number }) {
+  const Icon = box.icon
+  return (
+    <div
+      className="flex flex-col items-center text-center gap-3 rounded-2xl p-6 transition-all duration-200 cursor-default group"
+      style={{
+        background: box.bg,
+        border: `1px solid ${box.border}`,
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 8px 32px var(--accent-teal-dim)`
+        ;(e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "none"
+        ;(e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"
+      }}
+    >
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+        style={{ background: `${box.color}18` }}>
+        <Icon size={16} style={{ color: box.color }} strokeWidth={1.75} />
+      </div>
+
+      <p className="font-bold tracking-tight" style={{ fontSize: 18, color: "var(--text-primary)" }}>
+        {box.prefix}{" "}
+        <RotatingText
+          words={box.words}
+          mode="slide"
+          interval={2500 + index * 300}
+          style={{ color: "var(--accent-teal)" } as React.CSSProperties}
+        />
+      </p>
+
+      <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.5 }}>
+        {box.desc}
+      </p>
+    </div>
+  )
+}
+
 // ─── Problem Statement ────────────────────────────────────────────────────────
-// Replaces the generic "Trusted by" logos bar with something that earns attention
 
 function ProblemStatement() {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-60px" })
+  const rawIsInView = useInView(ref, { once: true, margin: "-60px" })
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const isInView = mounted && rawIsInView
   const shouldReduce = useMotionSafe()
 
   return (
-    <section ref={ref} className="py-24 border-t border-[#1e1a17]">
+    <section ref={ref} className="py-24" style={{ borderTop: "1px solid var(--border-subtle)", background: "transparent" }}>
       <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
-        {/* Left — the problem */}
         <motion.div
           initial={shouldReduce ? false : { opacity: 0, x: -20 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <p className="text-[11px] font-mono text-[#4a4540] mb-4 tracking-widest uppercase">The problem</p>
-          <h2 className="text-2xl md:text-3xl font-semibold text-[#f0ece4] leading-snug mb-4">
-            Practising alone doesn&apos;t tell you
-            what you&apos;re doing wrong.
+          <p className="text-[11px] font-mono mb-4 tracking-widest uppercase" style={{ color: "var(--text-tertiary)" }}>The problem</p>
+          <h2 className="text-2xl md:text-3xl font-semibold leading-snug mb-4" style={{ color: "var(--text-primary)" }}>
+            Practising alone doesn&apos;t tell you what you&apos;re doing wrong.
           </h2>
-          <p className="text-[#7a7265] text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed" style={{ color: "var(--text-tertiary)" }}>
             Most students run through their presentations in the mirror or in front of friends.
-            Neither gives you data. You finish, you feel uncertain, you do it again the same way.
+            Neither gives you data. You finish, feel uncertain, and do it again the same way.
           </p>
         </motion.div>
 
-        {/* Right — the contrast */}
         <motion.div
           initial={shouldReduce ? false : { opacity: 0, x: 20 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="border-l border-[#2a2520] pl-8"
+          className="pl-8"
+          style={{ borderLeft: "1px solid var(--border-subtle)" }}
         >
-          <p className="text-[11px] font-mono text-[#4a4540] mb-4 tracking-widest uppercase">What changes</p>
+          <p className="text-[11px] font-mono mb-4 tracking-widest uppercase" style={{ color: "var(--text-tertiary)" }}>What changes</p>
           <ul className="space-y-4">
             {[
-              ['You said \u201cum\u201d 14 times', "at 0:32, 1:14, 2:07\u2026"],
+              ['You said "um" 14 times', "at 0:32, 1:14, 2:07…"],
               ["Posture broke at minute 3", "shoulders dropped, eye contact lost"],
               ["Pacing 187 wpm in section 2", "MUET target is 120–150 wpm"],
             ].map(([finding, detail]) => (
               <li key={finding} className="flex items-start gap-3">
-                <ChevronRight className="w-3.5 h-3.5 text-[#d4622b] mt-0.5 shrink-0" />
+                <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--accent-teal)" }} />
                 <div>
-                  <p className="text-sm text-[#f0ece4] font-medium">{finding}</p>
-                  <p className="text-xs text-[#7a7265]">{detail}</p>
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{finding}</p>
+                  <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>{detail}</p>
                 </div>
               </li>
             ))}
@@ -263,316 +348,35 @@ function ProblemStatement() {
   )
 }
 
-// ─── Features ─────────────────────────────────────────────────────────────────
-// Left-aligned vertical list — not 3-column glassmorphism cards
-
-function Features() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-60px" })
-  const shouldReduce = useMotionSafe()
-
-  const features = [
-    {
-      index: "01",
-      title: "Speech breakdown",
-      detail:
-        "Whisper + Llama 3.3 transcribes your recording and flags every filler word, rushed sentence, and mispronunciation with a timestamp. Not a score — a map.",
-      tag: "MUET Band 1–6",
-    },
-    {
-      index: "02",
-      title: "Body language read",
-      detail:
-        "MediaPipe tracks your posture, hand gestures, and eye contact frame by frame. The report shows exactly when your confidence dropped — not just that it did.",
-      tag: "Real-time via webcam",
-    },
-    {
-      index: "03",
-      title: "Delivery pacing",
-      detail:
-        "Words per minute, pause distribution, and volume variation charted against the MUET speaking task criteria. You see what an examiner hears.",
-      tag: "Calibrated to MUET rubric",
-    },
-  ]
-
-  return (
-    <section id="features" ref={ref} className="py-24 border-t border-[#1e1a17]">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="grid md:grid-cols-[1fr_2fr] gap-16 items-start">
-          {/* Left — sticky label */}
-          <div className="md:sticky md:top-24">
-            <motion.div
-              initial={shouldReduce ? false : { opacity: 0 }}
-              animate={isInView ? { opacity: 1 } : {}}
-              transition={{ duration: 0.5 }}
-            >
-              <p className="text-[11px] font-mono text-[#4a4540] mb-4 tracking-widest uppercase">What we measure</p>
-              <h2 className="text-xl font-semibold text-[#f0ece4] leading-snug mb-4">
-                Three things that determine your band score.
-              </h2>
-              <p className="text-sm text-[#7a7265] leading-relaxed">
-                Every MUET Speaking assessment weighs the same three dimensions.
-                Most students only practise one.
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Right — feature list */}
-          <div className="space-y-0">
-            {features.map((f, i) => (
-              <motion.div
-                key={f.index}
-                initial={shouldReduce ? false : { opacity: 0, y: 20 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="group border-t border-[#1e1a17] py-8 grid grid-cols-[48px_1fr] gap-6 cursor-default"
-              >
-                <span className="text-[11px] font-mono text-[#4a4540] pt-0.5">{f.index}</span>
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-base font-semibold text-[#f0ece4] group-hover:text-[#c4a882] transition-colors duration-200">
-                      {f.title}
-                    </h3>
-                    <span className="text-[10px] font-mono text-[#4a4540] border border-[#2a2520] px-2 py-0.5 rounded-sm">
-                      {f.tag}
-                    </span>
-                  </div>
-                  <p className="text-sm text-[#7a7265] leading-relaxed">{f.detail}</p>
-                </div>
-              </motion.div>
-            ))}
-            <div className="border-t border-[#1e1a17]" />
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ─── How It Works ─────────────────────────────────────────────────────────────
-// Vertical timeline — not horizontal numbered circles
-
-function HowItWorks() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-60px" })
-  const shouldReduce = useMotionSafe()
-
-  const steps = [
-    {
-      label: "Open a session",
-      body: "Pick a MUET task type — individual presentation or group discussion. Grant webcam and mic access. That's it.",
-      note: "No downloads. Works on Chrome.",
-    },
-    {
-      label: "Present as you normally would",
-      body: "Record for 2 to 15 minutes. The system captures audio and video simultaneously. You don't need to think about it.",
-      note: "Your data stays on your account.",
-    },
-    {
-      label: "Read the report",
-      body: "A full timestamped breakdown is ready in under 90 seconds — speech errors, body language events, pacing chart, and a band estimate.",
-      note: "Export to PDF for your lecturer.",
-    },
-  ]
-
-  return (
-    <section id="how-it-works" ref={ref} className="py-24 border-t border-[#1e1a17]">
-      <div className="max-w-6xl mx-auto px-6">
-        <motion.div
-          initial={shouldReduce ? false : { opacity: 0, y: 16 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          className="mb-14"
-        >
-          <p className="text-[11px] font-mono text-[#4a4540] mb-4 tracking-widest uppercase">How it works</p>
-          <h2 className="text-xl font-semibold text-[#f0ece4]">
-            From recording to report in three steps.
-          </h2>
-        </motion.div>
-
-        {/* Vertical timeline */}
-        <div className="relative">
-          {/* Track line */}
-          <div className="absolute left-1.75 top-2 bottom-2 w-px bg-[#2a2520]" />
-
-          <div className="space-y-10 pl-10">
-            {steps.map((step, i) => (
-              <motion.div
-                key={step.label}
-                initial={shouldReduce ? false : { opacity: 0, x: -12 }}
-                animate={isInView ? { opacity: 1, x: 0 } : {}}
-                transition={{ duration: 0.5, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                className="relative"
-              >
-                {/* Dot */}
-                <div className="absolute -left-10 top-1.5 w-3.5 h-3.5 rounded-full border border-[#d4622b] bg-[#0c0a09] flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#d4622b]" />
-                </div>
-
-                <p className="text-sm font-semibold text-[#f0ece4] mb-1">{step.label}</p>
-                <p className="text-sm text-[#7a7265] leading-relaxed mb-1">{step.body}</p>
-                <p className="text-[11px] font-mono text-[#4a4540]">{step.note}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        <motion.div
-          initial={shouldReduce ? false : { opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-14 pl-10"
-        >
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 text-sm text-[#d4622b] hover:text-[#bf5524] transition-colors duration-200 group font-medium"
-          >
-            Try it on my next presentation
-            <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-          </Link>
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
-// ─── Institutional Strip ──────────────────────────────────────────────────────
-// Logos treated as credentials, not social proof widgets
-
-function InstitutionalStrip() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-40px" })
-  const shouldReduce = useMotionSafe()
-
-  return (
-    <section ref={ref} className="py-16 border-t border-[#1e1a17]">
-      <div className="max-w-6xl mx-auto px-6">
-        <motion.div
-          initial={shouldReduce ? false : { opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-center gap-8 md:gap-12"
-        >
-          <p className="text-[11px] font-mono text-[#4a4540] tracking-widest uppercase whitespace-nowrap">
-            Built for
-          </p>
-
-          <div className="flex items-center gap-8 flex-wrap">
-            {[
-              {
-                src: "/msu.png",
-                alt: "Management and Science University",
-                label: "Management & Science University",
-              },
-              {
-                src: "/moe.jpg",
-                alt: "Kementerian Pendidikan Malaysia",
-                label: "Kementerian Pendidikan Malaysia",
-              },
-              {
-                src: "/mpm.png",
-                alt: "Majlis Peperiksaan Malaysia",
-                label: "MUET — Majlis Peperiksaan Malaysia",
-              },
-            ].map((org) => (
-              <div key={org.alt} className="flex items-center gap-2.5 opacity-40 hover:opacity-70 transition-opacity duration-300">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={org.src}
-                  alt={org.alt}
-                  width={22}
-                  height={22}
-                  className="object-contain"
-                />
-                <span className="text-xs text-[#7a7265]">{org.label}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
-// ─── Final CTA ────────────────────────────────────────────────────────────────
-
-function FinalCTA() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-60px" })
-  const shouldReduce = useMotionSafe()
-
-  return (
-    <section ref={ref} className="py-28 border-t border-[#1e1a17]">
-      <div className="max-w-6xl mx-auto px-6">
-        <motion.div
-          initial={shouldReduce ? false : { opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-xl"
-        >
-          <h2 className="text-3xl md:text-4xl font-semibold text-[#f0ece4] leading-snug mb-4">
-            The presentation is in two weeks.
-            <br />
-            <span className="text-[#7a7265] font-light">
-              What does your feedback loop look like?
-            </span>
-          </h2>
-          <p className="text-sm text-[#7a7265] leading-relaxed mb-8">
-            PresentCoach is free to start. No institution account needed.
-            Your first session report is ready in under 90 seconds.
-          </p>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 bg-[#d4622b] text-white text-sm px-6 py-3 rounded-sm font-medium hover:bg-[#bf5524] transition-colors duration-200 group"
-            >
-              Analyse my first recording
-              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-            </Link>
-            <Link
-              href="/login"
-              className="text-sm text-[#7a7265] hover:text-[#f0ece4] transition-colors duration-200"
-            >
-              Sign in
-            </Link>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
 function Footer() {
   return (
-    <footer className="border-t border-[#1e1a17] py-8">
+    <footer className="py-8" style={{ borderTop: "1px solid var(--border-subtle)", background: "transparent" }}>
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <Mic className="w-3.5 h-3.5 text-[#4a4540]" strokeWidth={1.5} />
-          <span className="text-xs text-[#4a4540]">PresentCoach</span>
-          <span className="text-[#2a2520] text-xs">—</span>
-          <span className="text-[11px] font-mono text-[#4a4540]">MSU Final Year Project · Ziyan Nifail</span>
+          <VoxReadyLogo iconSize={18} />
+          <span style={{ color: "var(--border-medium)", fontSize: 12 }}>—</span>
+          <span className="text-[11px] font-mono" style={{ color: "var(--text-tertiary)" }}>MSU Final Year Project · Ziyan Nifail</span>
         </div>
 
         <div className="flex items-center gap-6">
           {[
-            { label: "Features", href: "#features" },
-            { label: "How it works", href: "#how-it-works" },
             { label: "Sign in", href: "/login" },
             { label: "Register", href: "/register" },
           ].map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-[11px] text-[#4a4540] hover:text-[#7a7265] transition-colors duration-200"
+            <Link key={link.label} href={link.href}
+              className="text-[11px] transition-colors duration-200"
+              style={{ color: "var(--text-tertiary)" }}
+              onMouseEnter={e => (e.currentTarget.style.color = "var(--text-secondary)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "var(--text-tertiary)")}
             >
               {link.label}
             </Link>
           ))}
         </div>
 
-        <p className="text-[11px] font-mono text-[#4a4540]">
+        <p className="text-[11px] font-mono" style={{ color: "var(--text-tertiary)" }}>
           © {new Date().getFullYear()}
         </p>
       </div>
@@ -584,17 +388,11 @@ function Footer() {
 
 export default function LandingPage() {
   return (
-    <main
-      className="min-h-screen overflow-x-hidden"
-      style={{ background: "#0c0a09", color: "#f0ece4" }}
-    >
+    <main className="relative min-h-screen overflow-x-hidden">
+      <ShaderBackground />
       <Navbar />
       <Hero />
       <ProblemStatement />
-      <Features />
-      <HowItWorks />
-      <InstitutionalStrip />
-      <FinalCTA />
       <Footer />
     </main>
   )

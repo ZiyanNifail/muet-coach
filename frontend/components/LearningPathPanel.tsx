@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import type { RubricBands } from '@/components/RubricPanel'
 
 interface SessionPoint {
   session_date: string
@@ -56,9 +57,72 @@ const DRILLS: Record<string, { title: string; drills: string[] }> = {
       'Review your transcript and rewrite 3 sentences where you could express ideas more clearly.',
     ],
   },
+  task_fulfilment: {
+    title: 'Task Fulfilment',
+    drills: [
+      'Pick any topic and speak for 90 seconds: introduction (15s), 3 main points (60s), conclusion (15s). Stay on-topic throughout.',
+      'Before speaking, write a 3-point outline in 30 seconds — then deliver it strictly. Re-record if you deviate.',
+      'Make a claim, then support it with 2 specific examples. Record 60 seconds per claim — no vague statements.',
+    ],
+  },
+  coherence_cohesion: {
+    title: 'Coherence & Cohesion',
+    drills: [
+      'Speak for 90 seconds on any topic using at least 5 discourse markers: firstly, furthermore, however, as a result, in conclusion.',
+      'Summarise a news article in 2 minutes. Every new sentence must begin with a connective (therefore, however, in addition).',
+      'Every time you feel the urge to say "um" or "uh", replace it with a silent 2-second pause. Count your pauses afterward.',
+    ],
+  },
+  lexical_resource: {
+    title: 'Lexical Resource',
+    drills: [
+      'Choose 5 words you overuse (good, bad, thing, very, said). Find 2 precise alternatives for each, then use them in sentences.',
+      'Give a 90-second speech, then identify 3 basic words you used. Re-record the same speech replacing them with higher-band alternatives.',
+      'Pick a MUET topic. List 10 topic-specific collocations in 2 minutes, then use at least 5 of them in a 90-second talk.',
+    ],
+  },
+  grammatical_range_accuracy: {
+    title: 'Grammatical Range & Accuracy',
+    drills: [
+      'Describe an issue for 90 seconds: past tense for what happened, present perfect for impact, conditional for implications.',
+      'In a 90-second speech, every 3 sentences include one complex sentence using although, which, despite, or provided that.',
+      'Give your opinion on a MUET topic for 90 seconds. Use at least two conditional structures (one first, one second/third conditional).',
+    ],
+  },
+  pronunciation: {
+    title: 'Pronunciation',
+    drills: [
+      'Practise these word pairs slowly then at speed: ship/sheep, wet/vet, thin/tin, three/tree, leave/live. Record and compare.',
+      'Say these words with correct stress: pho-TO-graph, pho-TOG-ra-phy, de-VE-lop, DE-ve-lop-ment. Use each in a sentence. Repeat 3×.',
+      'Find a 1-minute English news clip. Listen once, then shadow it word-by-word, matching the speaker\'s rhythm and stress.',
+    ],
+  },
 }
 
-function findWeakestMetric(sessions: SessionPoint[]): string {
+const RUBRIC_CRITERIA_KEYS = [
+  'task_fulfilment',
+  'coherence_cohesion',
+  'lexical_resource',
+  'grammatical_range_accuracy',
+  'pronunciation',
+] as const
+
+function findWeakestMetric(sessions: SessionPoint[], rubricBands?: RubricBands): string {
+  // Prefer rubric bands from the latest session — more precise than history heuristics
+  if (rubricBands) {
+    let worst = 'band_score'
+    let worstScore = Infinity
+    for (const key of RUBRIC_CRITERIA_KEYS) {
+      const band = rubricBands[key]
+      if (band && band.score < worstScore) {
+        worstScore = band.score
+        worst = key
+      }
+    }
+    if (worst !== 'band_score') return worst
+  }
+
+  // Fall back to history-based heuristics
   const recent = sessions.slice(0, 5)
   const scores: Record<string, number[]> = {
     eye_contact: [],
@@ -71,9 +135,7 @@ function findWeakestMetric(sessions: SessionPoint[]): string {
     const r = s.feedback_reports
     if (!r) continue
     if (r.eye_contact_pct != null) scores.eye_contact.push(r.eye_contact_pct)
-    // Pace: distance from ideal 140 WPM → convert to 0–100 score
     if (r.wpm_avg != null) scores.pace.push(Math.max(0, 100 - Math.abs(r.wpm_avg - 140) * 1.5))
-    // Filler: higher count = lower score (each filler costs 5 points)
     if (r.filler_count != null) scores.filler_words.push(Math.max(0, 100 - r.filler_count * 5))
     if (r.posture_score != null) scores.posture.push(r.posture_score)
   }
@@ -93,7 +155,7 @@ function findWeakestMetric(sessions: SessionPoint[]): string {
   return worstMetric
 }
 
-export function LearningPathPanel({ studentId }: { studentId: string }) {
+export function LearningPathPanel({ studentId, rubricBands }: { studentId: string; rubricBands?: RubricBands }) {
   const [sessions, setSessions] = useState<SessionPoint[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -115,11 +177,13 @@ export function LearningPathPanel({ studentId }: { studentId: string }) {
     })
   }, [studentId])
 
-  if (loading || sessions.length < 2) return null
+  // Show if we have rubric bands (no history needed) or if history is loaded with ≥2 sessions
+  if (!rubricBands && (loading || sessions.length < 2)) return null
 
-  const metric = findWeakestMetric(sessions)
+  const metric = findWeakestMetric(sessions, rubricBands)
   const { title, drills } = DRILLS[metric]
   const sessionCount = Math.min(sessions.length, 5)
+  const isRubricDriven = !!rubricBands && RUBRIC_CRITERIA_KEYS.includes(metric as typeof RUBRIC_CRITERIA_KEYS[number])
 
   return (
     <div
@@ -139,8 +203,10 @@ export function LearningPathPanel({ studentId }: { studentId: string }) {
       </div>
 
       <p className="text-xs" style={{ color: '#9B8E80' }}>
-        Based on your last {sessionCount} session{sessionCount > 1 ? 's' : ''}, your weakest area is{' '}
-        <span style={{ color: '#c4b5fd' }}>{title}</span>. Here are 3 targeted drills.
+        {isRubricDriven
+          ? <>Based on your MUET rubric breakdown, your lowest criterion is{' '}<span style={{ color: '#c4b5fd' }}>{title}</span>. Here are 3 targeted drills.</>
+          : <>Based on your last {sessionCount} session{sessionCount > 1 ? 's' : ''}, your weakest area is{' '}<span style={{ color: '#c4b5fd' }}>{title}</span>. Here are 3 targeted drills.</>
+        }
       </p>
 
       <div className="flex flex-col gap-2">

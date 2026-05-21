@@ -16,6 +16,7 @@ export default function NewAssignmentPage() {
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
   const [examMode, setExamMode] = useState(false)
+  const [slideRequired, setSlideRequired] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,6 +37,7 @@ export default function NewAssignmentPage() {
           description: description.trim(),
           deadline: deadline || null,
           exam_mode: examMode,
+          slide_required: slideRequired,
         }),
       })
       if (!res.ok) {
@@ -57,7 +59,7 @@ export default function NewAssignmentPage() {
   }
 
   return (
-    <div className="p-6 flex flex-col gap-6 max-w-2xl">
+    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-2xl">
       <div className="flex items-center gap-3">
         <Link href={`/educator/courses/${courseId}`}>
           <button className="text-[#9B8E80] hover:text-[#6B6050] transition-colors">
@@ -86,7 +88,7 @@ export default function NewAssignmentPage() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Individual Presentation — Topic 1"
               required
-              className="rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8]"
+              className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8] min-h-[44px]"
               style={inputStyle}
               onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
               onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
@@ -101,7 +103,7 @@ export default function NewAssignmentPage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the task, topic, or rubric criteria..."
               rows={4}
-              className="rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8] resize-none"
+              className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8] resize-none"
               style={inputStyle}
               onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
               onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
@@ -115,7 +117,7 @@ export default function NewAssignmentPage() {
               type="datetime-local"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors"
+              className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors min-h-[44px]"
               style={{ ...inputStyle, colorScheme: 'dark' }}
               onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
               onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
@@ -124,10 +126,10 @@ export default function NewAssignmentPage() {
 
           {/* Exam mode toggle */}
           <div
-            className="flex items-center justify-between rounded-lg border px-4 py-3"
+            className="flex items-start justify-between gap-4 rounded-lg border px-4 py-3"
             style={{ borderColor: examMode ? 'rgba(245,158,11,0.3)' : 'rgba(180,165,148,0.30)' }}
           >
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-[#1C1A17]">Exam Mode (MUET Part 1)</div>
               <div className="text-xs text-[#9B8E80] mt-0.5">2-minute prep + 2-minute delivery format</div>
             </div>
@@ -143,11 +145,33 @@ export default function NewAssignmentPage() {
             >
               <span
                 className="absolute rounded-full bg-white transition-all"
-                style={{
-                  width: 16, height: 16,
-                  top: 3,
-                  left: examMode ? 21 : 3,
-                }}
+                style={{ width: 16, height: 16, top: 3, left: examMode ? 21 : 3 }}
+              />
+            </button>
+          </div>
+
+          {/* Slide deck required toggle */}
+          <div
+            className="flex items-start justify-between gap-4 rounded-lg border px-4 py-3"
+            style={{ borderColor: slideRequired ? 'rgba(245,158,11,0.3)' : 'rgba(180,165,148,0.30)' }}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-[#1C1A17]">Require Slide Deck</div>
+              <div className="text-xs text-[#9B8E80] mt-0.5">Students must upload a PDF or PPTX alongside their recording</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSlideRequired((v) => !v)}
+              className="rounded-full transition-all"
+              style={{
+                width: 40, height: 22,
+                background: slideRequired ? '#f59e0b' : 'rgba(180,165,148,0.30)',
+                position: 'relative',
+              }}
+            >
+              <span
+                className="absolute rounded-full bg-white transition-all"
+                style={{ width: 16, height: 16, top: 3, left: slideRequired ? 21 : 3 }}
               />
             </button>
           </div>
@@ -155,7 +179,7 @@ export default function NewAssignmentPage() {
 
         {error && <p className="text-sm text-[#ef4444]">{error}</p>}
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
           <Button type="submit" disabled={loading || !title.trim()}>
             {loading ? 'Creating...' : 'Create Assignment →'}
           </Button>

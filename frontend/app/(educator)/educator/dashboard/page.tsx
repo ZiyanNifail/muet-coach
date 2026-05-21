@@ -120,17 +120,17 @@ export default function EducatorDashboard() {
   }
 
   return (
-    <div className="p-6 flex flex-col gap-6 max-w-6xl">
+    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-6xl">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>
             EDUCATOR PORTAL
           </div>
-          <h1 className="text-2xl font-semibold text-[#1C1A17]">Dashboard</h1>
-          <p className="text-[#6B6050] text-sm mt-1">Overview of your courses, students, and submissions.</p>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Dashboard</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Overview of your courses, students, and submissions.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link href="/educator/analytics">
             <Button variant="secondary">
               <BarChart2 size={14} className="mr-2" />
@@ -147,7 +147,7 @@ export default function EducatorDashboard() {
       </div>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: 'COURSES', value: String(courses.length), icon: BookOpen, color: '#f59e0b' },
           { label: 'TOTAL STUDENTS', value: String(totalStudents), icon: Users, color: '#94a3b8' },
@@ -157,10 +157,10 @@ export default function EducatorDashboard() {
           const Icon = m.icon
           return (
             <div key={m.label} className="flex items-center gap-4 rounded-xl border p-4"
-              style={{ background: 'rgba(180,165,148,0.06)', borderColor: 'rgba(180,165,148,0.22)' }}>
+              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}>
               <Icon size={20} style={{ color: m.color, opacity: 0.7, flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>{m.label}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>{m.label}</div>
                 <div className="font-mono text-xl font-semibold" style={{ color: m.color }}>{m.value}</div>
               </div>
             </div>
@@ -168,25 +168,25 @@ export default function EducatorDashboard() {
         })}
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left 2/3: courses + recent submissions */}
-        <div className="col-span-2 flex flex-col gap-5">
+        <div className="lg:col-span-2 flex flex-col gap-5">
           {/* My Courses */}
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 10 }}>
               MY COURSES
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center h-28 rounded-xl border"
-                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
-                <span className="text-[#9B8E80] text-sm">Loading...</span>
+                style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}>
+                <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Loading...</span>
               </div>
             ) : courses.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-36 rounded-xl border gap-4"
-                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
-                <BookOpen size={24} style={{ color: '#9B8E80', opacity: 0.5 }} />
-                <p className="text-[#9B8E80] text-sm">No courses yet.</p>
+                style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}>
+                <BookOpen size={24} style={{ color: 'var(--text-tertiary)', opacity: 0.5 }} />
+                <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No courses yet.</p>
                 <Link href="/educator/courses/new"><Button variant="secondary">Create First Course</Button></Link>
               </div>
             ) : (
@@ -194,25 +194,25 @@ export default function EducatorDashboard() {
                 {courses.map((course) => (
                   <Link key={course.id} href={`/educator/courses/${course.id}`} className="no-underline">
                     <div className="flex items-center gap-4 rounded-xl border p-4 transition-colors hover:border-white/10 cursor-pointer"
-                      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                      style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}>
                       <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
                         style={{ background: 'rgba(245,158,11,0.10)' }}>
                         <BookOpen size={16} style={{ color: '#f59e0b' }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm font-semibold text-[#1C1A17] truncate">{course.name}</span>
+                          <span className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{course.name}</span>
                           <Badge variant="amber">{course.subject_code}</Badge>
                           {course.rubric_path && <Badge variant="green">Rubric</Badge>}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-[#9B8E80]">
+                        <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                           <span className="flex items-center gap-1">
                             <Users size={10} /> {course.course_members?.[0]?.count ?? 0} students
                           </span>
-                          <span>Code: <code className="font-mono text-[#6B6050]">{course.invite_code}</code></span>
+                          <span>Code: <code className="font-mono" style={{ color: 'var(--text-secondary)' }}>{course.invite_code}</code></span>
                         </div>
                       </div>
-                      <ChevronRight size={14} style={{ color: '#C4B8A8', flexShrink: 0 }} />
+                      <ChevronRight size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
                     </div>
                   </Link>
                 ))}
@@ -224,22 +224,22 @@ export default function EducatorDashboard() {
           {recentSubs.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2.5">
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                   RECENT SUBMISSIONS
                 </div>
                 <Link href="/educator/submissions">
-                  <span className="text-xs text-[#94a3b8] hover:underline cursor-pointer">View all</span>
+                  <span className="text-xs hover:underline cursor-pointer" style={{ color: 'var(--text-tertiary)' }}>View all</span>
                 </Link>
               </div>
               <div className="rounded-xl border overflow-hidden"
-                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}>
                 {recentSubs.map((s, i) => (
                   <Link key={s.id} href={`/educator/courses/${s.course_id}/submissions/${s.id}`} className="no-underline">
                     <div className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.02] transition-colors cursor-pointer"
-                      style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(180,165,148,0.08)' }}>
+                      style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border-subtle)' }}>
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-[#1C1A17]">{s.student}</span>
-                        <span className="text-xs text-[#9B8E80] ml-2">
+                        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{s.student}</span>
+                        <span className="text-xs ml-2" style={{ color: 'var(--text-tertiary)' }}>
                           {new Date(s.date).toLocaleDateString('en-MY', { dateStyle: 'medium' })}
                         </span>
                       </div>
@@ -250,7 +250,7 @@ export default function EducatorDashboard() {
                         style={{ color: bandColor(s.band) }}>
                         {s.band != null ? s.band.toFixed(1) : '—'}
                       </span>
-                      <ChevronRight size={13} style={{ color: '#C4B8A8' }} />
+                      <ChevronRight size={13} style={{ color: 'var(--text-tertiary)' }} />
                     </div>
                   </Link>
                 ))}
@@ -263,9 +263,9 @@ export default function EducatorDashboard() {
         <div className="flex flex-col gap-4">
           {/* Pending actions */}
           <div className="flex flex-col gap-3 rounded-xl border p-4"
-            style={{ background: 'rgba(255,255,255,0.80)', borderColor: pendingItems.length > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(180,165,148,0.22)' }}>
+            style={{ background: 'var(--bg-panel)', borderColor: pendingItems.length > 0 ? 'rgba(239,68,68,0.2)' : 'var(--border-subtle)', transition: 'background 0.3s ease' }}>
             <div className="flex items-center justify-between">
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                 PENDING ACTIONS
               </div>
               {pendingItems.length > 0 && (
@@ -278,7 +278,7 @@ export default function EducatorDashboard() {
             {pendingItems.length === 0 ? (
               <div className="flex items-center gap-2 py-2">
                 <CheckCircle size={14} style={{ color: '#22c55e' }} />
-                <span className="text-xs text-[#9B8E80]">All caught up!</span>
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>All caught up!</span>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -288,14 +288,14 @@ export default function EducatorDashboard() {
                       style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.1)' }}>
                       <AlertCircle size={12} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-[#1C1A17] truncate">{item.label}</div>
-                        <div className="text-[10px] text-[#9B8E80]">{item.detail} · <span className="font-mono text-[#f59e0b]">{item.subject_code}</span></div>
+                        <div className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{item.label}</div>
+                        <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{item.detail} · <span className="font-mono text-[#f59e0b]">{item.subject_code}</span></div>
                       </div>
                     </div>
                   </Link>
                 ))}
                 {pendingItems.length > 6 && (
-                  <p className="text-[10px] text-[#C4B8A8] text-center">+{pendingItems.length - 6} more</p>
+                  <p className="text-[10px] text-center" style={{ color: 'var(--text-tertiary)' }}>+{pendingItems.length - 6} more</p>
                 )}
               </div>
             )}
@@ -303,8 +303,8 @@ export default function EducatorDashboard() {
 
           {/* Quick links */}
           <div className="flex flex-col gap-2 rounded-xl border p-4"
-            style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
+            style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>
               QUICK ACTIONS
             </div>
             {[
@@ -316,7 +316,7 @@ export default function EducatorDashboard() {
               const Icon = link.icon
               return (
                 <Link key={link.href} href={link.href} className="no-underline">
-                  <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-[#9B8E80] hover:text-[#6B6050] hover:bg-white/[0.03] transition-all cursor-pointer">
+                  <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all cursor-pointer" style={{ color: 'var(--text-tertiary)' }}>
                     <Icon size={13} />
                     {link.label}
                   </div>

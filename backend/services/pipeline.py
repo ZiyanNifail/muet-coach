@@ -18,8 +18,10 @@ from services.nlp_service import (
     compute_wpm_avg,
     compute_wpm_timeseries,
     compute_lexical_diversity,
+    count_discourse_markers,
+    compute_sentence_stats,
 )
-from services.cefr_evaluator import compute_band_score
+from services.cefr_evaluator import compute_band_score, compute_subband_scores
 from services.groq_service import generate_feedback
 from services.supabase_client import (
     db_update_presentation,
@@ -147,7 +149,7 @@ async def run_pipeline(
             logger.warning("Transcript empty or too short for %s — marking audio_ok=False", presentation_id)
             audio_ok = False
 
-        # ── T2.12B  Sentiment (distilbert) ───────────────────────────────────
+        # ── T2.12B  Sentiment (VADER) ────────────────────────────────────────
         sentiment_score: float | None = None
         if transcript and len(transcript.split()) >= 5:
             loop = asyncio.get_event_loop()
@@ -190,16 +192,37 @@ async def run_pipeline(
         pace_timeseries = compute_wpm_timeseries(transcript, duration_secs)
         lexical_diversity = compute_lexical_diversity(transcript)
 
+        word_count = len(transcript.split()) if transcript else 0
+        discourse_marker_count = count_discourse_markers(transcript) if transcript else 0
+        sentence_stats = compute_sentence_stats(transcript) if transcript else {}
+        sentence_length_variance: float | None = sentence_stats.get("sentence_length_variance")
+
         # ── T2.16  CEFR band (rule-based) ────────────────────────────────────
-        # Pass None through for N/A metrics — cefr_evaluator skips them
-        # rather than defaulting to 0 (CRIT-04 fix).
-        rule_band = compute_band_score(
-            wpm_avg=wpm_avg,
-            eye_contact_pct=eye_contact_pct,
-            filler_density=filler_density,
-            posture_score=posture_score,
-            lexical_diversity=lexical_diversity,
-        )
+        # When no speech detected, skip CEFR entirely — filler_density=0 earns
+        # a bonus and eye contact/posture inflate the score despite no speech.
+        if audio_ok:
+            rule_band = compute_band_score(
+                wpm_avg=wpm_avg,
+                eye_contact_pct=eye_contact_pct,
+                filler_density=filler_density,
+                posture_score=posture_score,
+                lexical_diversity=lexical_diversity,
+            )
+            rule_subbands = compute_subband_scores(
+                wpm_avg=wpm_avg,
+                filler_density=filler_density,
+                lexical_diversity=lexical_diversity,
+                voice_clarity_score=voice_clarity_score,
+                pitch_mean_hz=pitch_mean_hz,
+                energy_mean_db=energy_mean_db,
+                duration_secs=duration_secs,
+                word_count=word_count,
+                discourse_marker_count=discourse_marker_count,
+                sentence_length_variance=sentence_length_variance,
+            )
+        else:
+            rule_band = 1.0
+            rule_subbands = None
 
         # ── T2.18  Groq feedback ──────────────────────────────────────────────
         metrics_for_groq = {
@@ -211,12 +234,15 @@ async def run_pipeline(
             "duration_secs": duration_secs,
             "session_mode": session_mode,
         }
-        # Pass rule_band so Groq uses it as a calibration anchor (CRIT-01 fix).
-        groq_result = await generate_feedback(transcript, metrics_for_groq, rule_band=rule_band)
+        groq_result = await generate_feedback(
+            transcript, metrics_for_groq,
+            rule_band=rule_band,
+            rule_subbands=rule_subbands,
+        )
 
-        # Use merged band from groq_service; fall back to rule_band if Groq failed.
         final_band = groq_result["band_score"] if groq_result["band_score"] is not None else rule_band
         advice_cards = groq_result["advice_cards"]
+        rubric_bands = groq_result.get("rubric_bands")
 
         # ── T3.04A  Composite Confidence Score ───────────────────────────────
         confidence_score = compute_confidence_score(
@@ -248,6 +274,7 @@ async def run_pipeline(
             "sentiment_score": sentiment_score,
             "voice_clarity_score": voice_clarity_score,
             "confidence_score": confidence_score,
+            "rubric_bands": rubric_bands,
         }
         report_id = await db_insert_report(report)
         if report_id is None:

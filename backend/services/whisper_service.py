@@ -14,7 +14,23 @@ from concurrent.futures import ThreadPoolExecutor
 logger = logging.getLogger(__name__)
 
 _local_model = None
-_executor = ThreadPoolExecutor(max_workers=2)
+_executor = ThreadPoolExecutor(max_workers=5)
+_groq_client = None
+
+
+def _get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        api_key = os.getenv("GROQ_API_KEY", "")
+        if api_key:
+            from groq import Groq
+            _groq_client = Groq(api_key=api_key)
+    return _groq_client
+
+
+def _reset_groq_client():
+    global _groq_client
+    _groq_client = None
 
 
 # ── Groq Whisper (primary) ────────────────────────────────────────────────────
@@ -30,14 +46,12 @@ def _transcribe_chunk_groq(chunk_path: str, with_clarity: bool = False) -> tuple
     Returns:
         (text, avg_logprob) — avg_logprob is None unless with_clarity=True.
     """
-    api_key = os.getenv("GROQ_API_KEY", "")
-    if not api_key:
+    client = _get_groq_client()
+    if client is None:
         text = _transcribe_chunk_local(chunk_path)
         avg_logprob = _local_chunk_logprob(chunk_path) if with_clarity else None
         return text, avg_logprob
     try:
-        from groq import Groq
-        client = Groq(api_key=api_key)
         with open(chunk_path, "rb") as f:
             file_bytes = f.read()
 
@@ -74,6 +88,7 @@ def _transcribe_chunk_groq(chunk_path: str, with_clarity: bool = False) -> tuple
             return text.strip(), None
     except Exception as exc:
         logger.warning("Groq Whisper failed for %s: %s — falling back to local Whisper", chunk_path, exc)
+        _reset_groq_client()
         text = _transcribe_chunk_local(chunk_path)
         avg_logprob = _local_chunk_logprob(chunk_path) if with_clarity else None
         return text, avg_logprob

@@ -91,7 +91,7 @@ export default function AllSubmissionsPage() {
   }
 
   return (
-    <div className="p-6 flex flex-col gap-6 max-w-5xl">
+    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-5xl">
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href="/educator/dashboard">
@@ -159,8 +159,9 @@ export default function AllSubmissionsPage() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-0 rounded-xl border overflow-hidden"
+        <div className="overflow-x-auto rounded-xl border"
           style={{ borderColor: 'rgba(180,165,148,0.22)' }}>
+        <div className="flex flex-col gap-0 min-w-[640px]">
           {/* Table header */}
           <div
             className="grid grid-cols-12 gap-3 px-4 py-2.5"
@@ -242,6 +243,7 @@ export default function AllSubmissionsPage() {
               </Link>
             )
           })}
+        </div>
         </div>
       )}
     </div>

@@ -1,5 +1,13 @@
 {
   "mcpServers": {
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "mcp-obsidian", "C:\\Users\\USER\\DevVault"],
+      "env": {
+        "OBSIDIAN_API_KEY": "188a8ce77128be302d9252dd025959b6e2ddbddd73d8f8671b30dda1c859dedb",
+        "OBSIDIAN_HOST": "https://localhost:27124"
+      }
+    },
     "browser": {
       "command": "node",
       "args": ["C:\\presentation-coach-fyp\\tools\\browser-mcp\\index.mjs"]

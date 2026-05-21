@@ -75,17 +75,53 @@
   --dot-error:      #C0392B;
 }
 
+/* ── Dark mode overrides ── */
+.dark {
+  --bg-base:        #0B1410;
+  --bg-panel:       rgba(15, 30, 24, 0.90);
+  --bg-panel-hover: rgba(20, 40, 32, 0.95);
+  --bg-surface:     rgba(61, 184, 150, 0.07);
+  --bg-surface-alt: rgba(61, 184, 150, 0.03);
+
+  --border-subtle:  rgba(61, 184, 150, 0.14);
+  --border-medium:  rgba(61, 184, 150, 0.26);
+  --border-strong:  rgba(61, 184, 150, 0.42);
+
+  --text-primary:   #E8F5F1;
+  --text-secondary: #A8C5BC;
+  --text-tertiary:  #6B9E93;
+
+  --accent-teal:       #3DB896;
+  --accent-teal-dim:   rgba(61,184,150,0.13);
+  --accent-green:      #3DB896;
+  --accent-green-dim:  rgba(61,184,150,0.12);
+  --accent-amber:      #D4A44C;
+  --accent-amber-dim:  rgba(212,164,76,0.13);
+  --accent-red:        #F07070;
+  --accent-red-dim:    rgba(240,112,112,0.12);
+  --accent-blue:       #7AB5A8;
+  --accent-blue-dim:   rgba(122,181,168,0.12);
+  --accent-purple:     #A78BCA;
+
+  --dot-active:     #3DB896;
+  --dot-processing: #D4A44C;
+  --dot-complete:   #6B9E93;
+  --dot-error:      #F07070;
+}
+
 html {
-  background-color: #FAF9F7;
-  color: #1C1A17;
+  background-color: var(--bg-base, #FAF9F7);
+  color: var(--text-primary, #1C1A17);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body {
-  background-color: #FAF9F7;
-  color: #1C1A17;
+  background-color: var(--bg-base, #FAF9F7);
+  color: var(--text-primary, #1C1A17);
   min-height: 100vh;
   overflow-y: scroll;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Reusable utility classes */
@@ -188,3 +224,4 @@ body {
 .font-serif {
   font-family: 'Lora', Georgia, serif;
 }
+

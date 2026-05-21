@@ -12,7 +12,7 @@ interface ConsentModalProps {
 const consentPoints = [
   'Your video and audio recordings will be processed by AI models to generate coaching feedback.',
   'Recording data is stored securely on Supabase for up to 90 days.',
-  'Your transcript and metrics are used only for personalised coaching — never shared externally.',
+  'Your transcript and metrics are used only for personalised coaching, never shared externally.',
   'You can withdraw consent and request data deletion at any time from Settings.',
 ]
 
@@ -34,19 +34,26 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(20px)' }}
+      style={{ background: 'rgba(0,0,0,0.65)' }}
     >
       <div
         className="w-full max-w-md flex flex-col gap-5 rounded-2xl border p-6"
         style={{
-          background: 'rgba(180,165,148,0.35)',
-          borderColor: 'rgba(180,165,148,0.30)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
+          background: 'var(--bg-panel)',
+          borderColor: 'rgba(58,125,106,0.20)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.28)',
+          transition: 'background 0.3s ease, color 0.3s ease',
         }}
       >
+        {/* MSU logo */}
+        <div className="flex items-center gap-2.5 pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/msu.png" alt="Management and Science University" style={{ width: 40, height: 40, objectFit: 'contain' }} />
+          <span style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 500 }}>Management and Science University</span>
+        </div>
+
         <div className="flex items-start gap-3">
-          <ShieldCheck size={22} style={{ color: '#94a3b8', marginTop: 2, flexShrink: 0 }} />
+          <ShieldCheck size={22} style={{ color: '#3A7D6A', marginTop: 2, flexShrink: 0 }} />
           <div>
             <div
               style={{
@@ -54,14 +61,14 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
                 fontWeight: 600,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: '#9B8E80',
+                color: 'var(--text-tertiary)',
                 marginBottom: 4,
               }}
             >
               Data Consent
             </div>
-            <h2 className="text-lg font-semibold text-[#1C1A17]">Before you begin</h2>
-            <p className="text-[#6B6050] text-sm mt-1">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Before you begin</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
               This platform uses AI to analyse your presentations. Please review:
             </p>
           </div>
@@ -69,10 +76,10 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
 
         <ul className="flex flex-col gap-2.5">
           {consentPoints.map((point, i) => (
-            <li key={i} className="flex gap-2.5 text-sm text-[#6B6050] leading-6">
+            <li key={i} className="flex gap-2.5 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
               <ChevronRight
                 size={14}
-                style={{ color: '#94a3b8', marginTop: 4, flexShrink: 0 }}
+                style={{ color: '#3A7D6A', marginTop: 4, flexShrink: 0 }}
               />
               {point}
             </li>
@@ -84,9 +91,9 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
             type="checkbox"
             checked={checked}
             onChange={(e) => setChecked(e.target.checked)}
-            className="mt-1 w-4 h-4 accent-[#94a3b8] shrink-0"
+            className="mt-1 w-4 h-4 accent-[#3A7D6A] shrink-0"
           />
-          <span className="text-sm text-[#1C1A17]">
+          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
             I understand and consent to my video and audio being processed by AI for coaching purposes.
           </span>
         </label>

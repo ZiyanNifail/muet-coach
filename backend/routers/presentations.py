@@ -16,7 +16,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Background
 from pydantic import BaseModel
 from typing import Optional, List
 
-from services.supabase_client import get_supabase, db_update_presentation
+from services.supabase_client import get_supabase, db_update_presentation, db_get_assignment
 from services.pipeline import run_pipeline
 from services.storage_service import get_video_signed_url
 from services.auth_deps import get_current_user_id
@@ -46,6 +46,7 @@ async def upload_presentation(
     topic_text: Optional[str] = Form(None),
     brainstorm_notes: Optional[str] = Form(None),
     duration_secs: Optional[float] = Form(None),
+    assignment_id: Optional[str] = Form(None),
     slides: Optional[UploadFile] = File(None),
     authorization: Optional[str] = Header(None),
 ):
@@ -53,6 +54,26 @@ async def upload_presentation(
     ct = (video.content_type or "").split(";")[0].strip()
     if ct not in ALLOWED_TYPES:
         raise HTTPException(400, f"Unsupported file type: {ct}. Must be video/webm or video/mp4.")
+
+    # ── Assignment lookup + deadline/slide enforcement ───────────────────────
+    assignment_row = None
+    if assignment_id:
+        assignment_row = db_get_assignment(assignment_id)
+        if not assignment_row:
+            raise HTTPException(404, "Assignment not found.")
+        deadline = assignment_row.get("deadline")
+        if deadline:
+            from datetime import datetime, timezone
+            try:
+                dl = datetime.fromisoformat(str(deadline).replace("Z", "+00:00"))
+                if dl.tzinfo is None:
+                    dl = dl.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) > dl:
+                    raise HTTPException(400, "Assignment deadline has passed — resubmissions are not allowed.")
+            except ValueError:
+                pass
+        if assignment_row.get("slide_required") and not (slides and slides.filename):
+            raise HTTPException(400, "This assignment requires a slide deck upload.")
 
     # ── CRIT-03 fix: validate student_id against JWT when token is present ───
     # If a Supabase JWT is provided, extract the real user ID from it and use
@@ -92,18 +113,28 @@ async def upload_presentation(
     except Exception as exc:
         raise HTTPException(500, f"Failed to save video: {exc}")
 
-    # ── Save optional slide PDF ───────────────────────────────────────────────
+    # ── Save optional slide deck (PDF or PPTX) ────────────────────────────────
     slides_path: Optional[str] = None
     if slides and slides.filename:
         slides_ct = (slides.content_type or "").split(";")[0].strip()
-        if slides_ct == "application/pdf":
-            slides_path = os.path.join(work_dir, "slides.pdf")
+        fname = slides.filename.lower()
+        if slides_ct == "application/pdf" or fname.endswith(".pdf"):
+            slide_ext = ".pdf"
+        elif (
+            slides_ct == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            or fname.endswith(".pptx")
+        ):
+            slide_ext = ".pptx"
+        else:
+            slide_ext = None
+        if slide_ext:
+            slides_path = os.path.join(work_dir, f"slides{slide_ext}")
             try:
                 with open(slides_path, "wb") as sf:
                     while chunk := await slides.read(1024 * 1024):
                         sf.write(chunk)
             except Exception:
-                slides_path = None  # non-fatal — proceed without slides
+                slides_path = None
 
     # Guard: reject anonymous uploads — student_id must be a real UUID.
     # This produces a clear 401 instead of a Postgres type-error 500.
@@ -117,6 +148,7 @@ async def upload_presentation(
     row = {
         "id": presentation_id,
         "student_id": student_id,
+        "assignment_id": assignment_id or None,
         "session_mode": session_mode,
         "topic_id": topic_id or None,
         "topic_text": topic_text or None,

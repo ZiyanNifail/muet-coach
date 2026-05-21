@@ -26,6 +26,7 @@ uploads/
 # OS
 .DS_Store
 Thumbs.db
+nul
 
 # IDE
 .vscode/settings.json
@@ -34,3 +35,4 @@ Thumbs.db
 # Claude worktrees
 .claude/worktrees/
 C:/temp/
+backend/models/

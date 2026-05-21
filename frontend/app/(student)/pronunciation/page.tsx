@@ -54,7 +54,7 @@ function ScoreRing({ score }: { score: number }) {
       >
         {score}
       </div>
-      <span className="text-[10px] text-[#9B8E80]">/ 100</span>
+      <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>/ 100</span>
     </div>
   )
 }
@@ -80,16 +80,16 @@ function StepIndicator({ stage }: { stage: Stage }) {
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
                 style={{
-                  background: done ? '#3A7D6A' : active ? 'rgba(58,125,106,0.15)' : 'rgba(180,165,148,0.12)',
-                  border: `1.5px solid ${done ? '#3A7D6A' : active ? '#3A7D6A' : 'rgba(180,165,148,0.30)'}`,
-                  color: done ? '#fff' : active ? '#3A7D6A' : '#C4B8A8',
+                  background: done ? 'var(--accent-teal)' : active ? 'var(--accent-teal-dim)' : 'var(--bg-surface)',
+                  border: `1.5px solid ${done ? 'var(--accent-teal)' : active ? 'var(--accent-teal)' : 'var(--border-medium)'}`,
+                  color: done ? '#fff' : active ? 'var(--accent-teal)' : 'var(--text-tertiary)',
                 }}
               >
                 {done ? '✓' : i + 1}
               </div>
               <span
                 className="text-[10px] font-medium whitespace-nowrap"
-                style={{ color: active ? '#3A7D6A' : done ? '#6B6050' : '#C4B8A8' }}
+                style={{ color: active ? 'var(--accent-teal)' : done ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}
               >
                 {s.label}
               </span>
@@ -97,7 +97,7 @@ function StepIndicator({ stage }: { stage: Stage }) {
             {i < steps.length - 1 && (
               <div
                 className="w-10 h-px mb-4 mx-1"
-                style={{ background: i < current ? '#3A7D6A' : 'rgba(180,165,148,0.25)' }}
+                style={{ background: i < current ? 'var(--accent-teal)' : 'var(--border-subtle)' }}
               />
             )}
           </div>
@@ -280,17 +280,17 @@ export default function PronunciationPage() {
   const sylPassCount = sylResults.filter((r) => r.pass).length
 
   return (
-    <div className="p-6 flex flex-col gap-6 max-w-2xl">
+    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-2xl w-full">
       {/* Header */}
       <div>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>
           IMPROVE
         </div>
         <div className="flex items-center gap-2.5">
-          <Volume2 size={20} style={{ color: '#3A7D6A' }} />
-          <h1 className="text-2xl font-semibold text-[#1C1A17]">Pronunciation Trainer</h1>
+          <Volume2 size={20} style={{ color: 'var(--accent-teal)' }} />
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Pronunciation Trainer</h1>
         </div>
-        <p className="text-[#6B6050] text-sm mt-1">
+        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
           Enter any English word to learn how to pronounce it, syllable by syllable.
         </p>
       </div>
@@ -302,23 +302,23 @@ export default function PronunciationPage() {
       {stage === 'input' && (
         <div
           className="flex flex-col gap-5 rounded-2xl border p-6"
-          style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(180,165,148,0.22)' }}
+          style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}
         >
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 8 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 8 }}>
               ENTER A WORD TO PRACTISE
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 placeholder="e.g. beneficial, enthusiasm, articulate…"
                 value={inputWord}
                 onChange={(e) => { setInputWord(e.target.value); setInputError(null) }}
                 onKeyDown={(e) => e.key === 'Enter' && !validating && handleValidate()}
-                className="flex-1 rounded-xl border px-4 py-3 text-base text-[#1C1A17] outline-none transition-colors placeholder:text-[#C4B8A8]"
-                style={{ background: 'rgba(180,165,148,0.07)', borderColor: 'rgba(180,165,148,0.25)' }}
-                onFocus={(e) => (e.target.style.borderColor = '#3A7D6A')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.25)')}
+                className="flex-1 rounded-xl border px-4 py-3 text-base outline-none transition-colors"
+                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+                onFocus={(e) => (e.target.style.borderColor = 'var(--accent-teal)')}
+                onBlur={(e) => (e.target.style.borderColor = 'var(--border-subtle)')}
                 autoFocus
               />
               <Button onClick={handleValidate} disabled={!inputWord.trim() || validating}>
@@ -328,7 +328,7 @@ export default function PronunciationPage() {
               </Button>
             </div>
             {inputError && (
-              <p className="text-sm text-[#ef4444] mt-2 flex items-center gap-1.5">
+              <p className="text-sm mt-2 flex items-center gap-1.5" style={{ color: 'var(--accent-red)' }}>
                 <XCircle size={13} /> {inputError}
               </p>
             )}
@@ -336,7 +336,7 @@ export default function PronunciationPage() {
 
           {/* Suggestion chips */}
           <div className="flex flex-col gap-2">
-            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#C4B8A8' }}>
+            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
               TRY ONE OF THESE
             </span>
             <div className="flex flex-wrap gap-2">
@@ -346,9 +346,9 @@ export default function PronunciationPage() {
                   onClick={() => { setInputWord(w); setInputError(null) }}
                   className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                   style={{
-                    background: 'rgba(58,125,106,0.07)',
+                    background: 'var(--accent-teal-dim)',
                     border: '1px solid rgba(58,125,106,0.18)',
-                    color: '#3A7D6A',
+                    color: 'var(--accent-teal)',
                   }}
                 >
                   {w}
@@ -369,20 +369,20 @@ export default function PronunciationPage() {
           >
             <div className="flex items-start gap-4 flex-wrap">
               <div>
-                <span className="text-3xl font-bold text-[#1C1A17]">{wordData.word}</span>
+                <span className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>{wordData.word}</span>
                 {wordData.ipa && (
-                  <span className="ml-3 font-mono text-sm text-[#9B8E80]">{wordData.ipa}</span>
+                  <span className="ml-3 font-mono text-sm" style={{ color: 'var(--text-tertiary)' }}>{wordData.ipa}</span>
                 )}
               </div>
             </div>
             {wordData.definition && (
-              <p className="text-sm text-[#6B6050] leading-relaxed">{wordData.definition}</p>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{wordData.definition}</p>
             )}
             {wordData.usage_hint && (
               <div className="flex items-start gap-2 rounded-lg px-3 py-2"
                 style={{ background: 'rgba(58,125,106,0.08)', border: '1px solid rgba(58,125,106,0.12)' }}>
                 <Lightbulb size={13} style={{ color: '#3A7D6A', flexShrink: 0, marginTop: 1 }} />
-                <p className="text-xs text-[#3A7D6A]">{wordData.usage_hint}</p>
+                <p className="text-xs" style={{ color: 'var(--accent-teal)' }}>{wordData.usage_hint}</p>
               </div>
             )}
           </div>
@@ -404,14 +404,14 @@ export default function PronunciationPage() {
                         ? 'rgba(239,68,68,0.08)'
                         : isCurrent
                         ? 'rgba(58,125,106,0.15)'
-                        : 'rgba(180,165,148,0.10)',
+                        : 'var(--bg-surface)',
                       border: `1.5px solid ${
                         r?.pass ? 'rgba(34,197,94,0.35)'
                         : r?.exhausted ? 'rgba(239,68,68,0.25)'
                         : isCurrent ? 'rgba(58,125,106,0.40)'
-                        : 'rgba(180,165,148,0.20)'
+                        : 'var(--border-subtle)'
                       }`,
-                      color: r?.pass ? '#22c55e' : r?.exhausted ? '#ef4444' : isCurrent ? '#3A7D6A' : '#C4B8A8',
+                      color: r?.pass ? '#22c55e' : r?.exhausted ? 'var(--accent-red)' : isCurrent ? 'var(--accent-teal)' : 'var(--text-tertiary)',
                       transform: isCurrent ? 'scale(1.08)' : 'scale(1)',
                     }}
                   >
@@ -420,7 +420,7 @@ export default function PronunciationPage() {
                   {r?.pass && <CheckCircle size={12} style={{ color: '#22c55e' }} />}
                   {r?.exhausted && <XCircle size={12} style={{ color: '#ef4444' }} />}
                   {!isDone && isCurrent && (
-                    <span className="text-[9px] font-bold text-[#3A7D6A]">NOW</span>
+                    <span className="text-[9px] font-bold" style={{ color: 'var(--accent-teal)' }}>NOW</span>
                   )}
                 </div>
               )
@@ -429,19 +429,19 @@ export default function PronunciationPage() {
 
           {/* Active syllable practice card */}
           <div
-            className="rounded-2xl border p-6 flex flex-col gap-5"
-            style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(180,165,148,0.22)' }}
+            className="rounded-2xl border p-4 md:p-6 flex flex-col gap-5"
+            style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}
           >
             <div>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                 SYLLABLE {currentSyl + 1} OF {wordData.syllables.length}
               </div>
               <div className="mt-2 flex items-baseline gap-3">
-                <span className="text-4xl font-bold font-mono" style={{ color: '#3A7D6A' }}>
+                <span className="text-4xl font-bold font-mono" style={{ color: 'var(--accent-teal)' }}>
                   {wordData.syllables[currentSyl]}
                 </span>
                 {wordData.syllable_tips[currentSyl] && (
-                  <span className="text-sm text-[#9B8E80]">{wordData.syllable_tips[currentSyl]}</span>
+                  <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{wordData.syllable_tips[currentSyl]}</span>
                 )}
               </div>
             </div>
@@ -456,7 +456,7 @@ export default function PronunciationPage() {
                   label={`Say: "${wordData.syllables[currentSyl]}"`}
                 />
                 {curSylResult && curSylResult.tries > 0 && (
-                  <span className="text-xs text-[#9B8E80]">
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                     Attempt {curSylResult.tries} / {MAX_RETRIES}
                   </span>
                 )}
@@ -465,7 +465,7 @@ export default function PronunciationPage() {
 
             {/* Checking spinner */}
             {sylChecking && (
-              <div className="flex items-center justify-center gap-2 py-4 text-[#9B8E80] text-sm">
+              <div className="flex items-center justify-center gap-2 py-4 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                 <Loader2 size={16} className="animate-spin" />
                 Checking your pronunciation…
               </div>
@@ -485,16 +485,16 @@ export default function PronunciationPage() {
                     ) : curSylResult.exhausted ? (
                       <div className="flex items-center gap-2">
                         <XCircle size={18} style={{ color: '#ef4444' }} />
-                        <span className="font-semibold text-[#ef4444]">Moving on — keep practising!</span>
+                        <span className="font-semibold text-[#ef4444]">Moving on, keep practising!</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <RotateCcw size={16} style={{ color: '#f59e0b' }} />
-                        <span className="font-semibold text-[#f59e0b]">Not quite — try again!</span>
+                        <span className="font-semibold text-[#f59e0b]">Not quite, try again!</span>
                       </div>
                     )}
                     {curSylResult.tip && (
-                      <p className="text-xs text-[#6B6050] mt-1">{curSylResult.tip}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{curSylResult.tip}</p>
                     )}
                   </div>
                 </div>
@@ -527,13 +527,12 @@ export default function PronunciationPage() {
               </span>
             </div>
             {wordData.usage_hint && (
-              <p className="text-sm text-[#3A7D6A] font-medium">{wordData.usage_hint}</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--accent-teal)' }}>{wordData.usage_hint}</p>
             )}
             {wordData.examples.length > 0 && (
               <div className="flex flex-col gap-2">
                 {wordData.examples.slice(0, 3).map((ex, i) => (
-                  <p key={i} className="text-xs text-[#6B6050] pl-3 border-l-2"
-                    style={{ borderColor: 'rgba(58,125,106,0.25)' }}>
+                  <p key={i} className="text-xs pl-3 border-l-2" style={{ color: 'var(--text-secondary)', borderColor: 'rgba(58,125,106,0.25)' }}>
                     {ex}
                   </p>
                 ))}
@@ -543,16 +542,16 @@ export default function PronunciationPage() {
 
           {/* Recording card */}
           <div
-            className="rounded-2xl border p-6 flex flex-col gap-5"
-            style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(180,165,148,0.22)' }}
+            className="rounded-2xl border p-4 md:p-6 flex flex-col gap-5"
+            style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}
           >
             <div>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                 YOUR TURN
               </div>
-              <p className="mt-1.5 text-sm text-[#1C1A17]">
+              <p className="mt-1.5 text-sm" style={{ color: 'var(--text-primary)' }}>
                 Say a sentence using the word{' '}
-                <strong style={{ color: '#3A7D6A' }}>{wordData.word}</strong>.
+                <strong style={{ color: 'var(--accent-teal)' }}>{wordData.word}</strong>.
               </p>
             </div>
 
@@ -566,7 +565,7 @@ export default function PronunciationPage() {
             )}
 
             {sentenceChecking && (
-              <div className="flex items-center justify-center gap-2 py-4 text-[#9B8E80] text-sm">
+              <div className="flex items-center justify-center gap-2 py-4 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                 <Loader2 size={16} className="animate-spin" />
                 Analysing your sentence…
               </div>
@@ -577,11 +576,11 @@ export default function PronunciationPage() {
                 {/* Transcript */}
                 {sentenceResult.transcript && (
                   <div className="rounded-lg border px-4 py-3"
-                    style={{ background: 'rgba(180,165,148,0.05)', borderColor: 'rgba(180,165,148,0.20)' }}>
-                    <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#C4B8A8', marginBottom: 4 }}>
+                    style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+                    <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>
                       WHAT WE HEARD
                     </div>
-                    <p className="text-sm text-[#1C1A17] italic">"{sentenceResult.transcript}"</p>
+                    <p className="text-sm italic" style={{ color: 'var(--text-primary)' }}>"{sentenceResult.transcript}"</p>
                   </div>
                 )}
 
@@ -596,11 +595,11 @@ export default function PronunciationPage() {
                         <Badge variant="amber">Word not detected</Badge>
                       )}
                     </div>
-                    <p className="text-sm text-[#6B6050]">{sentenceResult.feedback}</p>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{sentenceResult.feedback}</p>
                   </div>
                 </div>
 
-                <div className="flex gap-3 flex-wrap">
+                <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
                   {!sentenceResult.has_word || sentenceResult.score < 60 ? (
                     <Button variant="secondary" onClick={() => { setSentenceResult(null); setSentenceBlob(null) }}>
                       <RotateCcw size={13} className="mr-1.5" /> Try Again
@@ -621,30 +620,30 @@ export default function PronunciationPage() {
         <div className="flex flex-col gap-4">
           {/* Summary card */}
           <div
-            className="rounded-2xl border p-6 flex flex-col gap-5"
-            style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(180,165,148,0.22)' }}
+            className="rounded-2xl border p-4 md:p-6 flex flex-col gap-5"
+            style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}
           >
             <div className="flex items-center justify-between">
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                   SESSION COMPLETE
                 </div>
                 <div className="flex items-baseline gap-3 mt-1">
-                  <span className="text-3xl font-bold text-[#1C1A17]">{wordData.word}</span>
+                  <span className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>{wordData.word}</span>
                   {wordData.ipa && (
-                    <span className="font-mono text-sm text-[#9B8E80]">{wordData.ipa}</span>
+                    <span className="font-mono text-sm" style={{ color: 'var(--text-tertiary)' }}>{wordData.ipa}</span>
                   )}
                 </div>
               </div>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ background: 'rgba(58,125,106,0.10)' }}>
-                <CheckCircle size={28} style={{ color: '#3A7D6A' }} />
+                style={{ background: 'var(--accent-teal-dim)' }}>
+                <CheckCircle size={28} style={{ color: 'var(--accent-teal)' }} />
               </div>
             </div>
 
             {/* Syllable breakdown */}
             <div>
-              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#C4B8A8', marginBottom: 8 }}>
+              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 8 }}>
                 SYLLABLE RESULTS · {sylPassCount}/{wordData.syllables.length} passed
               </div>
               <div className="flex flex-col gap-2">
@@ -656,13 +655,13 @@ export default function PronunciationPage() {
                         background: r?.pass ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.03)',
                         borderColor: r?.pass ? 'rgba(34,197,94,0.20)' : 'rgba(239,68,68,0.15)',
                       }}>
-                      <span className="font-mono font-semibold text-sm w-20 text-[#1C1A17]">{syl}</span>
+                      <span className="font-mono font-semibold text-sm w-16 md:w-20" style={{ color: 'var(--text-primary)' }}>{syl}</span>
                       {r?.pass
-                        ? <><CheckCircle size={13} style={{ color: '#22c55e' }} /><span className="text-xs text-[#22c55e]">Passed</span></>
-                        : <><XCircle size={13} style={{ color: '#ef4444' }} /><span className="text-xs text-[#ef4444]">Needs work</span></>
+                        ? <><CheckCircle size={13} style={{ color: '#22c55e' }} /><span className="text-xs" style={{ color: '#22c55e' }}>Passed</span></>
+                        : <><XCircle size={13} style={{ color: 'var(--accent-red)' }} /><span className="text-xs" style={{ color: 'var(--accent-red)' }}>Needs work</span></>
                       }
                       {r?.score !== null && (
-                        <span className="ml-auto font-mono text-xs text-[#9B8E80]">{r.score}/100</span>
+                        <span className="ml-auto font-mono text-xs" style={{ color: 'var(--text-tertiary)' }}>{r.score}/100</span>
                       )}
                     </div>
                   )
@@ -679,17 +678,17 @@ export default function PronunciationPage() {
                 }}>
                 <ScoreRing score={sentenceResult.score} />
                 <div className="flex-1">
-                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#C4B8A8', marginBottom: 4 }}>
+                  <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>
                     SENTENCE USAGE
                   </div>
-                  <p className="text-xs text-[#6B6050]">{sentenceResult.feedback}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{sentenceResult.feedback}</p>
                 </div>
               </div>
             )}
           </div>
 
           {/* Try another word */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button onClick={reset}>
               <RotateCcw size={14} className="mr-1.5" />
               Try Another Word

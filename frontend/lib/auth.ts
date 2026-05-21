@@ -72,6 +72,38 @@ export async function getEducatorApprovalStatus(
   return (data?.status as 'pending' | 'approved' | 'rejected') ?? null
 }
 
+export async function signInWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+      queryParams: { access_type: 'offline', prompt: 'consent' },
+    },
+  })
+  if (error) throw error
+}
+
+export async function ensureAppUserRow(): Promise<AppUser | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const existing = await getAppUser()
+  if (existing) return existing
+  const fullName =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.email?.split('@')[0] ||
+    'Student'
+  const { error } = await supabase.from('users').insert({
+    id: user.id,
+    email: user.email,
+    role: 'student',
+    full_name: fullName,
+    consent_given: false,
+  })
+  if (error && error.code !== '23505') throw error
+  return await getAppUser()
+}
+
 export async function giveConsent(userId: string) {
   await supabase
     .from('users')

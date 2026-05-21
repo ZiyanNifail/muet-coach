@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS presentations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id UUID REFERENCES users(id) ON DELETE CASCADE,
   assignment_id UUID,
-  session_mode TEXT CHECK (session_mode IN ('unguided', 'guided', 'exam')),
+  session_mode TEXT CHECK (session_mode IN ('unguided', 'guided', 'exam', 'upload')),
   topic_id UUID REFERENCES muet_topics(id),
   brainstorm_notes TEXT,
   duration_secs INTEGER,
@@ -298,3 +298,135 @@ ALTER TABLE presentations ADD COLUMN IF NOT EXISTS slide_path TEXT;
 -- WARN-D03: topic_text stored in code but column was missing — caused every upload to 500
 --           after this column was added to the insert payload. Applied 2026-04-14.
 ALTER TABLE presentations ADD COLUMN IF NOT EXISTS topic_text TEXT;
+
+-- =====================================================
+-- Assignment grading flow (2026-04-20)
+-- slide_required toggle, assignment FK on presentations,
+-- release gate + university grade on educator_overrides.
+-- =====================================================
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS slide_required BOOLEAN DEFAULT false;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'presentations_assignment_id_fkey'
+      AND table_name = 'presentations'
+  ) THEN
+    ALTER TABLE presentations
+      ADD CONSTRAINT presentations_assignment_id_fkey
+      FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE SET NULL;
+  END IF;
+END $$;
+
+ALTER TABLE educator_overrides ADD COLUMN IF NOT EXISTS released_at TIMESTAMPTZ;
+ALTER TABLE educator_overrides ADD COLUMN IF NOT EXISTS grade_percent NUMERIC(5,2);
+ALTER TABLE educator_overrides ADD COLUMN IF NOT EXISTS grade_letter TEXT;
+
+DROP POLICY IF EXISTS "overrides_student_select" ON educator_overrides;
+CREATE POLICY "overrides_student_select" ON educator_overrides FOR SELECT USING (
+  released_at IS NOT NULL AND EXISTS (
+    SELECT 1 FROM presentations
+    WHERE presentations.id = presentation_id
+      AND presentations.student_id = auth.uid()
+  )
+);
+
+-- =====================================================
+-- Per-Rubric MUET Breakdown + Weakness-Targeted Drills
+-- Run if upgrading an existing DB (idempotent).
+-- =====================================================
+ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS rubric_bands JSONB;
+-- Shape: {"task_fulfilment":{"score":4.5,"justification":"..."},
+--         "coherence_cohesion":{...}, "lexical_resource":{...},
+--         "grammatical_range_accuracy":{...}, "pronunciation":{...}}
+
+CREATE TABLE IF NOT EXISTS drill_attempts (
+  id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id        UUID        REFERENCES users(id) ON DELETE CASCADE,
+  source_report_id  UUID        REFERENCES feedback_reports(id) ON DELETE CASCADE,
+  criterion         TEXT        NOT NULL,
+  drill_type        TEXT        NOT NULL,
+  prompt            JSONB,
+  reeval_score      FLOAT,
+  reeval_feedback   TEXT,
+  created_at        TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE drill_attempts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "drills_own" ON drill_attempts;
+CREATE POLICY "drills_own" ON drill_attempts
+  USING  (auth.uid() = student_id)
+  WITH CHECK (auth.uid() = student_id);
+
+-- Listening sessions (Component 1 practice)
+CREATE TABLE IF NOT EXISTS listening_sessions (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id    UUID        REFERENCES users(id) ON DELETE CASCADE,
+  answers       JSONB       NOT NULL DEFAULT '{}',
+  section_scores JSONB      NOT NULL DEFAULT '{}',
+  overall_band  FLOAT,
+  advice_cards  JSONB,
+  created_at    TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE listening_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "listening_own" ON listening_sessions;
+CREATE POLICY "listening_own" ON listening_sessions
+  USING  (auth.uid() = student_id)
+  WITH CHECK (auth.uid() = student_id);
+
+-- Writing sessions (Component 4 practice)
+CREATE TABLE IF NOT EXISTS writing_sessions (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id      UUID        REFERENCES users(id) ON DELETE CASCADE,
+  task1_prompt    TEXT,
+  task1_response  TEXT,
+  task2_topic     TEXT,
+  task2_response  TEXT,
+  task1_band      FLOAT,
+  task2_band      FLOAT,
+  overall_band    FLOAT,
+  advice_cards    JSONB,
+  created_at      TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE writing_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "writing_own" ON writing_sessions;
+CREATE POLICY "writing_own" ON writing_sessions
+  USING  (auth.uid() = student_id)
+  WITH CHECK (auth.uid() = student_id);
+
+-- =====================================================
+-- MUET Mock Exam + Human-in-the-Loop (2026-05-14)
+-- Scheduled exams, per-exam student invitations, and
+-- presentation accuracy scoring by educators.
+-- =====================================================
+
+-- Exam scheduling columns on assignments
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ;
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS educator_id UUID REFERENCES users(id);
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS exam_duration_mins INT DEFAULT 30;
+ALTER TABLE assignments ADD COLUMN IF NOT EXISTS exam_topic_id UUID REFERENCES muet_topics(id);
+
+-- Per-exam student invitations (separate from course membership)
+CREATE TABLE IF NOT EXISTS exam_invitations (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  assignment_id UUID        REFERENCES assignments(id) ON DELETE CASCADE,
+  student_id    UUID        REFERENCES users(id) ON DELETE CASCADE,
+  invited_by    UUID        REFERENCES users(id),
+  status        TEXT        DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+  invited_at    TIMESTAMPTZ DEFAULT now(),
+  responded_at  TIMESTAMPTZ,
+  UNIQUE (assignment_id, student_id)
+);
+ALTER TABLE exam_invitations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "exam_inv_student_select" ON exam_invitations;
+DROP POLICY IF EXISTS "exam_inv_student_update" ON exam_invitations;
+DROP POLICY IF EXISTS "exam_inv_educator" ON exam_invitations;
+CREATE POLICY "exam_inv_student_select" ON exam_invitations FOR SELECT USING (auth.uid() = student_id);
+CREATE POLICY "exam_inv_student_update" ON exam_invitations FOR UPDATE USING (auth.uid() = student_id);
+CREATE POLICY "exam_inv_educator" ON exam_invitations
+  USING  (auth.uid() = invited_by)
+  WITH CHECK (auth.uid() = invited_by);
+
+-- Presentation accuracy score added by educator during HITL review
+ALTER TABLE educator_overrides ADD COLUMN IF NOT EXISTS presentation_accuracy_score FLOAT;
+ALTER TABLE educator_overrides ADD COLUMN IF NOT EXISTS presentation_accuracy_notes TEXT;

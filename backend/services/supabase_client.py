@@ -59,6 +59,62 @@ def test_connection() -> tuple[bool, str]:
         return False, f"Supabase query failed: {exc}"
 
 
+async def db_list_students() -> list[dict]:
+    """Return all users with role='student', ordered by creation date desc."""
+    sb = get_supabase()
+    if sb is None:
+        return []
+    try:
+        res = (
+            sb.table("users")
+            .select("id, full_name, email, created_at, consent_given")
+            .eq("role", "student")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return res.data or []
+    except Exception as exc:
+        logger.error("db_list_students failed: %s", exc)
+        return []
+
+
+async def db_delete_student(user_id: str) -> tuple[bool, str]:
+    """
+    Hard-delete a student and everything associated with them:
+      1. Delete their video files from Supabase Storage (recordings bucket)
+      2. Delete the auth.users row — cascades to users, presentations,
+         analysis_results, advice_cards, feedback_reports, consent_log, etc.
+    Returns (success, message).
+    """
+    sb = get_supabase()
+    if sb is None:
+        return False, "Supabase unavailable"
+    try:
+        # Collect all presentation IDs so we can purge storage
+        res = (
+            sb.table("presentations")
+            .select("id")
+            .eq("student_id", user_id)
+            .execute()
+        )
+        pres_rows = res.data or []
+
+        # Delete storage objects for each presentation
+        if pres_rows:
+            paths = [f"{user_id}/{row['id']}/video.webm" for row in pres_rows]
+            try:
+                sb.storage.from_("recordings").remove(paths)
+            except Exception as exc:
+                logger.warning("Storage delete partial failure for %s: %s", user_id, exc)
+
+        # Delete the auth user — RLS cascade removes all child rows
+        sb.auth.admin.delete_user(user_id)
+        return True, "Student deleted"
+    except Exception as exc:
+        logger.error("db_delete_student failed for %s: %s", user_id, exc)
+        return False, str(exc)
+
+
 async def db_update_presentation(presentation_id: str, data: dict) -> None:
     sb = get_supabase()
     if sb is None:
@@ -137,6 +193,7 @@ async def db_get_report(presentation_id: str) -> dict | None:
     if sb is None:
         return None
     try:
+        # Try by presentation_id first (new sessions redirect with presentation_id)
         report_res = (
             sb.table("feedback_reports")
             .select("*")
@@ -145,18 +202,28 @@ async def db_get_report(presentation_id: str) -> dict | None:
             .execute()
         )
         if not report_res.data:
+            # Fall back to report's own primary key (dashboard/history links use report_id)
+            report_res = (
+                sb.table("feedback_reports")
+                .select("*")
+                .eq("id", presentation_id)
+                .limit(1)
+                .execute()
+            )
+        if not report_res.data:
             return None
         row = dict(report_res.data[0])
     except Exception as exc:
         logger.error("db_get_report: feedback_reports query failed for %s: %s", presentation_id, exc)
         return None
 
-    # Separately fetch presentation context — non-fatal if columns don't exist yet
+    # Fetch presentation context using the resolved presentation_id from the row
+    resolved_pres_id = row.get("presentation_id", presentation_id)
     try:
         pres_res = (
             sb.table("presentations")
             .select("topic_text, session_mode, duration_secs")
-            .eq("id", presentation_id)
+            .eq("id", resolved_pres_id)
             .limit(1)
             .execute()
         )
@@ -379,19 +446,95 @@ def db_get_assignments(course_id: str) -> list:
 
 
 def db_create_assignment(course_id: str, title: str, description: str,
-                         deadline: str | None, exam_mode: bool) -> dict | None:
+                         deadline: str | None, exam_mode: bool,
+                         slide_required: bool = False,
+                         scheduled_at: str | None = None,
+                         exam_duration_mins: int | None = None,
+                         exam_topic_id: str | None = None) -> dict | None:
     sb = get_supabase()
     if sb is None:
         return None
     try:
-        res = sb.table("assignments").insert({
+        payload: dict = {
             "course_id": course_id,
             "title": title,
             "description": description,
             "deadline": deadline,
             "exam_mode": exam_mode,
-        }).execute()
+            "slide_required": slide_required,
+        }
+        if scheduled_at is not None:
+            payload["scheduled_at"] = scheduled_at
+        if exam_duration_mins is not None:
+            payload["exam_duration_mins"] = exam_duration_mins
+        if exam_topic_id is not None:
+            payload["exam_topic_id"] = exam_topic_id
+        res = sb.table("assignments").insert(payload).execute()
         return res.data[0] if res.data else None
+    except Exception:
+        return None
+
+
+def db_create_standalone_exam(
+    educator_id: str,
+    title: str,
+    scheduled_at: str | None = None,
+    exam_duration_mins: int | None = None,
+    exam_topic_id: str | None = None,
+) -> dict | None:
+    sb = get_supabase()
+    if sb is None:
+        return None
+    try:
+        payload: dict = {
+            "title": title,
+            "exam_mode": True,
+            "educator_id": educator_id,
+        }
+        if scheduled_at is not None:
+            payload["scheduled_at"] = scheduled_at
+        if exam_duration_mins is not None:
+            payload["exam_duration_mins"] = exam_duration_mins
+        if exam_topic_id is not None:
+            payload["exam_topic_id"] = exam_topic_id
+        res = sb.table("assignments").insert(payload).execute()
+        return res.data[0] if res.data else None
+    except Exception:
+        return None
+
+
+def db_get_standalone_exams(educator_id: str) -> list:
+    sb = get_supabase()
+    if sb is None:
+        return []
+    try:
+        res = (
+            sb.table("assignments")
+            .select("*")
+            .eq("educator_id", educator_id)
+            .eq("exam_mode", True)
+            .is_("course_id", "null")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return res.data or []
+    except Exception:
+        return []
+
+
+def db_get_assignment(assignment_id: str) -> dict | None:
+    sb = get_supabase()
+    if sb is None:
+        return None
+    try:
+        res = (
+            sb.table("assignments")
+            .select("*")
+            .eq("id", assignment_id)
+            .maybe_single()
+            .execute()
+        )
+        return res.data
     except Exception:
         return None
 
@@ -547,19 +690,70 @@ def db_get_educator_analytics(educator_id: str) -> dict:
 
 def db_create_override(presentation_id: str, educator_id: str,
                        original_band: float | None, override_band: float,
-                       feedback: str) -> bool:
+                       feedback: str, grade_percent: float | None = None,
+                       grade_letter: str | None = None,
+                       presentation_accuracy_score: float | None = None,
+                       presentation_accuracy_notes: str | None = None) -> bool:
+    """Save an educator override as a draft. Not visible to the student until released."""
     sb = get_supabase()
     if sb is None:
         return False
     try:
-        sb.table("educator_overrides").insert({
+        existing = (
+            sb.table("educator_overrides")
+            .select("id")
+            .eq("presentation_id", presentation_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        payload: dict = {
             "presentation_id": presentation_id,
             "educator_id": educator_id,
             "original_band": original_band,
             "override_band": override_band,
             "feedback": feedback,
-        }).execute()
-        # Also update feedback_reports.band_score with the override
+            "grade_percent": grade_percent,
+            "grade_letter": grade_letter,
+        }
+        if presentation_accuracy_score is not None:
+            payload["presentation_accuracy_score"] = presentation_accuracy_score
+        if presentation_accuracy_notes is not None:
+            payload["presentation_accuracy_notes"] = presentation_accuracy_notes
+        if existing.data:
+            sb.table("educator_overrides").update(payload).eq(
+                "id", existing.data[0]["id"]
+            ).execute()
+        else:
+            sb.table("educator_overrides").insert(payload).execute()
+        return True
+    except Exception:
+        return False
+
+
+def db_release_override(presentation_id: str) -> bool:
+    """Mark the latest draft override for a presentation as released, and write
+    the override band back to feedback_reports so student-facing views surface it."""
+    sb = get_supabase()
+    if sb is None:
+        return False
+    try:
+        existing = (
+            sb.table("educator_overrides")
+            .select("id, override_band")
+            .eq("presentation_id", presentation_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        if not existing.data:
+            return False
+        override_row = existing.data[0]
+        from datetime import datetime, timezone
+        sb.table("educator_overrides").update(
+            {"released_at": datetime.now(timezone.utc).isoformat()}
+        ).eq("id", override_row["id"]).execute()
+
         report_res = (
             sb.table("feedback_reports")
             .select("id")
@@ -568,9 +762,230 @@ def db_create_override(presentation_id: str, educator_id: str,
             .execute()
         )
         if report_res.data:
-            sb.table("feedback_reports").update({"band_score": override_band}).eq(
-                "id", report_res.data["id"]
-            ).execute()
+            sb.table("feedback_reports").update(
+                {"band_score": override_row["override_band"]}
+            ).eq("id", report_res.data["id"]).execute()
         return True
     except Exception:
         return False
+
+
+# ── Exam invitation helpers ───────────────────────────────────────────────────
+
+def db_create_exam_invitation(assignment_id: str, student_id: str, educator_id: str) -> dict | None:
+    sb = get_supabase()
+    if sb is None:
+        return None
+    try:
+        res = sb.table("exam_invitations").upsert({
+            "assignment_id": assignment_id,
+            "student_id": student_id,
+            "invited_by": educator_id,
+            "status": "pending",
+        }, on_conflict="assignment_id,student_id").execute()
+        return res.data[0] if res.data else None
+    except Exception:
+        return None
+
+
+def db_get_exam_invitations_for_student(student_id: str) -> list:
+    sb = get_supabase()
+    if sb is None:
+        return []
+    try:
+        res = (
+            sb.table("exam_invitations")
+            .select("*, assignments(id, title, scheduled_at, exam_duration_mins, course_id, courses(name))")
+            .eq("student_id", student_id)
+            .order("invited_at", desc=True)
+            .execute()
+        )
+        return res.data or []
+    except Exception:
+        return []
+
+
+def db_get_exam_invitations_for_assignment(assignment_id: str) -> list:
+    sb = get_supabase()
+    if sb is None:
+        return []
+    try:
+        res = (
+            sb.table("exam_invitations")
+            .select("*, users(id, full_name, email)")
+            .eq("assignment_id", assignment_id)
+            .execute()
+        )
+        return res.data or []
+    except Exception:
+        return []
+
+
+def db_get_exam_submission_statuses(student_id: str) -> list:
+    """For each accepted exam invitation, return submission state and grade release status."""
+    sb = get_supabase()
+    if sb is None:
+        return []
+    try:
+        inv_res = (
+            sb.table("exam_invitations")
+            .select("assignment_id")
+            .eq("student_id", student_id)
+            .eq("status", "accepted")
+            .execute()
+        )
+        assignment_ids = [r["assignment_id"] for r in (inv_res.data or [])]
+        if not assignment_ids:
+            return []
+
+        pres_res = (
+            sb.table("presentations")
+            .select("id, assignment_id, status, educator_overrides(released_at)")
+            .eq("student_id", student_id)
+            .in_("assignment_id", assignment_ids)
+            .order("uploaded_at", desc=True)
+            .execute()
+        )
+
+        seen: set = set()
+        result = []
+        for p in (pres_res.data or []):
+            aid = p["assignment_id"]
+            if aid in seen:
+                continue
+            seen.add(aid)
+            overrides = p.get("educator_overrides") or []
+            if isinstance(overrides, dict):
+                overrides = [overrides]
+            grade_released = any(o.get("released_at") for o in overrides)
+            result.append({
+                "assignment_id": aid,
+                "presentation_id": p["id"],
+                "status": p["status"],
+                "grade_released": grade_released,
+            })
+        return result
+    except Exception:
+        return []
+
+
+def db_respond_exam_invitation(invitation_id: str, student_id: str, status: str) -> bool:
+    sb = get_supabase()
+    if sb is None:
+        return False
+    try:
+        from datetime import datetime, timezone
+        sb.table("exam_invitations").update({
+            "status": status,
+            "responded_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("id", invitation_id).eq("student_id", student_id).execute()
+        return True
+    except Exception:
+        return False
+
+
+# ── Student directory helpers ─────────────────────────────────────────────────
+
+def db_get_all_students() -> list:
+    """Returns all registered students for educator invite workflows."""
+    sb = get_supabase()
+    if sb is None:
+        return []
+    try:
+        res = (
+            sb.table("users")
+            .select("id, full_name, email")
+            .eq("role", "student")
+            .order("full_name")
+            .execute()
+        )
+        return res.data or []
+    except Exception:
+        return []
+
+
+def db_get_students_overview(educator_id: str) -> list:
+    """Returns all enrolled students across educator's courses with band stats."""
+    sb = get_supabase()
+    if sb is None:
+        return []
+    try:
+        courses_res = (
+            sb.table("courses")
+            .select("id, name, subject_code")
+            .eq("educator_id", educator_id)
+            .execute()
+        )
+        courses = courses_res.data or []
+        course_ids = [c["id"] for c in courses]
+        course_map = {c["id"]: c for c in courses}
+        if not course_ids:
+            return []
+
+        members_res = (
+            sb.table("course_members")
+            .select("student_id, course_id, users(id, full_name, email)")
+            .in_("course_id", course_ids)
+            .eq("status", "approved")
+            .execute()
+        )
+
+        # Build per-student record
+        student_map: dict = {}
+        for m in (members_res.data or []):
+            sid = m["student_id"]
+            u = m.get("users") or {}
+            if sid not in student_map:
+                student_map[sid] = {
+                    "student_id": sid,
+                    "full_name": u.get("full_name") or "—",
+                    "email": u.get("email") or "—",
+                    "courses": [],
+                    "current_band": None,
+                    "highest_band": None,
+                }
+            cinfo = course_map.get(m["course_id"])
+            if cinfo and not any(c["id"] == m["course_id"] for c in student_map[sid]["courses"]):
+                student_map[sid]["courses"].append({
+                    "id": m["course_id"],
+                    "name": cinfo["name"],
+                    "subject_code": cinfo["subject_code"],
+                })
+
+        if not student_map:
+            return []
+
+        # Fetch presentations + released band scores for these students
+        pres_res = (
+            sb.table("presentations")
+            .select("student_id, uploaded_at, feedback_reports(band_score)")
+            .in_("student_id", list(student_map.keys()))
+            .eq("status", "complete")
+            .order("uploaded_at", desc=True)
+            .execute()
+        )
+
+        seen_first: set = set()
+        for p in (pres_res.data or []):
+            sid = p["student_id"]
+            if sid not in student_map:
+                continue
+            reports = p.get("feedback_reports") or []
+            if isinstance(reports, dict):
+                reports = [reports]
+            for r in reports:
+                band = r.get("band_score")
+                if band is None:
+                    continue
+                st = student_map[sid]
+                if sid not in seen_first:
+                    st["current_band"] = band
+                    seen_first.add(sid)
+                if st["highest_band"] is None or band > st["highest_band"]:
+                    st["highest_band"] = band
+
+        return sorted(student_map.values(), key=lambda s: s["full_name"])
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("students_overview error: %s", exc)
+        return []
