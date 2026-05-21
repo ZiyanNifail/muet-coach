@@ -39,9 +39,9 @@ function Navbar() {
       <nav
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
         style={{
-          background: scrolled ? "var(--bg-panel)" : "transparent",
-          borderBottom: scrolled ? "1px solid var(--border-subtle)" : "none",
-          backdropFilter: scrolled ? "blur(12px)" : "none",
+          background: scrolled ? "rgba(8, 18, 12, 0.88)" : "transparent",
+          borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "none",
+          backdropFilter: scrolled ? "blur(14px)" : "none",
         }}
       >
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
