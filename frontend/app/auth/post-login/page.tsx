@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import { ensureAppUserRow, signOut } from '@/lib/auth'
 
 export default function PostLoginPage() {
@@ -8,13 +9,14 @@ export default function PostLoginPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    let handled = false
+
     async function handle() {
+      if (handled) return
+      handled = true
       try {
         const user = await ensureAppUserRow()
-        if (!user) {
-          router.push('/login')
-          return
-        }
+        if (!user) { router.push('/login'); return }
         if (user.role === 'educator') {
           await signOut()
           setError('Educator accounts cannot sign in with Google. Please use email and password.')
@@ -25,7 +27,18 @@ export default function PostLoginPage() {
         setError(err instanceof Error ? err.message : 'Sign-in failed. Please try again.')
       }
     }
-    handle()
+
+    // Fast path: session already in cookie (e.g. refresh or second visit)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) handle()
+    })
+
+    // Slow path: wait for client to pick up the session from the OAuth redirect cookie
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) handle()
+    })
+
+    return () => subscription.unsubscribe()
   }, [router])
 
   if (error) {
