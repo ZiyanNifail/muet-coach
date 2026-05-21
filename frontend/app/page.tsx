@@ -89,7 +89,7 @@ function Navbar() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
             className="fixed top-14 left-0 right-0 z-40 flex flex-col px-6 py-5 gap-4"
-            style={{ background: "var(--bg-base)", borderBottom: "1px solid var(--border-subtle)", transition: "background 0.3s ease" }}
+            style={{ background: "rgba(8, 18, 12, 0.96)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
           >
             <Link href="/login" onClick={() => setMobileOpen(false)}
               className="text-sm px-4 py-2.5 rounded-lg font-semibold text-center"
@@ -388,7 +388,14 @@ function Footer() {
 
 export default function LandingPage() {
   return (
-    <main className="relative min-h-screen overflow-x-hidden">
+    <main className="relative min-h-screen overflow-x-hidden" style={{
+      '--text-primary': '#f0ede8',
+      '--text-secondary': '#c8bdb0',
+      '--text-tertiary': '#9b8e80',
+      '--border-subtle': 'rgba(255,255,255,0.08)',
+      '--border-medium': 'rgba(255,255,255,0.18)',
+      '--accent-teal-dim': 'rgba(58,125,106,0.14)',
+    } as React.CSSProperties}>
       <ShaderBackground />
       <Navbar />
       <Hero />
