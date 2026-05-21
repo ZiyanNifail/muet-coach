@@ -9,7 +9,7 @@ interface RecordingInterfaceProps {
   maxSecs?: number
   notes?: string
   onComplete: (blob: Blob, durationSecs: number) => void
-  onCancel: (action: 'restart' | 'dashboard') => void
+  onCancel?: (action: 'restart' | 'dashboard') => void
 }
 
 // ── Filler word list (used in both guided filler detection & display) ─────────
@@ -718,7 +718,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
             </div>
             <div className="flex flex-col gap-3 w-full">
               <button
-                onClick={() => onCancel('restart')}
+                onClick={() => onCancel?.('restart')}
                 className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-colors"
                 style={{ background: '#3A7D6A', color: '#fff' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#2d6356' }}
@@ -728,7 +728,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
                 Restart Recording
               </button>
               <button
-                onClick={() => onCancel('dashboard')}
+                onClick={() => onCancel?.('dashboard')}
                 className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-colors"
                 style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--border-subtle)' }}
