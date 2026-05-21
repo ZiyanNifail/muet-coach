@@ -67,28 +67,28 @@ export default function NewExamPage() {
     <div className="p-4 md:p-6 max-w-xl flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <Link href={`/educator/courses/${courseId}`}>
-          <button className="text-[#9B8E80] hover:text-[#6B6050] transition-colors">
+          <button className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors">
             <ArrowLeft size={18} />
           </button>
         </Link>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 2 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 2 }}>
             MOCK EXAM
           </div>
-          <h1 className="text-xl font-semibold text-[#1C1A17]">Schedule MUET Practice Exam</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)]">Schedule MUET Practice Exam</h1>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Title */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#6B6050]">Exam Title *</label>
+          <label className="text-xs font-semibold text-[var(--text-secondary)]">Exam Title *</label>
           <input
             value={title}
             onChange={e => setTitle(e.target.value)}
             placeholder="e.g. MUET Mid-Semester Mock Exam"
-            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8] min-h-[44px]"
-            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: '#1C1A17' }}
+            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-[var(--text-tertiary)] min-h-[44px]"
+            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: 'var(--text-primary)' }}
             onFocus={e => (e.target.style.borderColor = 'rgba(139,92,246,0.35)')}
             onBlur={e => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
           />
@@ -96,7 +96,7 @@ export default function NewExamPage() {
 
         {/* Date + time */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#6B6050] flex items-center gap-1.5">
+          <label className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
             <Calendar size={12} /> Scheduled Date &amp; Time *
           </label>
           <input
@@ -104,7 +104,7 @@ export default function NewExamPage() {
             value={scheduledAt}
             onChange={e => setScheduledAt(e.target.value)}
             className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors min-h-[44px]"
-            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: '#1C1A17' }}
+            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: 'var(--text-primary)' }}
             onFocus={e => (e.target.style.borderColor = 'rgba(139,92,246,0.35)')}
             onBlur={e => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
           />
@@ -112,7 +112,7 @@ export default function NewExamPage() {
 
         {/* Duration */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#6B6050] flex items-center gap-1.5">
+          <label className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
             <Clock size={12} /> Duration (minutes)
           </label>
           <input
@@ -122,7 +122,7 @@ export default function NewExamPage() {
             value={durationMins}
             onChange={e => setDurationMins(Number(e.target.value))}
             className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors min-h-[44px]"
-            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: '#1C1A17' }}
+            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: 'var(--text-primary)' }}
             onFocus={e => (e.target.style.borderColor = 'rgba(139,92,246,0.35)')}
             onBlur={e => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
           />
@@ -130,7 +130,7 @@ export default function NewExamPage() {
 
         {/* MUET Topic */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#6B6050] flex items-center gap-1.5">
+          <label className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
             <BookOpen size={12} /> MUET Topic (optional)
           </label>
           <select

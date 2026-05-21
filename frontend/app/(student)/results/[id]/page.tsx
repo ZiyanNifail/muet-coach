@@ -163,7 +163,7 @@ function PostureBar({ score }: { score: number }) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-[#6B6050]">Posture Score</span>
+        <span className="text-xs text-[var(--text-secondary)]">Posture Score</span>
         <span className="text-xs font-mono font-semibold" style={{ color }}>
           {Math.round(pct)}/100 · {postureLabel(score)}
         </span>
@@ -347,7 +347,7 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
       className="flex flex-col gap-4 rounded-xl border p-5"
       style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
         AI CONFIDENCE SCORE
       </div>
 
@@ -355,7 +355,7 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
       <div className="flex items-center gap-4">
         <div className="flex flex-col">
           <span className="font-mono text-3xl font-bold" style={{ color }}>{score.toFixed(1)}</span>
-          <span style={{ fontSize: 10, color: '#9B8E80' }}>/100 · {label}</span>
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>/100 · {label}</span>
         </div>
         <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'rgba(180,165,148,0.22)' }}>
           <div
@@ -383,7 +383,7 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
               onMouseEnter={() => setHoveredMetric(m.key)}
               onMouseLeave={() => setHoveredMetric(null)}
             >
-              <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#C4B8A8' }}>
+              <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                 {m.key}
               </span>
               <span className="font-mono text-sm font-semibold" style={{ color: m.color }}>
@@ -410,12 +410,12 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
                   <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: m.color }}>
                     {m.key}
                   </p>
-                  <p style={{ fontSize: 11, color: '#6B6050', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                     {thresh.description}
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span style={{ fontSize: 10, color: '#9B8E80' }}>Target:</span>
-                    <span className="font-mono text-xs font-semibold" style={{ color: '#1C1A17' }}>{thresh.target}</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Target:</span>
+                    <span className="font-mono text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{thresh.target}</span>
                   </div>
                   {met !== null && (
                     <div
@@ -429,7 +429,7 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
                     </div>
                   )}
                   {m.raw == null && (
-                    <p style={{ fontSize: 10, color: '#9B8E80' }}>No data recorded for this metric.</p>
+                    <p style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>No data recorded for this metric.</p>
                   )}
                 </div>
               )}
@@ -589,8 +589,8 @@ export default function ResultsPage() {
               animation: 'pulse 2s ease-in-out infinite', display: 'inline-block',
             }}
           />
-          <h2 className="text-lg font-semibold text-[#1C1A17]">Waiting for analysis...</h2>
-          <p className="text-[#6B6050] text-sm">The AI is still processing your session.</p>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Waiting for analysis...</h2>
+          <p className="text-[var(--text-secondary)] text-sm">The AI is still processing your session.</p>
         </div>
       </div>
     )
@@ -606,7 +606,7 @@ export default function ResultsPage() {
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ef4444' }}>
             REPORT ERROR
           </div>
-          <p className="text-[#1C1A17] text-sm leading-6">{error}</p>
+          <p className="text-[var(--text-primary)] text-sm leading-6">{error}</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/practice"><Button variant="secondary" className="min-h-[44px]">New Session</Button></Link>
             <Link href="/dashboard"><Button variant="ghost" className="min-h-[44px]">Dashboard</Button></Link>
@@ -645,7 +645,7 @@ export default function ResultsPage() {
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 6 }}>
               EXAM RESULTS PENDING
             </div>
-            <p className="text-sm text-[#6B6050] max-w-sm">
+            <p className="text-sm text-[var(--text-secondary)] max-w-sm">
               Your exam has been submitted and is being reviewed by your educator. Results will be visible once your educator finalizes the marks.
             </p>
           </div>
@@ -666,21 +666,21 @@ export default function ResultsPage() {
               <span className="font-mono text-3xl font-bold" style={{ color: '#8b5cf6' }}>
                 {educatorGrade.band.toFixed(1)}
               </span>
-              <span className="text-xs text-[#9B8E80]">MUET Band</span>
+              <span className="text-xs text-[var(--text-tertiary)]">MUET Band</span>
             </div>
             {educatorGrade.percent != null && (
               <div className="flex flex-col">
                 <span className="font-mono text-3xl font-bold" style={{ color: '#6d28d9' }}>
                   {educatorGrade.percent}%
                 </span>
-                <span className="text-xs text-[#9B8E80]">
+                <span className="text-xs text-[var(--text-tertiary)]">
                   University Grade{educatorGrade.letter ? ` · ${educatorGrade.letter}` : ''}
                 </span>
               </div>
             )}
           </div>
           {educatorGrade.feedback && (
-            <p className="text-sm text-[#6B6050] leading-6 border-t pt-3"
+            <p className="text-sm text-[var(--text-secondary)] leading-6 border-t pt-3"
               style={{ borderColor: 'rgba(139,92,246,0.15)' }}>
               {educatorGrade.feedback}
             </p>
@@ -696,10 +696,10 @@ export default function ResultsPage() {
                 }}>
                   {educatorGrade.accuracy_score.toFixed(0)}%
                 </span>
-                <span className="text-xs text-[#9B8E80]">Factual accuracy of content</span>
+                <span className="text-xs text-[var(--text-tertiary)]">Factual accuracy of content</span>
               </div>
               {educatorGrade.accuracy_notes && (
-                <p className="text-xs text-[#6B6050] leading-5">{educatorGrade.accuracy_notes}</p>
+                <p className="text-xs text-[var(--text-secondary)] leading-5">{educatorGrade.accuracy_notes}</p>
               )}
             </div>
           )}
@@ -714,14 +714,14 @@ export default function ResultsPage() {
           <div
             style={{
               fontSize: 10, fontWeight: 600, letterSpacing: '0.12em',
-              textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4,
+              textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4,
             }}
           >
             FEEDBACK REPORT{isDemo && ' · DEMO DATA'}
           </div>
-          <h1 className="text-xl font-semibold text-[#1C1A17]">Presentation Analysis</h1>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)]">Presentation Analysis</h1>
           {(r.topic_text || r.session_mode) && (
-            <p className="text-[#9B8E80] text-xs mt-1">
+            <p className="text-[var(--text-tertiary)] text-xs mt-1">
               {r.topic_text && <span>{r.topic_text}</span>}
               {r.session_mode && (
                 <span className="ml-2 capitalize">{r.session_mode.replace('_', ' ')} session</span>
@@ -777,13 +777,13 @@ export default function ResultsPage() {
                 className="flex flex-col gap-1 rounded-lg border p-3"
                 style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}
               >
-                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#9B8E80' }}>
+                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                   {m.label}
                 </span>
                 <span className="font-mono text-xl font-semibold" style={{ color: m.color }}>
                   {m.value}
                 </span>
-                {m.sub && <span style={{ fontSize: 10, color: '#C4B8A8' }}>{m.sub}</span>}
+                {m.sub && <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{m.sub}</span>}
               </div>
             ))}
           </div>
@@ -821,10 +821,10 @@ export default function ResultsPage() {
           style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
               SPEAKING PACE (WPM)
             </div>
-            <div className="flex items-center gap-3 text-[10px]" style={{ color: '#9B8E80' }}>
+            <div className="flex items-center gap-3 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
               <span className="flex items-center gap-1"><span style={{ width: 16, height: 1, background: '#f59e0b', display: 'inline-block' }} /> 130 WPM min</span>
               <span className="flex items-center gap-1"><span style={{ width: 16, height: 1, background: '#ef4444', display: 'inline-block' }} /> 150 WPM max</span>
             </div>
@@ -836,7 +836,7 @@ export default function ResultsPage() {
               <XAxis dataKey="t" tick={{ fill: '#9B8E80', fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#9B8E80', fontSize: 10 }} axisLine={false} tickLine={false} domain={['auto', 'auto']} />
               <Tooltip
-                contentStyle={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(180,165,148,0.30)', borderRadius: 8, color: '#1C1A17', fontSize: 12 }}
+                contentStyle={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(180,165,148,0.30)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 12 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={((v: number | undefined) => [`${v ?? '—'} WPM`, 'Pace']) as any}
               />
@@ -885,8 +885,8 @@ export default function ResultsPage() {
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#3A7D6A' }}>
               🎯 FIX THIS FIRST
             </div>
-            <p className="text-sm font-medium text-[#1C1A17] leading-relaxed">{top.text}</p>
-            <p className="text-xs" style={{ color: '#9B8E80' }}>
+            <p className="text-sm font-medium text-[var(--text-primary)] leading-relaxed">{top.text}</p>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               Highest-impact change you can make before your next session.
             </p>
           </div>
@@ -900,10 +900,10 @@ export default function ResultsPage() {
           style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           <div className="flex items-center justify-between">
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
               ALL INSIGHTS
             </div>
-            <span className="text-[#9B8E80] text-xs">{r.advice_cards.length} items</span>
+            <span className="text-[var(--text-tertiary)] text-xs">{r.advice_cards.length} items</span>
           </div>
           {r.advice_cards.map((card, i) => (
             <div
@@ -911,8 +911,8 @@ export default function ResultsPage() {
               className="flex items-start gap-3 rounded-lg border p-3"
               style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}
             >
-              <span className="text-[#9B8E80] text-sm mt-0.5 shrink-0">▸</span>
-              <p className="flex-1 min-w-0 text-sm text-[#6B6050]">{card.text}</p>
+              <span className="text-[var(--text-tertiary)] text-sm mt-0.5 shrink-0">▸</span>
+              <p className="flex-1 min-w-0 text-sm text-[var(--text-secondary)]">{card.text}</p>
               <Badge variant={IMPACT_VARIANT[card.impact]}>{card.impact}</Badge>
             </div>
           ))}

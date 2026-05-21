@@ -83,7 +83,7 @@ function SlideUploadStep({
         <button
           onClick={onClose}
           className="absolute top-6 right-6 flex items-center justify-center w-8 h-8 rounded-full transition-colors"
-          style={{ background: 'rgba(180,165,148,0.15)', color: '#9B8E80' }}
+          style={{ background: 'rgba(180,165,148,0.15)', color: 'var(--text-tertiary)' }}
           onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(180,165,148,0.30)')}
           onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(180,165,148,0.15)')}
         >
@@ -91,11 +91,11 @@ function SlideUploadStep({
         </button>
       )}
       <div>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 4 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>
           SLIDES {required ? '(REQUIRED)' : '(OPTIONAL)'}
         </div>
-        <h1 className="text-2xl font-semibold text-[#1C1A17]">Upload your slide deck</h1>
-        <p className="text-[#6B6050] text-sm mt-1">
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Upload your slide deck</h1>
+        <p className="text-[var(--text-secondary)] text-sm mt-1">
           PDF or PPTX · Max 20 MB{required ? ' · Required for this assignment' : ' · Optional — skip if not needed'}
         </p>
       </div>
@@ -127,8 +127,8 @@ function SlideUploadStep({
         {file ? (
           <div className="flex flex-col items-center gap-2">
             <FileText size={32} style={{ color: '#22c55e' }} />
-            <span className="text-sm text-[#1C1A17] font-semibold">{file.name}</span>
-            <span className="text-xs text-[#9B8E80]">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
+            <span className="text-sm text-[var(--text-primary)] font-semibold">{file.name}</span>
+            <span className="text-xs text-[var(--text-tertiary)]">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
             <button
               className="flex items-center gap-1 text-xs text-[#ef4444] hover:underline"
               onClick={(e) => { e.stopPropagation(); setFile(null) }}
@@ -138,10 +138,10 @@ function SlideUploadStep({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 pointer-events-none">
-            <Upload size={28} style={{ color: '#9B8E80' }} />
+            <Upload size={28} style={{ color: 'var(--text-tertiary)' }} />
             <div className="text-center">
-              <p className="text-sm text-[#6B6050]">Drag and drop your PDF or PPTX here</p>
-              <p className="text-xs text-[#C4B8A8] mt-1">or click to browse</p>
+              <p className="text-sm text-[var(--text-secondary)]">Drag and drop your PDF or PPTX here</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">or click to browse</p>
             </div>
           </div>
         )}

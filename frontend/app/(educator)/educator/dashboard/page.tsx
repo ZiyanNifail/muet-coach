@@ -235,7 +235,7 @@ export default function EducatorDashboard() {
                 style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}>
                 {recentSubs.map((s, i) => (
                   <Link key={s.id} href={`/educator/courses/${s.course_id}/submissions/${s.id}`} className="no-underline">
-                    <div className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                    <div className="flex items-center gap-4 px-4 py-3 hover:bg-[var(--bg-panel)]/[0.02] transition-colors cursor-pointer"
                       style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border-subtle)' }}>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{s.student}</span>
@@ -284,7 +284,7 @@ export default function EducatorDashboard() {
               <div className="flex flex-col gap-2">
                 {pendingItems.slice(0, 6).map((item, i) => (
                   <Link key={i} href={item.href} className="no-underline">
-                    <div className="flex items-start gap-2 rounded-lg p-2.5 hover:bg-white/[0.03] transition-colors cursor-pointer"
+                    <div className="flex items-start gap-2 rounded-lg p-2.5 hover:bg-[var(--bg-panel)]/[0.03] transition-colors cursor-pointer"
                       style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.1)' }}>
                       <AlertCircle size={12} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
                       <div className="min-w-0">

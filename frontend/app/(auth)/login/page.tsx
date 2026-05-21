@@ -106,7 +106,7 @@ export default function LoginPage() {
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#9B8E80',
+              color: 'var(--text-tertiary)',
               transition: 'border-color 0.2s, color 0.2s',
             }}
             onMouseEnter={(e) => {
@@ -135,14 +135,14 @@ export default function LoginPage() {
             {/* Popover header */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <ShieldCheck size={13} style={{ color: '#6B6050' }} />
+                <ShieldCheck size={13} style={{ color: 'var(--text-secondary)' }} />
                 <span
                   style={{
                     fontSize: 10,
                     fontWeight: 600,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color: '#9B8E80',
+                    color: 'var(--text-tertiary)',
                   }}
                 >
                   Admin Access
@@ -150,7 +150,7 @@ export default function LoginPage() {
               </div>
               <button
                 onClick={() => { setAdminOpen(false); setAdminError('') }}
-                style={{ color: '#9B8E80', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                style={{ color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
               >
                 <X size={13} />
               </button>
@@ -159,7 +159,7 @@ export default function LoginPage() {
             {/* Popover form */}
             <form onSubmit={handleAdminLogin} className="flex flex-col gap-2.5">
               <div className="flex flex-col gap-1">
-                <label style={{ fontSize: 10, color: '#9B8E80', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <label style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   ID
                 </label>
                 <input
@@ -174,14 +174,14 @@ export default function LoginPage() {
                     borderRadius: 6,
                     padding: '6px 10px',
                     fontSize: 13,
-                    color: '#1C1A17',
+                    color: 'var(--text-primary)',
                     outline: 'none',
                     width: '100%',
                   }}
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label style={{ fontSize: 10, color: '#9B8E80', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <label style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   Password
                 </label>
                 <input
@@ -195,7 +195,7 @@ export default function LoginPage() {
                     borderRadius: 6,
                     padding: '6px 10px',
                     fontSize: 13,
-                    color: '#1C1A17',
+                    color: 'var(--text-primary)',
                     outline: 'none',
                     width: '100%',
                   }}

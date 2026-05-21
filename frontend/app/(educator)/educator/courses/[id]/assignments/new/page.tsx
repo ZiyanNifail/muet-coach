@@ -55,22 +55,22 @@ export default function NewAssignmentPage() {
   const inputStyle = {
     background: 'rgba(180,165,148,0.08)',
     borderColor: 'rgba(180,165,148,0.30)',
-    color: '#1C1A17',
+    color: 'var(--text-primary)',
   }
 
   return (
     <div className="p-4 md:p-6 flex flex-col gap-6 max-w-2xl">
       <div className="flex items-center gap-3">
         <Link href={`/educator/courses/${courseId}`}>
-          <button className="text-[#9B8E80] hover:text-[#6B6050] transition-colors">
+          <button className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors">
             <ArrowLeft size={18} />
           </button>
         </Link>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 2 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 2 }}>
             ASSIGNMENT
           </div>
-          <h1 className="text-2xl font-semibold text-[#1C1A17]">New Assignment</h1>
+          <h1 className="text-2xl font-semibold text-[var(--text-primary)]">New Assignment</h1>
         </div>
       </div>
 
@@ -81,14 +81,14 @@ export default function NewAssignmentPage() {
         >
           {/* Title */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#6B6050]">Assignment Title *</label>
+            <label className="text-xs font-semibold text-[var(--text-secondary)]">Assignment Title *</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Individual Presentation — Topic 1"
               required
-              className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8] min-h-[44px]"
+              className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[var(--text-tertiary)] min-h-[44px]"
               style={inputStyle}
               onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
               onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
@@ -97,13 +97,13 @@ export default function NewAssignmentPage() {
 
           {/* Description */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#6B6050]">Instructions / Description</label>
+            <label className="text-xs font-semibold text-[var(--text-secondary)]">Instructions / Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the task, topic, or rubric criteria..."
               rows={4}
-              className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[#C4B8A8] resize-none"
+              className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-[var(--text-tertiary)] resize-none"
               style={inputStyle}
               onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
               onBlur={(e) => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
@@ -112,7 +112,7 @@ export default function NewAssignmentPage() {
 
           {/* Deadline */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#6B6050]">Deadline (optional)</label>
+            <label className="text-xs font-semibold text-[var(--text-secondary)]">Deadline (optional)</label>
             <input
               type="datetime-local"
               value={deadline}
@@ -130,8 +130,8 @@ export default function NewAssignmentPage() {
             style={{ borderColor: examMode ? 'rgba(245,158,11,0.3)' : 'rgba(180,165,148,0.30)' }}
           >
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-[#1C1A17]">Exam Mode (MUET Part 1)</div>
-              <div className="text-xs text-[#9B8E80] mt-0.5">2-minute prep + 2-minute delivery format</div>
+              <div className="text-sm font-semibold text-[var(--text-primary)]">Exam Mode (MUET Part 1)</div>
+              <div className="text-xs text-[var(--text-tertiary)] mt-0.5">2-minute prep + 2-minute delivery format</div>
             </div>
             <button
               type="button"
@@ -144,7 +144,7 @@ export default function NewAssignmentPage() {
               }}
             >
               <span
-                className="absolute rounded-full bg-white transition-all"
+                className="absolute rounded-full bg-[var(--bg-panel)] transition-all"
                 style={{ width: 16, height: 16, top: 3, left: examMode ? 21 : 3 }}
               />
             </button>
@@ -156,8 +156,8 @@ export default function NewAssignmentPage() {
             style={{ borderColor: slideRequired ? 'rgba(245,158,11,0.3)' : 'rgba(180,165,148,0.30)' }}
           >
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-[#1C1A17]">Require Slide Deck</div>
-              <div className="text-xs text-[#9B8E80] mt-0.5">Students must upload a PDF or PPTX alongside their recording</div>
+              <div className="text-sm font-semibold text-[var(--text-primary)]">Require Slide Deck</div>
+              <div className="text-xs text-[var(--text-tertiary)] mt-0.5">Students must upload a PDF or PPTX alongside their recording</div>
             </div>
             <button
               type="button"
@@ -170,7 +170,7 @@ export default function NewAssignmentPage() {
               }}
             >
               <span
-                className="absolute rounded-full bg-white transition-all"
+                className="absolute rounded-full bg-[var(--bg-panel)] transition-all"
                 style={{ width: 16, height: 16, top: 3, left: slideRequired ? 21 : 3 }}
               />
             </button>

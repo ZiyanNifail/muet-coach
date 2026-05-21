@@ -6,7 +6,7 @@ export default function PracticePage() {
     <Suspense
       fallback={
         <div className="flex-1 flex items-center justify-center">
-          <span className="text-[#6B6050] text-sm">Loading...</span>
+          <span className="text-[var(--text-secondary)] text-sm">Loading...</span>
         </div>
       }
     >

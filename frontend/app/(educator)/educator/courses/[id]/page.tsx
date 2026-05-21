@@ -315,7 +315,7 @@ export default function CourseDetailPage() {
   const approved = members.filter((m) => m.status === 'approved')
 
   if (loading) {
-    return <div className="p-4 md:p-6 text-[#9B8E80] text-sm">Loading...</div>
+    return <div className="p-4 md:p-6 text-[var(--text-tertiary)] text-sm">Loading...</div>
   }
 
   if (!course) {
@@ -327,16 +327,16 @@ export default function CourseDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
         <Link href="/educator/dashboard">
-          <button className="mt-1 text-[#6b6050] hover:text-[#c08830] transition-colors">
+          <button className="mt-1 text-[var(--text-secondary)] hover:text-[#c08830] transition-colors">
             <ArrowLeft size={18} />
           </button>
         </Link>
         <div className="flex-1 min-w-0">
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b6050', marginBottom: 4 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
             COURSE · <span style={{ color: '#f59e0b' }}>{course.subject_code}</span>
           </div>
-          <h1 className="text-2xl font-semibold text-[#1C1A17]">{course.name}</h1>
-          {course.description && <p className="text-[#6B6050] text-sm mt-1">{course.description}</p>}
+          <h1 className="text-2xl font-semibold text-[var(--text-primary)]">{course.name}</h1>
+          {course.description && <p className="text-[var(--text-secondary)] text-sm mt-1">{course.description}</p>}
         </div>
         <div className="flex gap-2">
           <Link href={`/educator/courses/${id}/assignments/new`}>
@@ -352,10 +352,10 @@ export default function CourseDetailPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Invite code */}
         <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b6050' }}>INVITE CODE</div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>INVITE CODE</div>
           <div className="flex items-center gap-3">
             <code className="font-mono text-xl font-bold text-[#f59e0b]">{course.invite_code}</code>
-            <button onClick={copyInviteCode} className="transition-colors" style={{ color: '#6b6050' }}>
+            <button onClick={copyInviteCode} className="transition-colors" style={{ color: 'var(--text-secondary)' }}>
               {copied ? <Check size={14} style={{ color: '#22c55e' }} /> : <Copy size={14} />}
             </button>
           </div>
@@ -364,28 +364,28 @@ export default function CourseDetailPage() {
 
         {/* Rubric PDF */}
         <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b6050' }}>RUBRIC PDF</div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>RUBRIC PDF</div>
           {course.rubric_path ? (
             <div className="flex items-center gap-2">
               <FileText size={16} style={{ color: '#22c55e' }} />
               <span className="text-sm text-[#22c55e]">Rubric uploaded</span>
               <button
                 className="text-xs underline ml-2"
-                style={{ color: '#6b6050' }}
+                style={{ color: 'var(--text-secondary)' }}
                 onClick={() => { setCourse((c) => c ? { ...c, rubric_path: null } : c); setRubricFile(null) }}
               >Replace</button>
             </div>
           ) : rubricFile ? (
             <div className="flex items-center gap-2">
               <FileText size={16} style={{ color: '#94a3b8' }} />
-              <span className="text-sm text-[#6B6050] truncate flex-1">{rubricFile.name}</span>
-              <button onClick={() => setRubricFile(null)}><X size={14} style={{ color: '#9B8E80' }} /></button>
+              <span className="text-sm text-[var(--text-secondary)] truncate flex-1">{rubricFile.name}</span>
+              <button onClick={() => setRubricFile(null)}><X size={14} style={{ color: 'var(--text-tertiary)' }} /></button>
             </div>
           ) : (
             <button
               onClick={() => rubricInputRef.current?.click()}
               className="flex items-center gap-2 text-sm transition-colors"
-              style={{ color: '#6b6050' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
               <Upload size={14} />
               Upload rubric PDF (max 20 MB)
@@ -425,19 +425,19 @@ export default function CourseDetailPage() {
               Powered by Groq
             </span>
           </div>
-          {showAiPanel ? <ChevronUp size={14} style={{ color: '#6b6050' }} /> : <ChevronDown size={14} style={{ color: '#6b6050' }} />}
+          {showAiPanel ? <ChevronUp size={14} style={{ color: 'var(--text-secondary)' }} /> : <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />}
         </button>
 
         {showAiPanel && (
           <div className="flex flex-col gap-5 px-5 pb-5 pt-1" style={{ borderTop: '1px solid rgba(245,158,11,0.08)' }}>
-            <p className="text-xs" style={{ color: '#6b6050' }}>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               The AI will generate a structured presentation rubric based on your course details and the options you select below.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Presentation type */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold" style={{ color: '#6B6050' }}>Presentation Type</label>
+                <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Presentation Type</label>
                 <select
                   value={presentationType}
                   onChange={(e) => setPresentationType(e.target.value)}
@@ -445,7 +445,7 @@ export default function CourseDetailPage() {
                   style={{
                     background: 'rgba(180,165,148,0.08)',
                     borderColor: 'rgba(245,158,11,0.15)',
-                    color: '#1C1A17',
+                    color: 'var(--text-primary)',
                     colorScheme: 'light',
                   }}
                 >
@@ -457,7 +457,7 @@ export default function CourseDetailPage() {
 
               {/* Band count */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold" style={{ color: '#6B6050' }}>Band Levels</label>
+                <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Band Levels</label>
                 <select
                   value={String(bandCount)}
                   onChange={(e) => setBandCount(Number(e.target.value) as 4 | 5)}
@@ -465,7 +465,7 @@ export default function CourseDetailPage() {
                   style={{
                     background: 'rgba(180,165,148,0.08)',
                     borderColor: 'rgba(245,158,11,0.15)',
-                    color: '#1C1A17',
+                    color: 'var(--text-primary)',
                     colorScheme: 'light',
                   }}
                 >
@@ -477,7 +477,7 @@ export default function CourseDetailPage() {
 
             {/* Focus areas */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold" style={{ color: '#6B6050' }}>
+              <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
                 Assessment Criteria <span style={{ color: '#4a4035' }}>(select all that apply)</span>
               </label>
               <div className="flex flex-wrap gap-2">
@@ -544,7 +544,7 @@ export default function CourseDetailPage() {
                   style={{
                     background: 'rgba(180,165,148,0.06)',
                     borderColor: 'rgba(180,165,148,0.22)',
-                    color: '#1C1A17',
+                    color: 'var(--text-primary)',
                     lineHeight: 1.7,
                   }}
                 />
@@ -568,7 +568,7 @@ export default function CourseDetailPage() {
               className="px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize"
               style={tab === t
                 ? { background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }
-                : { color: '#9B8E80' }}
+                : { color: 'var(--text-tertiary)' }}
             >
               {t}
               {t === 'members' && pending.length > 0 && (
@@ -591,7 +591,7 @@ export default function CourseDetailPage() {
         <div className="flex flex-col gap-4">
           {/* Invite by email */}
           <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b6050' }}>INVITE BY EMAIL</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>INVITE BY EMAIL</div>
             <p className="text-xs" style={{ color: '#4a4035' }}>
               Enter the email of a registered student to add them directly. They will appear as a pending request.
             </p>
@@ -601,7 +601,7 @@ export default function CourseDetailPage() {
                 placeholder="student@example.com"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                className="w-full sm:flex-1 rounded-lg border px-3.5 py-2 text-sm text-[#1C1A17] outline-none placeholder:text-[#C4B8A8] min-h-[44px]"
+                className="w-full sm:flex-1 rounded-lg border px-3.5 py-2 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] min-h-[44px]"
                 style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(245,158,11,0.15)' }}
                 onFocus={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.35)')}
                 onBlur={(e) => (e.target.style.borderColor = 'rgba(245,158,11,0.15)')}
@@ -636,8 +636,8 @@ export default function CourseDetailPage() {
                 <div key={m.id} className="flex items-center gap-4 rounded-lg border px-4 py-3"
                   style={{ background: 'rgba(245,158,11,0.04)', borderColor: 'rgba(245,158,11,0.15)' }}>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-[#1C1A17]">{m.users?.full_name}</span>
-                    <span className="text-xs text-[#9B8E80] ml-2 break-all">{m.users?.email}</span>
+                    <span className="text-sm font-semibold text-[var(--text-primary)]">{m.users?.full_name}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] ml-2 break-all">{m.users?.email}</span>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleMemberAction(m.id, 'approve')} disabled={actionId === m.id}
@@ -656,7 +656,7 @@ export default function CourseDetailPage() {
 
           {/* Approved members */}
           <div className="flex flex-col gap-2">
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b6050' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
               ENROLLED STUDENTS ({approved.length})
             </div>
             {approved.length === 0 ? (
@@ -669,10 +669,10 @@ export default function CourseDetailPage() {
               approved.map((m) => (
                 <div key={m.id} className="flex items-center gap-3 rounded-lg border px-4 py-3"
                   style={{ background: 'rgba(180,165,148,0.04)', borderColor: 'rgba(180,165,148,0.22)' }}>
-                  <Users size={14} style={{ color: '#9B8E80', flexShrink: 0 }} />
+                  <Users size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm text-[#1C1A17] block truncate">{m.users?.full_name}</span>
-                    <span className="text-xs text-[#9B8E80] block truncate">{m.users?.email}</span>
+                    <span className="text-sm text-[var(--text-primary)] block truncate">{m.users?.full_name}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] block truncate">{m.users?.email}</span>
                   </div>
                   <Badge variant="green">Enrolled</Badge>
                 </div>
@@ -686,7 +686,7 @@ export default function CourseDetailPage() {
       {tab === 'assignments' && (
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <span className="text-[#9B8E80] text-sm">{assignments.length} assignment{assignments.length !== 1 ? 's' : ''}</span>
+            <span className="text-[var(--text-tertiary)] text-sm">{assignments.length} assignment{assignments.length !== 1 ? 's' : ''}</span>
             <Link href={`/educator/courses/${id}/assignments/new`}>
               <Button variant="secondary">
                 <PlusCircle size={14} className="mr-2" />
@@ -706,12 +706,12 @@ export default function CourseDetailPage() {
                 style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold text-[#1C1A17]">{a.title}</span>
+                    <span className="text-sm font-semibold text-[var(--text-primary)]">{a.title}</span>
                     {a.exam_mode && <Badge variant="amber">Exam Mode</Badge>}
                   </div>
-                  {a.description && <p className="text-xs text-[#9B8E80] mb-2">{a.description}</p>}
+                  {a.description && <p className="text-xs text-[var(--text-tertiary)] mb-2">{a.description}</p>}
                   {a.deadline && (
-                    <p className="text-xs text-[#C4B8A8]">
+                    <p className="text-xs text-[var(--text-tertiary)]">
                       Due: {new Date(a.deadline).toLocaleDateString('en-MY', { dateStyle: 'medium' })}
                     </p>
                   )}
@@ -726,7 +726,7 @@ export default function CourseDetailPage() {
       {tab === 'exams' && (
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <span className="text-[#9B8E80] text-sm">
+            <span className="text-[var(--text-tertiary)] text-sm">
               {assignments.filter(a => a.exam_mode).length} mock exam{assignments.filter(a => a.exam_mode).length !== 1 ? 's' : ''}
             </span>
             <Link href={`/educator/courses/${id}/exams/new`}>
@@ -748,13 +748,13 @@ export default function CourseDetailPage() {
                 style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-sm font-semibold text-[#1C1A17]">{a.title}</span>
+                    <span className="text-sm font-semibold text-[var(--text-primary)]">{a.title}</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded font-bold"
                       style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
                       EXAM
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-[#9B8E80]">
+                  <div className="flex items-center gap-4 text-xs text-[var(--text-tertiary)]">
                     {a.scheduled_at && (
                       <span className="flex items-center gap-1">
                         <CalendarClock size={11} />
@@ -769,7 +769,7 @@ export default function CourseDetailPage() {
                 <button
                   onClick={() => openInviteModal(a.id)}
                   className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all"
-                  style={{ background: 'rgba(180,165,148,0.10)', border: '1px solid rgba(180,165,148,0.22)', color: '#9B8E80' }}
+                  style={{ background: 'rgba(180,165,148,0.10)', border: '1px solid rgba(180,165,148,0.22)', color: 'var(--text-tertiary)' }}
                 >
                   <Users size={13} />
                   Invite Students
@@ -783,7 +783,7 @@ export default function CourseDetailPage() {
       {/* Tab: Submissions */}
       {tab === 'submissions' && (
         <div className="flex flex-col gap-3">
-          <span className="text-[#9B8E80] text-sm">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</span>
+          <span className="text-[var(--text-tertiary)] text-sm">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</span>
           {submissions.length === 0 ? (
             <div className="flex items-center justify-center h-32 rounded-xl border" style={{ borderColor: 'rgba(245,158,11,0.08)' }}>
               <p className="text-xs" style={{ color: '#4a4035' }}>No submissions yet.</p>
@@ -798,14 +798,14 @@ export default function CourseDetailPage() {
                   style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-[#1C1A17]">{anonLabel}</span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">{anonLabel}</span>
                       <Badge variant={s.status === 'complete' ? 'green' : s.status === 'failed' ? 'red' : 'amber'}>
                         {s.status}
                       </Badge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#9B8E80]">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--text-tertiary)]">
                       {s.assignments && <span>Assignment: {s.assignments.title}</span>}
-                      {r?.band_score != null && <span>Band: <strong className="text-[#1C1A17]">{r.band_score.toFixed(1)}</strong></span>}
+                      {r?.band_score != null && <span>Band: <strong className="text-[var(--text-primary)]">{r.band_score.toFixed(1)}</strong></span>}
                       <span>{new Date(s.uploaded_at).toLocaleDateString('en-MY', { dateStyle: 'medium' })}</span>
                     </div>
                   </div>
@@ -835,14 +835,14 @@ export default function CourseDetailPage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                   INVITE STUDENTS
                 </div>
-                <h2 className="text-base font-semibold text-[#1C1A17] mt-0.5">
+                <h2 className="text-base font-semibold text-[var(--text-primary)] mt-0.5">
                   {assignments.find(a => a.id === inviteModalExamId)?.title}
                 </h2>
               </div>
-              <button onClick={() => setInviteModalExamId(null)} className="text-[#9B8E80] hover:text-[#1C1A17] transition-colors">
+              <button onClick={() => setInviteModalExamId(null)} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -853,7 +853,7 @@ export default function CourseDetailPage() {
               placeholder="Search by name or email..."
               value={inviteSearch}
               onChange={e => setInviteSearch(e.target.value)}
-              className="rounded-lg border px-3 py-2 text-sm outline-none placeholder:text-[#C4B8A8] text-[#1C1A17]"
+              className="rounded-lg border px-3 py-2 text-sm outline-none placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)]"
               style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)' }}
               onFocus={e => (e.target.style.borderColor = 'rgba(139,92,246,0.35)')}
               onBlur={e => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
@@ -861,14 +861,14 @@ export default function CourseDetailPage() {
 
             <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
               {allStudents.length === 0 ? (
-                <p className="text-xs text-[#9B8E80] text-center py-6">Loading students...</p>
+                <p className="text-xs text-[var(--text-tertiary)] text-center py-6">Loading students...</p>
               ) : (() => {
                 const q = inviteSearch.toLowerCase()
                 const filtered = allStudents.filter(s =>
                   s.full_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
                 )
                 if (filtered.length === 0) {
-                  return <p className="text-xs text-[#9B8E80] text-center py-6">No students found.</p>
+                  return <p className="text-xs text-[var(--text-tertiary)] text-center py-6">No students found.</p>
                 }
                 return filtered.map(s => {
                   const existing = examInvitations.find(i => i.student_id === s.id)
@@ -891,8 +891,8 @@ export default function CourseDetailPage() {
                         style={{ width: 14, height: 14, flexShrink: 0 }}
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm text-[#1C1A17] font-medium truncate">{s.full_name}</div>
-                        <div className="text-xs text-[#9B8E80] flex items-center gap-1">
+                        <div className="text-sm text-[var(--text-primary)] font-medium truncate">{s.full_name}</div>
+                        <div className="text-xs text-[var(--text-tertiary)] flex items-center gap-1">
                           <Mail size={10} />
                           {s.email}
                         </div>
@@ -913,7 +913,7 @@ export default function CourseDetailPage() {
             </div>
 
             <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between" style={{ borderTop: '1px solid rgba(180,165,148,0.18)' }}>
-              <p className="text-[11px] text-[#9B8E80]">
+              <p className="text-[11px] text-[var(--text-tertiary)]">
                 {selectedStudents.size > 0 ? `${selectedStudents.size} student${selectedStudents.size !== 1 ? 's' : ''} selected` : 'Select students to invite'}
               </p>
               <Button

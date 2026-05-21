@@ -127,16 +127,16 @@ export default function StudentsPage() {
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <Link href="/educator/dashboard">
-            <button className="mt-1 text-[#6b6050] hover:text-[#c08830] transition-colors">
+            <button className="mt-1 text-[var(--text-secondary)] hover:text-[#c08830] transition-colors">
               <ArrowLeft size={18} />
             </button>
           </Link>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b6050', marginBottom: 4 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 4 }}>
               MANAGE
             </div>
-            <h1 className="text-2xl font-semibold text-[#1C1A17]">Students</h1>
-            <p className="text-[#6B6050] text-sm mt-1">All enrolled students across your courses.</p>
+            <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Students</h1>
+            <p className="text-[var(--text-secondary)] text-sm mt-1">All enrolled students across your courses.</p>
           </div>
         </div>
         <input
@@ -144,15 +144,15 @@ export default function StudentsPage() {
           placeholder="Search by name or email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border px-3.5 py-2 text-sm outline-none placeholder:text-[#C4B8A8] w-full md:w-[260px]"
-          style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: '#1C1A17' }}
+          className="rounded-lg border px-3.5 py-2 text-sm outline-none placeholder:text-[var(--text-tertiary)] w-full md:w-[260px]"
+          style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: 'var(--text-primary)' }}
         />
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64 rounded-xl border"
           style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
-          <span className="text-[#9B8E80] text-sm">Loading...</span>
+          <span className="text-[var(--text-tertiary)] text-sm">Loading...</span>
         </div>
       ) : (
         <>
@@ -179,10 +179,10 @@ export default function StudentsPage() {
                   >
                     <Clock size={13} style={{ color: '#f59e0b', flexShrink: 0 }} />
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-semibold text-[#1C1A17]">{m.full_name}</span>
-                      <span className="text-xs text-[#9B8E80] ml-2">{m.email}</span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">{m.full_name}</span>
+                      <span className="text-xs text-[var(--text-tertiary)] ml-2">{m.email}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-[#9B8E80] mr-4">
+                    <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mr-4">
                       <BookOpen size={11} style={{ color: '#f59e0b' }} />
                       <span className="font-mono text-[#f59e0b]">{m.subject_code}</span>
                       <span className="hidden sm:inline">{m.course_name}</span>
@@ -215,15 +215,15 @@ export default function StudentsPage() {
 
           {/* Enrolled students table */}
           <div className="flex flex-col gap-3">
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
               ENROLLED STUDENTS {filteredStudents.length > 0 && `(${filteredStudents.length})`}
             </div>
 
             {filteredStudents.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 rounded-xl border gap-3"
                 style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
-                <GraduationCap size={28} style={{ color: '#9B8E80', opacity: 0.4 }} />
-                <p className="text-[#9B8E80] text-sm">
+                <GraduationCap size={28} style={{ color: 'var(--text-tertiary)', opacity: 0.4 }} />
+                <p className="text-[var(--text-tertiary)] text-sm">
                   {students.length === 0 ? 'No enrolled students yet.' : 'No students match your search.'}
                 </p>
               </div>
@@ -238,7 +238,7 @@ export default function StudentsPage() {
                     borderBottom: '1px solid rgba(180,165,148,0.22)',
                   }}>
                   {['STUDENT', 'EMAIL', 'CURRENT', 'HIGHEST', 'COURSES'].map((h) => (
-                    <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', color: '#C4B8A8' }}>{h}</div>
+                    <div key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-tertiary)' }}>{h}</div>
                   ))}
                 </div>
 
@@ -257,16 +257,16 @@ export default function StudentsPage() {
                         style={{ background: 'rgba(148,163,184,0.12)' }}>
                         <GraduationCap size={13} style={{ color: '#94a3b8' }} />
                       </div>
-                      <span className="text-sm font-semibold text-[#1C1A17] truncate">{s.full_name}</span>
+                      <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{s.full_name}</span>
                     </div>
-                    <span className="text-xs text-[#9B8E80] truncate pr-4">{s.email}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] truncate pr-4">{s.email}</span>
                     <div>
                       {s.current_band !== null ? (
                         <span className="text-sm font-bold" style={{ color: bandColor(s.current_band) }}>
                           {s.current_band.toFixed(1)}
                         </span>
                       ) : (
-                        <span className="text-xs text-[#C4B8A8]">—</span>
+                        <span className="text-xs text-[var(--text-tertiary)]">—</span>
                       )}
                     </div>
                     <div>
@@ -275,12 +275,12 @@ export default function StudentsPage() {
                           {s.highest_band.toFixed(1)}
                         </span>
                       ) : (
-                        <span className="text-xs text-[#C4B8A8]">—</span>
+                        <span className="text-xs text-[var(--text-tertiary)]">—</span>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-1 min-w-0">
                       {s.courses.length === 0 ? (
-                        <span className="text-xs text-[#C4B8A8]">—</span>
+                        <span className="text-xs text-[var(--text-tertiary)]">—</span>
                       ) : (
                         s.courses.map(c => (
                           <Link key={c.id} href={`/educator/courses/${c.id}`} className="no-underline">
@@ -297,7 +297,7 @@ export default function StudentsPage() {
           </div>
 
           {(filteredStudents.length > 0 || filteredPending.length > 0) && (
-            <div className="flex items-center gap-2 text-xs text-[#C4B8A8]">
+            <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
               <TrendingUp size={11} />
               {filteredStudents.length} enrolled · {filteredPending.length} pending
               {search && ` · filtered by "${search}"`}

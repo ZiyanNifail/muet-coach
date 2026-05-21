@@ -107,7 +107,7 @@ export default function ExamDetailPage() {
     setShowModal(false)
   }
 
-  if (loading) return <div className="p-6 text-[#9B8E80] text-sm">Loading...</div>
+  if (loading) return <div className="p-6 text-[var(--text-tertiary)] text-sm">Loading...</div>
   if (!exam) return <div className="p-6 text-[#ef4444] text-sm">Exam not found.</div>
 
   const accepted = invitations.filter(i => i.status === 'accepted')
@@ -118,16 +118,16 @@ export default function ExamDetailPage() {
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href="/educator/dashboard">
-          <button className="mt-1 text-[#9B8E80] hover:text-[#6B6050] transition-colors">
+          <button className="mt-1 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors">
             <ArrowLeft size={18} />
           </button>
         </Link>
         <div className="flex-1 min-w-0">
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80', marginBottom: 2 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 2 }}>
             MUET MOCK EXAM
           </div>
-          <h1 className="text-xl font-semibold text-[#1C1A17]">{exam.title}</h1>
-          <div className="flex items-center gap-4 mt-2 text-xs text-[#9B8E80]">
+          <h1 className="text-xl font-semibold text-[var(--text-primary)]">{exam.title}</h1>
+          <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-tertiary)]">
             {exam.scheduled_at && (
               <span className="flex items-center gap-1.5">
                 <CalendarClock size={12} />
@@ -151,14 +151,14 @@ export default function ExamDetailPage() {
       {/* Stats strip */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Invited', value: invitations.length, color: '#9B8E80' },
+          { label: 'Invited', value: invitations.length, color: 'var(--text-tertiary)' },
           { label: 'Accepted', value: accepted.length, color: '#22c55e' },
           { label: 'Pending', value: pending.length, color: '#f59e0b' },
         ].map(({ label, value, color }) => (
           <div key={label} className="flex flex-col gap-1 rounded-xl border p-4"
             style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
             <span className="text-2xl font-bold" style={{ color }}>{value}</span>
-            <span className="text-xs text-[#9B8E80]">{label}</span>
+            <span className="text-xs text-[var(--text-tertiary)]">{label}</span>
           </div>
         ))}
       </div>
@@ -166,7 +166,7 @@ export default function ExamDetailPage() {
       {/* Invitations list */}
       {invitations.length > 0 && (
         <div className="flex flex-col gap-2">
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
             INVITATIONS ({invitations.length})
           </div>
           <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(180,165,148,0.22)' }}>
@@ -177,8 +177,8 @@ export default function ExamDetailPage() {
                   borderTop: i === 0 ? 'none' : '1px solid rgba(180,165,148,0.10)',
                 }}>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-[#1C1A17]">{inv.users?.full_name}</div>
-                  <div className="text-xs text-[#9B8E80] flex items-center gap-1">
+                  <div className="text-sm font-medium text-[var(--text-primary)]">{inv.users?.full_name}</div>
+                  <div className="text-xs text-[var(--text-tertiary)] flex items-center gap-1">
                     <Mail size={10} />{inv.users?.email}
                   </div>
                 </div>
@@ -202,8 +202,8 @@ export default function ExamDetailPage() {
       {invitations.length === 0 && (
         <div className="flex flex-col items-center justify-center h-40 rounded-xl border gap-3"
           style={{ borderColor: 'rgba(180,165,148,0.18)' }}>
-          <Users size={24} style={{ color: '#C4B8A8' }} />
-          <p className="text-sm text-[#9B8E80]">No students invited yet.</p>
+          <Users size={24} style={{ color: 'var(--text-tertiary)' }} />
+          <p className="text-sm text-[var(--text-tertiary)]">No students invited yet.</p>
           <Button variant="secondary" onClick={openInviteModal}>
             <Users size={13} className="mr-2" /> Invite Students
           </Button>
@@ -220,10 +220,10 @@ export default function ExamDetailPage() {
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>INVITE STUDENTS</div>
-                <h2 className="text-base font-semibold text-[#1C1A17] mt-0.5">{exam.title}</h2>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>INVITE STUDENTS</div>
+                <h2 className="text-base font-semibold text-[var(--text-primary)] mt-0.5">{exam.title}</h2>
               </div>
-              <button onClick={() => setShowModal(false)} className="text-[#9B8E80] hover:text-[#1C1A17] transition-colors">
+              <button onClick={() => setShowModal(false)} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -233,7 +233,7 @@ export default function ExamDetailPage() {
               placeholder="Search by name or email..."
               value={inviteSearch}
               onChange={e => setInviteSearch(e.target.value)}
-              className="rounded-lg border px-3 py-2 text-sm outline-none placeholder:text-[#C4B8A8] text-[#1C1A17]"
+              className="rounded-lg border px-3 py-2 text-sm outline-none placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)]"
               style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)' }}
               onFocus={e => (e.target.style.borderColor = 'rgba(139,92,246,0.35)')}
               onBlur={e => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
@@ -241,13 +241,13 @@ export default function ExamDetailPage() {
 
             <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
               {allStudents.length === 0 ? (
-                <p className="text-xs text-[#9B8E80] text-center py-6">Loading students...</p>
+                <p className="text-xs text-[var(--text-tertiary)] text-center py-6">Loading students...</p>
               ) : (() => {
                 const q = inviteSearch.toLowerCase()
                 const filtered = allStudents.filter(s =>
                   s.full_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
                 )
-                if (filtered.length === 0) return <p className="text-xs text-[#9B8E80] text-center py-6">No students found.</p>
+                if (filtered.length === 0) return <p className="text-xs text-[var(--text-tertiary)] text-center py-6">No students found.</p>
                 return filtered.map(s => {
                   const existing = invitations.find(i => i.student_id === s.id)
                   const checked = selectedStudents.has(s.id)
@@ -263,8 +263,8 @@ export default function ExamDetailPage() {
                         className="rounded accent-violet-500"
                         style={{ width: 14, height: 14, flexShrink: 0 }} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm text-[#1C1A17] font-medium truncate">{s.full_name}</div>
-                        <div className="text-xs text-[#9B8E80] flex items-center gap-1">
+                        <div className="text-sm text-[var(--text-primary)] font-medium truncate">{s.full_name}</div>
+                        <div className="text-xs text-[var(--text-tertiary)] flex items-center gap-1">
                           <Mail size={10} />{s.email}
                         </div>
                       </div>
@@ -284,7 +284,7 @@ export default function ExamDetailPage() {
             </div>
 
             <div className="flex items-center justify-between pt-1" style={{ borderTop: '1px solid rgba(180,165,148,0.18)' }}>
-              <p className="text-[11px] text-[#9B8E80]">
+              <p className="text-[11px] text-[var(--text-tertiary)]">
                 {selectedStudents.size > 0 ? `${selectedStudents.size} student${selectedStudents.size !== 1 ? 's' : ''} selected` : 'Select students to invite'}
               </p>
               <Button onClick={handleBulkInvite} disabled={bulkInviting || selectedStudents.size === 0}>

@@ -40,10 +40,10 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
       style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
       <div className="flex items-center justify-between">
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9B8E80' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
           MUET RUBRIC BREAKDOWN
         </div>
-        <span style={{ fontSize: 10, color: '#C4B8A8' }}>5 criteria · tap row to expand</span>
+        <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>5 criteria · tap row to expand</span>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -80,7 +80,7 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
                 {/* Criterion label */}
                 <span
                   className="shrink-0 text-xs font-medium"
-                  style={{ color: '#6B6050', minWidth: isWeakest ? 148 : 168 }}
+                  style={{ color: 'var(--text-secondary)', minWidth: isWeakest ? 148 : 168 }}
                 >
                   {label}
                 </span>
@@ -99,7 +99,7 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
                 </span>
 
                 {/* Expand chevron */}
-                <span style={{ color: '#C4B8A8', fontSize: 10, transition: 'transform 0.2s', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none' }}>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: 10, transition: 'transform 0.2s', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none' }}>
                   ▾
                 </span>
               </div>
@@ -108,7 +108,7 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
               {isOpen && (
                 <div
                   className="px-3 pb-3 text-xs leading-relaxed"
-                  style={{ color: '#9B8E80', borderTop: '1px solid rgba(180,165,148,0.15)', paddingTop: 8 }}
+                  style={{ color: 'var(--text-tertiary)', borderTop: '1px solid rgba(180,165,148,0.15)', paddingTop: 8 }}
                 >
                   {band.justification}
                 </div>
@@ -118,7 +118,7 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
         })}
       </div>
 
-      <p style={{ fontSize: 10, color: '#C4B8A8' }}>
+      <p style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
         Each criterion scored 1.0–6.0 · Band 4 = Satisfactory · Band 5 = Good · Band 6 = Excellent
       </p>
     </div>

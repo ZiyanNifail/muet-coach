@@ -116,7 +116,7 @@ export function AudioRecorder({ maxSecs = 15, onBlob, disabled = false, label }:
   return (
     <div className="flex flex-col items-center gap-3">
       {label && (
-        <p className="text-sm text-[#6B6050] text-center">{label}</p>
+        <p className="text-sm text-[var(--text-secondary)] text-center">{label}</p>
       )}
 
       {/* Waveform canvas */}
@@ -172,7 +172,7 @@ export function AudioRecorder({ maxSecs = 15, onBlob, disabled = false, label }:
           <button
             onClick={reset}
             className="flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all"
-            style={{ color: '#9B8E80', border: '1px solid rgba(180,165,148,0.30)', cursor: 'pointer' }}
+            style={{ color: 'var(--text-tertiary)', border: '1px solid rgba(180,165,148,0.30)', cursor: 'pointer' }}
           >
             <RotateCcw size={12} />
             Record again

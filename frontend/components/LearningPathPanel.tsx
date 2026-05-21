@@ -202,7 +202,7 @@ export function LearningPathPanel({ studentId, rubricBands }: { studentId: strin
         </span>
       </div>
 
-      <p className="text-xs" style={{ color: '#9B8E80' }}>
+      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
         {isRubricDriven
           ? <>Based on your MUET rubric breakdown, your lowest criterion is{' '}<span style={{ color: '#c4b5fd' }}>{title}</span>. Here are 3 targeted drills.</>
           : <>Based on your last {sessionCount} session{sessionCount > 1 ? 's' : ''}, your weakest area is{' '}<span style={{ color: '#c4b5fd' }}>{title}</span>. Here are 3 targeted drills.</>
@@ -222,7 +222,7 @@ export function LearningPathPanel({ studentId, rubricBands }: { studentId: strin
             >
               {String(i + 1).padStart(2, '0')}
             </span>
-            <p className="text-sm leading-relaxed" style={{ color: '#6B6050' }}>{drill}</p>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{drill}</p>
           </div>
         ))}
       </div>
