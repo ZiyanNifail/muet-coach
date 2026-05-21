@@ -27,7 +27,7 @@ export function Task2Panel({ prompt, value, onChange }: Task2PanelProps) {
           className="rounded-xl border-l-4 px-4 py-3 flex gap-3"
           style={{ background: 'var(--accent-teal-dim)', borderLeftColor: 'var(--accent-teal)' }}
         >
-          <Quote size={16} style={{ color: 'var(--accent-teal)', shrink: 0, marginTop: 2 }} className="shrink-0" />
+          <Quote size={16} style={{ color: 'var(--accent-teal)', marginTop: 2 }} className="shrink-0" />
           <p className="text-sm leading-relaxed italic" style={{ color: 'var(--text-primary)' }}>{prompt.statement}</p>
         </div>
 

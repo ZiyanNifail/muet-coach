@@ -45,7 +45,7 @@ export function Task1Panel({ prompt, value, onChange }: Task1PanelProps) {
     return (
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>
-          <Pie data={prompt.chartData} dataKey="value" nameKey="label" cx="50%" cy="50%" outerRadius={85} label={({ label, value }) => `${label}: ${value}${prompt.unit}`} labelLine={false}>
+          <Pie data={prompt.chartData} dataKey="value" nameKey="label" cx="50%" cy="50%" outerRadius={85} label={({ name, value }: any) => `${name}: ${value}${prompt.unit}`} labelLine={false}>
             {prompt.chartData.map((_, i) => (
               <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
             ))}

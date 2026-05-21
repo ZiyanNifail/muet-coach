@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/Button'
 import { TopicWheel } from '@/components/TopicWheel'
 import { BrainstormPanel } from '@/components/BrainstormPanel'
 import { RecordingInterface } from '@/components/RecordingInterface'
-import { AlertTriangle, Mic, Mic2, CalendarClock, X } from 'lucide-react'
+import { AlertTriangle, Mic, Mic2, CalendarClock, X, FileText, Upload } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
-type Step = 'mode' | 'topic' | 'brainstorm' | 'recording' | 'processing'
+type Step = 'mode' | 'topic' | 'brainstorm' | 'slides' | 'recording' | 'processing'
 type Mode = 'unguided' | 'guided'
 
 const MODE_OPTIONS = [
@@ -200,6 +200,7 @@ export function PracticeContent() {
   const [pipelineStage, setPipelineStage] = useState(0)
   const [assignmentInfo, setAssignmentInfo] = useState<AssignmentInfo | null>(null)
   const [recordingKey, setRecordingKey] = useState(0)
+  const [slideFile, setSlideFile] = useState<File | null>(null)
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -214,7 +215,7 @@ export function PracticeContent() {
   useEffect(() => {
     if (!assignmentIdParam) return
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const authHdr = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
+      const authHdr: Record<string, string> = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
       try {
         const res = await fetch(`${API_URL}/api/courses/assignment/${assignmentIdParam}`, { headers: authHdr })
         if (!res.ok) return
@@ -477,6 +478,16 @@ export function PracticeContent() {
           </div>
           <BrainstormPanel topic={topic.topic} onReady={handleBrainstormReady} onSkip={() => setStep('recording')} onClose={goBack} />
         </>
+      )}
+
+      {/* Step: Slide upload */}
+      {step === 'slides' && (
+        <SlideUploadStep
+          required={assignmentInfo?.slide_required ?? false}
+          onContinue={(file) => { setSlideFile(file); setStep('recording') }}
+          onSkip={() => setStep('recording')}
+          onClose={goBack}
+        />
       )}
 
       {/* Step: Recording */}
