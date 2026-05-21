@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState } from 'react'
 
 export interface RubricBand {
@@ -37,7 +37,7 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
   return (
     <div
       className="flex flex-col gap-4 rounded-xl border p-5"
-      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
+      style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
       <div className="flex items-center justify-between">
         <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>

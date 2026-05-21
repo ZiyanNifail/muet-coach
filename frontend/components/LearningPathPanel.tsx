@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
@@ -188,7 +188,7 @@ export function LearningPathPanel({ studentId, rubricBands }: { studentId: strin
   return (
     <div
       className="flex flex-col gap-3 rounded-xl border p-5"
-      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(139,92,246,0.25)' }}
+      style={{ background: 'var(--bg-panel)', borderColor: 'rgba(139,92,246,0.25)' }}
     >
       <div className="flex items-center justify-between">
         <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8b5cf6' }}>

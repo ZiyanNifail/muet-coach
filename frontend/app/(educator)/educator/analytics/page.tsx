@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { supabase, getAuthHeaders } from '@/lib/supabase'
 import { Users, BookOpen, FileCheck, TrendingUp, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react'
@@ -122,7 +122,7 @@ export default function AnalyticsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64 rounded-xl border"
-          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+          style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
           <span className="text-[var(--text-tertiary)] text-sm">Loading analytics...</span>
         </div>
       ) : data ? (
@@ -163,12 +163,12 @@ export default function AnalyticsPage() {
 
               {data.courses.length === 0 ? (
                 <div className="flex items-center justify-center h-32 rounded-xl border"
-                  style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                  style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
                   <p className="text-[var(--text-tertiary)] text-sm">No courses yet.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-xl border"
-                  style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                  style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
                 <div className="min-w-[520px]">
                   {/* Table header */}
                   <div className="grid px-4 py-2.5"
@@ -217,7 +217,7 @@ export default function AnalyticsPage() {
             <div className="flex flex-col gap-5">
               {/* Band distribution */}
               <div className="flex flex-col gap-3 rounded-xl border p-4"
-                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
                 <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                   BAND DISTRIBUTION
                 </div>
@@ -233,7 +233,7 @@ export default function AnalyticsPage() {
 
               {/* Top issues */}
               <div className="flex flex-col gap-3 rounded-xl border p-4"
-                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
                 <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                   TOP RECURRING ISSUES
                 </div>

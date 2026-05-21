@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useRef, useState } from 'react'
 import { supabase, getAuthHeaders } from '@/lib/supabase'
 import Link from 'next/link'
@@ -151,7 +151,7 @@ export default function StudentsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64 rounded-xl border"
-          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+          style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
           <span className="text-[var(--text-tertiary)] text-sm">Loading...</span>
         </div>
       ) : (
@@ -221,7 +221,7 @@ export default function StudentsPage() {
 
             {filteredStudents.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 rounded-xl border gap-3"
-                style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
                 <GraduationCap size={28} style={{ color: 'var(--text-tertiary)', opacity: 0.4 }} />
                 <p className="text-[var(--text-tertiary)] text-sm">
                   {students.length === 0 ? 'No enrolled students yet.' : 'No students match your search.'}

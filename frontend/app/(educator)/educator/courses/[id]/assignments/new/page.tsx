@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -77,7 +77,7 @@ export default function NewAssignmentPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div
           className="flex flex-col gap-5 rounded-xl border p-5"
-          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
+          style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           {/* Title */}
           <div className="flex flex-col gap-2">

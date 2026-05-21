@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
@@ -147,12 +147,12 @@ export default function AllSubmissionsPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="flex items-center justify-center h-40 rounded-xl border" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+        <div className="flex items-center justify-center h-40 rounded-xl border" style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
           <span className="text-[var(--text-tertiary)] text-sm">Loading submissions...</span>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-48 rounded-xl border gap-3"
-          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+          style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
           <FileCheck size={28} style={{ color: 'var(--text-tertiary)', opacity: 0.4 }} />
           <p className="text-[var(--text-tertiary)] text-sm">
             {submissions.length === 0 ? 'No submissions yet across your courses.' : 'No submissions match the selected filters.'}

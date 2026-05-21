@@ -146,10 +146,10 @@ function BandRing({ score }: { score: number }) {
         fontSize={28} fontWeight={700} fontFamily="monospace">
         {score.toFixed(1)}
       </text>
-      <text x={70} y={83} textAnchor="middle" fill="#9B8E80" fontSize={9} letterSpacing="0.1em">
+      <text x={70} y={83} textAnchor="middle" fill="var(--text-tertiary)" fontSize={9} letterSpacing="0.1em">
         BAND
       </text>
-      <text x={70} y={97} textAnchor="middle" fill="#9B8E80" fontSize={9}>
+      <text x={70} y={97} textAnchor="middle" fill="var(--text-tertiary)" fontSize={9}>
         {bandDescriptor(score)}
       </text>
     </svg>
@@ -345,7 +345,7 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
   return (
     <div
       className="flex flex-col gap-4 rounded-xl border p-5"
-      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
+      style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
       <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
         AI CONFIDENCE SCORE
@@ -580,7 +580,7 @@ export default function ResultsPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div
           className="max-w-sm w-full flex flex-col items-center gap-4 rounded-xl border p-8 text-center"
-          style={{ background: 'rgba(245,242,237,0.95)', borderColor: 'rgba(180,165,148,0.22)' }}
+          style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           <span
             style={{
@@ -601,7 +601,7 @@ export default function ResultsPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div
           className="max-w-md w-full flex flex-col gap-4 rounded-xl border p-8 text-center"
-          style={{ background: 'rgba(245,242,237,0.95)', borderColor: 'rgba(239,68,68,0.2)' }}
+          style={{ background: 'var(--bg-panel)', borderColor: 'rgba(239,68,68,0.2)' }}
         >
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ef4444' }}>
             REPORT ERROR
@@ -755,7 +755,7 @@ export default function ResultsPage() {
       {/* Band ring + metrics */}
       <div
         className="flex flex-col md:flex-row gap-5 rounded-xl border p-5"
-        style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
+        style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
       >
         {/* Band ring */}
         {r.band_score != null && (
@@ -818,7 +818,7 @@ export default function ResultsPage() {
       {chartData && (
         <div
           className="flex flex-col gap-3 rounded-xl border p-5"
-          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
+          style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
@@ -836,7 +836,7 @@ export default function ResultsPage() {
               <XAxis dataKey="t" tick={{ fill: '#9B8E80', fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#9B8E80', fontSize: 10 }} axisLine={false} tickLine={false} domain={['auto', 'auto']} />
               <Tooltip
-                contentStyle={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(180,165,148,0.30)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 12 }}
+                contentStyle={{ background: 'var(--bg-panel)', border: '1px solid var(--border-medium)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 12 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={((v: number | undefined) => [`${v ?? '—'} WPM`, 'Pace']) as any}
               />
@@ -897,7 +897,7 @@ export default function ResultsPage() {
       {r.advice_cards && r.advice_cards.length > 0 && (
         <div
           className="flex flex-col gap-3 rounded-xl border p-5"
-          style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
+          style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>

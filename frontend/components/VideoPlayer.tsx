@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useRef, useState } from 'react'
 import { getAuthHeaders } from '@/lib/supabase'
 
@@ -73,7 +73,7 @@ export function VideoPlayer({ presentationId, eyeContactTimeline, duration }: Pr
   return (
     <div
       className="flex flex-col gap-3 rounded-xl border p-5"
-      style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}
+      style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between">

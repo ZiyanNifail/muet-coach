@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -199,7 +199,7 @@ export default function AdminPage() {
 
       {/* ── Approvals tab ── */}
       {tab === 'approvals' && (
-        <div className="rounded-xl border" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+        <div className="rounded-xl border" style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
           <div className="grid gap-4 px-5 py-3 text-[10px] font-semibold tracking-widest uppercase" style={{ gridTemplateColumns: '1fr 1fr auto auto auto', color: 'var(--text-tertiary)', borderBottom: '1px solid rgba(180,165,148,0.22)' }}>
             <span>Name</span><span>Email</span><span>Submitted</span><span>Status</span><span>Actions</span>
           </div>
@@ -237,7 +237,7 @@ export default function AdminPage() {
 
       {/* ── Students tab ── */}
       {tab === 'students' && (
-        <div className="rounded-xl border" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+        <div className="rounded-xl border" style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
           <div className="grid gap-4 px-5 py-3 text-[10px] font-semibold tracking-widest uppercase" style={{ gridTemplateColumns: '1fr 1fr auto auto auto', color: 'var(--text-tertiary)', borderBottom: '1px solid rgba(180,165,148,0.22)' }}>
             <span>Name</span><span>Email</span><span>Joined</span><span>Consent</span><span>Actions</span>
           </div>

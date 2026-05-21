@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase, getAuthHeaders } from '@/lib/supabase'
@@ -235,7 +235,7 @@ export default function SubmissionReviewPage() {
 
           {/* AI Metrics */}
           {report && (
-            <div className="flex flex-col gap-4 rounded-xl border p-4" style={{ background: 'rgba(255,255,255,0.80)', borderColor: 'rgba(180,165,148,0.22)' }}>
+            <div className="flex flex-col gap-4 rounded-xl border p-4" style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                 AI ANALYSIS
               </div>
@@ -297,7 +297,7 @@ export default function SubmissionReviewPage() {
         <div className="lg:col-span-2 flex flex-col gap-4">
           <div
             className="flex flex-col gap-4 rounded-xl border p-4 lg:sticky lg:top-4"
-            style={{ background: 'rgba(245,242,237,0.95)', borderColor: releaseSuccess ? 'rgba(34,197,94,0.3)' : 'rgba(180,165,148,0.22)' }}
+            style={{ background: 'var(--bg-panel)', borderColor: releaseSuccess ? 'rgba(34,197,94,0.3)' : 'rgba(180,165,148,0.22)' }}
           >
             <div className="flex items-center justify-between">
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
