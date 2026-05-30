@@ -572,7 +572,7 @@ export default function DashboardPage() {
                     <div className="w-11 h-11 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
                       style={{ background: 'rgba(255,255,255,0.92)' }}>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M4 2.5L13 8L4 13.5V2.5Z" fill="var(--text-primary)" />
+                        <path d="M4 2.5L13 8L4 13.5V2.5Z" fill="#1C1A17" />
                       </svg>
                     </div>
                   </div>

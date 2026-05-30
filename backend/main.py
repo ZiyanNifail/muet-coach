@@ -109,7 +109,7 @@ app.include_router(exams.router,         prefix="/api/exams",             tags=[
 app.include_router(interview.router,     prefix="/api/interview",          tags=["interview"])
 
 
-@app.get("/", include_in_schema=False)
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 async def root():
     return RedirectResponse(url="/docs")
 

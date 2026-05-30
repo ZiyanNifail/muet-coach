@@ -127,6 +127,13 @@ export default function InterviewRoomPage() {
     })
   }
 
+  function stopSimli() {
+    const client = simliClientRef.current
+    if (!client) return
+    simliClientRef.current = null
+    try { client.stop() } catch { /* SDK may throw if already closing */ }
+  }
+
   // Initialise Simli, then speak Q1
   useEffect(() => {
     let cancelled = false
@@ -173,7 +180,7 @@ export default function InterviewRoomPage() {
     return () => {
       cancelled = true
       if (speakTimerRef.current) clearTimeout(speakTimerRef.current)
-      simliClientRef.current?.stop?.()
+      stopSimli()
       audioRef.current?.pause()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,13 +254,16 @@ export default function InterviewRoomPage() {
 
   function cancelInterview() {
     if (speakTimerRef.current) clearTimeout(speakTimerRef.current)
-    simliClientRef.current?.stop?.()
+    stopSimli()
     audioRef.current?.pause()
     mediaRecorderRef.current?.stream.getTracks().forEach(t => t.stop())
     router.push('/interview')
   }
 
   async function generateReport() {
+    // Stop Simli before navigating so the cleanup effect doesn't double-stop
+    // an already-closing WebRTC session (causes "FAILED TO SEND FINAL MESSAGE").
+    stopSimli()
     try {
       const headers = await getAuthHeaders()
       await fetch(`${API_URL}/api/interview/complete`, {
