@@ -24,6 +24,7 @@ from services.supabase_client import (
     db_get_standalone_exams,
     db_get_assignment,
     db_get_exam_submission_statuses,
+    db_get_all_educator_exam_submissions,
 )
 
 logger = logging.getLogger(__name__)
@@ -79,6 +80,14 @@ async def invite_student_to_exam(
     if inv is None:
         raise HTTPException(500, "Failed to create invitation.")
     return {"invitation": inv}
+
+
+@router.get("/all-submissions")
+async def get_all_exam_submissions(
+    user_id: str = Depends(get_current_user_id),
+):
+    submissions = db_get_all_educator_exam_submissions(user_id)
+    return {"submissions": submissions}
 
 
 @router.get("/my-exam-statuses")

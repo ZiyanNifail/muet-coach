@@ -1,8 +1,9 @@
 'use client'
 import Link from 'next/link'
-import { VoxReadyLogo } from './ui/voxready-logo'
 import { usePathname } from 'next/navigation'
+import { motion, LayoutGroup } from 'framer-motion'
 import { clsx } from 'clsx'
+import { springs } from '@/lib/motion'
 import {
   LayoutDashboard,
   BookOpen,
@@ -89,7 +90,6 @@ export function EducatorSidebar({ open, onClose }: { open?: boolean; onClose?: (
       >
         {/* Portal identity */}
         <div className="px-4 pb-1 flex flex-col gap-1">
-          <VoxReadyLogo iconSize={18} />
           <div className="flex items-center gap-2">
             <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--text-primary)', fontFamily: 'var(--font-lora, Georgia, serif)' }}>
               Educator Portal
@@ -106,6 +106,7 @@ export function EducatorSidebar({ open, onClose }: { open?: boolean; onClose?: (
         {/* Divider */}
         <div style={{ height: 1, background: 'var(--border-subtle)', margin: '0 16px' }} />
 
+        <LayoutGroup id="educator-nav">
         {nav.map((group) => (
           <div key={group.section}>
             <div
@@ -119,27 +120,36 @@ export function EducatorSidebar({ open, onClose }: { open?: boolean; onClose?: (
                 const active = isActive(item.href)
                 const Icon = item.icon
                 return (
-                  <Link
-                    key={item.href + item.label}
-                    href={item.href}
-                    onClick={onClose}
-                    className={clsx(
-                      'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all no-underline',
-                      active ? 'font-medium' : 'hover:bg-[var(--bg-surface)]',
+                  <div key={item.href + item.label} className="relative">
+                    {active && (
+                      <motion.div
+                        layoutId="educator-nav-pill"
+                        className="absolute inset-0 rounded-lg"
+                        style={{ background: 'var(--accent-teal-dim)' }}
+                        transition={springs.gentle}
+                      />
                     )}
-                    style={active
-                      ? { background: 'var(--accent-teal-dim)', color: 'var(--accent-teal)' }
-                      : { color: 'var(--text-tertiary)' }
-                    }
-                  >
-                    <Icon size={14} strokeWidth={1.75} />
-                    {item.label}
-                  </Link>
+                    <Link
+                      href={item.href}
+                      onClick={onClose}
+                      className={clsx(
+                        'relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors no-underline',
+                        active ? 'font-medium' : 'hover:bg-[var(--bg-surface)]',
+                      )}
+                      style={active ? { color: 'var(--accent-teal)' } : { color: 'var(--text-tertiary)' }}
+                    >
+                      <motion.span whileHover={{ x: 1 }} transition={{ duration: 0.12 }}>
+                        <Icon size={14} strokeWidth={1.75} />
+                      </motion.span>
+                      {item.label}
+                    </Link>
+                  </div>
                 )
               })}
             </div>
           </div>
         ))}
+        </LayoutGroup>
 
         {/* Bottom: switch to student view */}
         <div className="mt-auto px-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>

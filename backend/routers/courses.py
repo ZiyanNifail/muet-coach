@@ -487,7 +487,7 @@ async def generate_rubric(
         from groq import Groq
         client = Groq(api_key=api_key)
         chat = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,
             max_tokens=2500,

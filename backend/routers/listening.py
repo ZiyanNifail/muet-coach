@@ -83,7 +83,7 @@ async def _generate_advice(section_scores: dict, overall_band: float) -> list[di
 
     def _call():
         return client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
             temperature=0.3,
             max_tokens=512,

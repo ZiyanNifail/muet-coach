@@ -1,5 +1,7 @@
 ﻿'use client'
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { staggerContainer, staggerItem, easings } from '@/lib/motion'
 
 export interface RubricBand {
   score: number
@@ -46,7 +48,7 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
         <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>5 criteria · tap row to expand</span>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <motion.div className="flex flex-col gap-2" variants={staggerContainer} initial="hidden" animate="visible">
         {CRITERIA.map(({ key, label, color }) => {
           const band = rubricBands[key]
           if (!band) return null
@@ -56,8 +58,9 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
           const sc = scoreColor(band.score)
 
           return (
-            <div
+            <motion.div
               key={key}
+              variants={staggerItem}
               className="flex flex-col rounded-lg border overflow-hidden cursor-pointer"
               style={{
                 borderColor: isWeakest ? 'rgba(245,158,11,0.5)' : 'rgba(180,165,148,0.18)',
@@ -105,18 +108,25 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
               </div>
 
               {/* Justification (expanded) */}
-              {isOpen && (
-                <div
-                  className="px-3 pb-3 text-xs leading-relaxed"
-                  style={{ color: 'var(--text-tertiary)', borderTop: '1px solid rgba(180,165,148,0.15)', paddingTop: 8 }}
-                >
-                  {band.justification}
-                </div>
-              )}
-            </div>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    key="justification"
+                    className="px-3 pb-3 text-xs leading-relaxed overflow-hidden"
+                    style={{ color: 'var(--text-tertiary)', borderTop: '1px solid rgba(180,165,148,0.15)', paddingTop: 8 }}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: easings.smooth }}
+                  >
+                    {band.justification}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           )
         })}
-      </div>
+      </motion.div>
 
       <p style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
         Each criterion scored 1.0–6.0 · Band 4 = Satisfactory · Band 5 = Good · Band 6 = Excellent

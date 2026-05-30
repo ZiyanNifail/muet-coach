@@ -192,7 +192,7 @@ export default function SubmissionReviewPage() {
     <div className="p-4 md:p-6 flex flex-col gap-6 max-w-5xl">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Link href={`/educator/courses/${courseId}`}>
+        <Link href={courseId === 'exam' ? '/educator/submissions' : `/educator/courses/${courseId}`}>
           <button className="mt-1 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors">
             <ArrowLeft size={18} />
           </button>

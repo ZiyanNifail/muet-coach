@@ -28,12 +28,13 @@ const FALLBACK_TOPICS: Topic[] = [
   { id: '15', topic: 'Why is improving English proficiency among Malaysian youth critical for their future career success?', category: 'education' },
 ]
 
-const ITEM_H = 56
+const ITEM_H = 64
 const VISIBLE = 5
 
 interface TopicWheelProps {
   onSelect: (topic: Topic) => void
   onClose?: () => void
+  embedded?: boolean
 }
 
 function computeOffset(topicsLen: number, idx: number) {
@@ -41,19 +42,17 @@ function computeOffset(topicsLen: number, idx: number) {
   return -(startCopy + idx) * ITEM_H + Math.floor(VISIBLE / 2) * ITEM_H
 }
 
-export function TopicWheel({ onSelect, onClose }: TopicWheelProps) {
+export function TopicWheel({ onSelect, onClose, embedded = false }: TopicWheelProps) {
   const [topics, setTopics] = useState<Topic[]>(FALLBACK_TOPICS)
   // Keep a ref always in sync so spin() closures always see the latest topics
   const topicsRef = useRef<Topic[]>(FALLBACK_TOPICS)
 
-  const [selectedIdx, setSelectedIdx] = useState(() =>
-    Math.floor(Math.random() * FALLBACK_TOPICS.length)
-  )
+  // Start at index 0 so server and client agree during SSR hydration.
+  // After mount, useEffect randomises the position client-side.
+  const [selectedIdx, setSelectedIdx] = useState(0)
   const [spinning, setSpinning] = useState(false)
   const [animate, setAnimate] = useState(false)
-  const [offset, setOffset] = useState(() =>
-    computeOffset(FALLBACK_TOPICS.length, Math.floor(Math.random() * FALLBACK_TOPICS.length))
-  )
+  const [offset, setOffset] = useState(() => computeOffset(FALLBACK_TOPICS.length, 0))
   const spinTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function spin() {
@@ -76,8 +75,13 @@ export function TopicWheel({ onSelect, onClose }: TopicWheelProps) {
     })
   }
 
-  // Fetch live topics — update ref first so the delayed spin() sees the right length
+  // Fetch live topics — update ref first so the delayed spin() sees the right length.
+  // Randomise initial position client-side (after hydration) then spin.
   useEffect(() => {
+    const initIdx = Math.floor(Math.random() * topicsRef.current.length)
+    setSelectedIdx(initIdx)
+    setOffset(computeOffset(topicsRef.current.length, initIdx))
+
     supabase
       .from('muet_topics')
       .select('id, topic, category')
@@ -105,22 +109,18 @@ export function TopicWheel({ onSelect, onClose }: TopicWheelProps) {
   const centerIdx = topics.length + selectedIdx
   const repeated = [...topics, ...topics, ...topics]
 
-  return (
+  const wheelCard = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(20px)' }}
+      className="w-full flex flex-col gap-5 rounded-2xl border p-6"
+      style={{
+        background: 'var(--bg-panel)',
+        borderColor: 'var(--border-medium)',
+        ...(embedded ? {} : { backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', maxWidth: 512 }),
+        transition: 'background 0.3s ease, color 0.3s ease',
+      }}
     >
-      <div
-        className="w-full max-w-lg flex flex-col gap-5 rounded-2xl border p-6"
-        style={{
-          background: 'var(--bg-panel)',
-          borderColor: 'var(--border-medium)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          transition: 'background 0.3s ease, color 0.3s ease',
-        }}
-      >
-        {/* Header */}
+      {/* Header — hidden in embedded mode */}
+      {!embedded && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span
@@ -159,87 +159,100 @@ export function TopicWheel({ onSelect, onClose }: TopicWheelProps) {
             </button>
           )}
         </div>
+      )}
 
-        {/* Wheel */}
+      {/* Wheel */}
+      <div
+        className="relative overflow-hidden rounded-xl"
+        style={{
+          height: ITEM_H * VISIBLE,
+          background: 'rgba(255,255,255,0.025)',
+          border: '1px solid rgba(255,255,255,0.07)',
+        }}
+      >
         <div
-          className="relative overflow-hidden rounded-xl"
+          className="absolute inset-x-0 pointer-events-none z-10"
           style={{
-            height: ITEM_H * VISIBLE,
-            background: 'rgba(255,255,255,0.025)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            top: Math.floor(VISIBLE / 2) * ITEM_H,
+            height: ITEM_H,
+            borderTop: '1px solid rgba(255,255,255,0.12)',
+            borderBottom: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(148,163,184,0.06)',
+          }}
+        />
+        <div
+          className="absolute inset-x-0 top-0 pointer-events-none z-10"
+          style={{
+            height: ITEM_H * 2.2,
+            background: 'linear-gradient(to bottom, var(--bg-panel) 0%, transparent 100%)',
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
+          style={{
+            height: ITEM_H * 2.2,
+            background: 'linear-gradient(to top, var(--bg-panel) 0%, transparent 100%)',
+          }}
+        />
+
+        <div
+          style={{
+            transform: `translateY(${offset}px)`,
+            transition: animate ? `transform 2200ms cubic-bezier(0.15, 0.85, 0.4, 1)` : 'none',
           }}
         >
-          <div
-            className="absolute inset-x-0 pointer-events-none z-10"
-            style={{
-              top: Math.floor(VISIBLE / 2) * ITEM_H,
-              height: ITEM_H,
-              borderTop: '1px solid rgba(255,255,255,0.12)',
-              borderBottom: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(148,163,184,0.06)',
-            }}
-          />
-          <div
-            className="absolute inset-x-0 top-0 pointer-events-none z-10"
-            style={{
-              height: ITEM_H * 2.2,
-              background: 'linear-gradient(to bottom, var(--bg-panel) 0%, transparent 100%)',
-            }}
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
-            style={{
-              height: ITEM_H * 2.2,
-              background: 'linear-gradient(to top, var(--bg-panel) 0%, transparent 100%)',
-            }}
-          />
-
-          <div
-            style={{
-              transform: `translateY(${offset}px)`,
-              transition: animate ? `transform 2200ms cubic-bezier(0.15, 0.85, 0.4, 1)` : 'none',
-            }}
-          >
-            {repeated.map((topic, i) => {
-              const isSelected = i === centerIdx
-              return (
-                <div
-                  key={`${topic.id}-${i}`}
-                  className="flex items-center justify-center px-8 text-center"
-                  style={{
-                    height: ITEM_H,
-                    color: isSelected ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                    opacity: isSelected ? 1 : 0.5,
-                    filter: isSelected ? 'none' : 'blur(1.5px)',
-                    fontSize: isSelected ? 15 : 13,
-                    fontWeight: isSelected ? 500 : 400,
-                    letterSpacing: isSelected ? '0.01em' : '0.02em',
-                    transition: 'color 0.4s ease, font-size 0.4s ease, filter 0.4s ease, opacity 0.4s ease',
-                    userSelect: 'none',
-                  }}
-                >
-                  {topic.topic}
-                </div>
-              )
-            })}
-          </div>
+          {repeated.map((topic, i) => {
+            const isSelected = i === centerIdx
+            return (
+              <div
+                key={`${topic.id}-${i}`}
+                className="flex items-center justify-center px-8 text-center"
+                style={{
+                  height: ITEM_H,
+                  color: isSelected ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  opacity: isSelected ? 1 : 0.5,
+                  filter: isSelected ? 'none' : 'blur(1.5px)',
+                  fontSize: isSelected ? 12 : 10,
+                  fontWeight: isSelected ? 500 : 400,
+                  letterSpacing: isSelected ? '0.01em' : '0.02em',
+                  transition: 'color 0.4s ease, font-size 0.4s ease, filter 0.4s ease, opacity 0.4s ease',
+                  userSelect: 'none',
+                }}
+              >
+                {topic.topic}
+              </div>
+            )
+          })}
         </div>
+      </div>
 
-        <p style={{ fontSize: 11, color: 'var(--text-secondary)', textAlign: 'center', letterSpacing: '0.02em' }}>
-          Topics are drawn from the MUET topic bank
-        </p>
+      <p style={{ fontSize: 11, color: 'var(--text-secondary)', textAlign: 'center', letterSpacing: '0.02em' }}>
+        Topics are drawn from the MUET topic bank
+      </p>
 
-        <div className="flex gap-3 justify-center">
-          <Button variant="secondary" onClick={spin} disabled={spinning}>
-            <RefreshCw size={14} className="mr-2" />
-            {spinning ? 'Spinning...' : 'Spin Again'}
-          </Button>
+      <div className="flex gap-3 justify-center">
+        <Button variant="secondary" onClick={spin} disabled={spinning}>
+          <RefreshCw size={14} className="mr-2" />
+          {spinning ? 'Spinning...' : 'Spin Again'}
+        </Button>
+        {!embedded && (
           <Button onClick={() => onSelect(topicsRef.current[selectedIdx])} disabled={spinning}>
             Use This Topic
             <ArrowRight size={14} className="ml-2" />
           </Button>
-        </div>
+        )}
       </div>
+    </div>
+  )
+
+  if (embedded) return wheelCard
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(20px)' }}
+    >
+      {wheelCard}
     </div>
   )
 }

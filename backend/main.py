@@ -1,15 +1,20 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 import logging
 import os
 
-from routers import auth, presentations, reports, courses, admin, submissions, gaze, pronunciation, drills, listening, writing, exams
+from routers import auth, presentations, reports, courses, admin, submissions, gaze, pronunciation, drills, listening, writing, exams, interview
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 
@@ -36,12 +41,12 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("APScheduler failed to start: %s", exc)
 
-    print("Presentation Coach API starting up...")
+    logger.info("Presentation Coach API starting up...")
     yield
 
     if scheduler and scheduler.running:
         scheduler.shutdown()
-    print("Presentation Coach API shutting down.")
+    logger.info("Presentation Coach API shutting down.")
 
 
 app = FastAPI(
@@ -66,6 +71,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ── Global error handling ────────────────────────────────────────────────────
+# Keep responses to a consistent {"detail": ...} shape and never leak tracebacks
+# to clients. Full details are logged server-side for debugging.
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning("Validation error on %s %s: %s", request.method, request.url.path, exc.errors())
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Invalid request.", "errors": exc.errors()},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
+
+
 # Routers
 app.include_router(auth.router,          prefix="/api/auth",          tags=["auth"])
 app.include_router(presentations.router, prefix="/api/presentations",  tags=["presentations"])
@@ -79,6 +106,7 @@ app.include_router(drills.router,        prefix="/api/drills",          tags=["d
 app.include_router(listening.router,     prefix="/api/listening",        tags=["listening"])
 app.include_router(writing.router,       prefix="/api/writing",          tags=["writing"])
 app.include_router(exams.router,         prefix="/api/exams",             tags=["exams"])
+app.include_router(interview.router,     prefix="/api/interview",          tags=["interview"])
 
 
 @app.get("/", include_in_schema=False)

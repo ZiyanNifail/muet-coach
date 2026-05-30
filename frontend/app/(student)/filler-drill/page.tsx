@@ -1,7 +1,9 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
+import { fadeUp, staggerContainer, staggerItem, springPop } from '@/lib/motion'
 
 const FILLERS = [
   'um', 'uh', 'er', 'ah', 'like', 'you know', 'basically',
@@ -144,10 +146,11 @@ export default function FillerDrillPage() {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 min-h-[calc(100vh-48px)]">
+      <AnimatePresence mode="wait">
 
       {/* ── Intro ── */}
       {phase === 'intro' && (
-        <div className="max-w-md w-full flex flex-col gap-6">
+        <motion.div key="intro" className="max-w-md w-full flex flex-col gap-6" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>
               IMPROVE · FILLER WORD DRILL
@@ -178,20 +181,32 @@ export default function FillerDrillPage() {
           <Link href="/dashboard" className="text-center text-xs transition-colors" style={{ color: 'var(--text-tertiary)' }}>
             Back to Dashboard
           </Link>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Countdown ── */}
       {phase === 'countdown' && (
-        <div className="flex flex-col items-center gap-4">
+        <motion.div key="countdown" className="flex flex-col items-center gap-4" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
           <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Get ready to speak…</p>
-          <div className="text-8xl font-bold font-mono" style={{ color: 'var(--accent-teal)' }}>{countdown}</div>
-        </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={countdown}
+              className="text-8xl font-bold font-mono"
+              style={{ color: 'var(--accent-teal)' }}
+              initial={{ scale: 1.4, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.6, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              {countdown}
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {/* ── Recording ── */}
       {phase === 'recording' && (
-        <div className="max-w-sm w-full flex flex-col gap-6">
+        <motion.div key="recording" className="max-w-sm w-full flex flex-col gap-6" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
           {/* Timer ring */}
           <div className="flex flex-col items-center gap-3">
             <div className="relative w-32 h-32">
@@ -214,17 +229,34 @@ export default function FillerDrillPage() {
 
             {/* Live filler flash */}
             <div className="h-8 flex items-center justify-center">
-              {lastHit ? (
-                <span className="text-sm font-semibold px-3 py-1 rounded-full animate-pulse"
-                  style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}>
-                  ⚠ "{lastHit}" detected
-                </span>
-              ) : (
-                <span className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />
-                  Listening…
-                </span>
-              )}
+              <AnimatePresence mode="wait">
+                {lastHit ? (
+                  <motion.span
+                    key={lastHit + Date.now()}
+                    className="text-sm font-semibold px-3 py-1 rounded-full"
+                    style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}
+                    initial={{ opacity: 0, scale: 0.8, y: 6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    ⚠ &ldquo;{lastHit}&rdquo; detected
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="listening"
+                    className="text-xs flex items-center gap-1.5"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                    Listening…
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -239,23 +271,35 @@ export default function FillerDrillPage() {
 
           {/* Hit log */}
           {hits.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <motion.div
+              className="flex flex-wrap gap-1.5"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+            >
+              <AnimatePresence>
               {hits.map((h, i) => (
-                <span key={i} className="text-[11px] px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.18)' }}>
+                <motion.span
+                  key={`${h.word}-${h.at}-${i}`}
+                  variants={staggerItem}
+                  layout
+                  className="text-[11px] px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.18)' }}
+                >
                   {h.word} <span style={{ opacity: 0.6 }}>@{h.at}s</span>
-                </span>
+                </motion.span>
               ))}
-            </div>
+              </AnimatePresence>
+            </motion.div>
           )}
 
           <Button variant="secondary" onClick={reset}>Stop Early</Button>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Results ── */}
       {phase === 'done' && (
-        <div className="max-w-sm w-full flex flex-col gap-5">
+        <motion.div key="done" className="max-w-sm w-full flex flex-col gap-5" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>
               DRILL COMPLETE
@@ -304,8 +348,10 @@ export default function FillerDrillPage() {
           <Link href="/dashboard" className="text-center text-xs transition-colors" style={{ color: 'var(--text-tertiary)' }}>
             Back to Dashboard
           </Link>
-        </div>
+        </motion.div>
       )}
+
+      </AnimatePresence>
     </div>
   )
 }

@@ -1,9 +1,11 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
-import { LogOut, GraduationCap, Menu } from 'lucide-react'
+import { LogOut, GraduationCap, Menu, Sun, Moon } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Badge } from './ui/Badge'
 import { signOut } from '@/lib/auth'
 import { VoxReadyLogo } from './ui/voxready-logo'
+import { useTheme } from '@/components/ThemeProvider'
 
 const studentPageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -36,6 +38,7 @@ function getTitle(pathname: string, role?: string): string {
 export function Topbar({ userName, role, onMenuToggle }: { userName?: string; role?: string; onMenuToggle?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { theme, toggle } = useTheme()
   const title = getTitle(pathname, role)
   const isEducator = role === 'educator'
 
@@ -85,6 +88,21 @@ export function Topbar({ userName, role, onMenuToggle }: { userName?: string; ro
         {userName && (
           <span className="text-sm hidden sm:block" style={{ color: 'var(--text-secondary)' }}>{userName}</span>
         )}
+        <button
+          onClick={toggle}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="p-1.5 rounded-lg transition-colors hover:opacity-70"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          <motion.div
+            key={theme}
+            initial={{ rotate: -60, scale: 0.5, opacity: 0 }}
+            animate={{ rotate: 0, scale: 1, opacity: 1 }}
+            transition={{ duration: 0.35, type: 'spring', stiffness: 260, damping: 18 }}
+          >
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          </motion.div>
+        </button>
         <button
           onClick={handleSignOut}
           className="flex items-center gap-1.5 text-sm transition-colors hover:opacity-70"

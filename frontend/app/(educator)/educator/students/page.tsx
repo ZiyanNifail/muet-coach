@@ -1,9 +1,11 @@
 ﻿'use client'
 import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { supabase, getAuthHeaders } from '@/lib/supabase'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 import { GraduationCap, BookOpen, TrendingUp, ArrowLeft, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { staggerContainer, staggerItem } from '@/lib/motion'
 
 interface StudentOverview {
   student_id: string
@@ -242,9 +244,11 @@ export default function StudentsPage() {
                   ))}
                 </div>
 
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible">
                 {filteredStudents.map((s, i) => (
-                  <div
+                  <motion.div
                     key={s.student_id}
+                    variants={staggerItem}
                     className="grid items-center px-4 py-3.5"
                     style={{
                       gridTemplateColumns: '1.4fr 1.4fr 80px 80px 1fr',
@@ -289,8 +293,9 @@ export default function StudentsPage() {
                         ))
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
+                </motion.div>
               </div>
               </div>
             )}

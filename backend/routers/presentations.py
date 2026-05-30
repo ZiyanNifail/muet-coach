@@ -222,6 +222,17 @@ async def get_video_url(
         raise HTTPException(500, "Video URL unavailable")
 
 
+@router.post("/brainstorm")
+async def brainstorm_points(topic: str = Form(...)):
+    """
+    Generate up to 5 brief AI talking points for a MUET speaking topic.
+    Called from the brainstorm panel before a guided/unguided session.
+    """
+    from services.groq_service import generate_brainstorm_points
+    points = await generate_brainstorm_points(topic)
+    return {"points": points}
+
+
 @router.get("/{presentation_id}/status")
 async def get_status(presentation_id: str):
     sb = get_supabase()

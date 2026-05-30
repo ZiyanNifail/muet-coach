@@ -1,8 +1,10 @@
 'use client'
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { ArrowRight, ChevronRight, ShieldCheck } from 'lucide-react'
 import { Button } from './ui/Button'
 import { giveConsent } from '@/lib/auth'
+import { backdropFade, springPop, staggerContainer, staggerItem } from '@/lib/motion'
 
 interface ConsentModalProps {
   userId: string
@@ -32,11 +34,14 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
   }
 
   return (
-    <div
+    <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.65)' }}
+      variants={backdropFade}
+      initial="hidden"
+      animate="visible"
     >
-      <div
+      <motion.div
         className="w-full max-w-md flex flex-col gap-5 rounded-2xl border p-6"
         style={{
           background: 'var(--bg-panel)',
@@ -44,6 +49,9 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
           boxShadow: '0 20px 60px rgba(0,0,0,0.28)',
           transition: 'background 0.3s ease, color 0.3s ease',
         }}
+        variants={springPop}
+        initial="hidden"
+        animate="visible"
       >
         {/* MSU logo */}
         <div className="flex items-center gap-2.5 pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
@@ -74,17 +82,22 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
           </div>
         </div>
 
-        <ul className="flex flex-col gap-2.5">
+        <motion.ul
+          className="flex flex-col gap-2.5"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           {consentPoints.map((point, i) => (
-            <li key={i} className="flex gap-2.5 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
+            <motion.li key={i} variants={staggerItem} className="flex gap-2.5 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
               <ChevronRight
                 size={14}
                 style={{ color: '#3A7D6A', marginTop: 4, flexShrink: 0 }}
               />
               {point}
-            </li>
+            </motion.li>
           ))}
-        </ul>
+        </motion.ul>
 
         <label className="flex items-start gap-3 cursor-pointer">
           <input
@@ -102,7 +115,7 @@ export function ConsentModal({ userId, onAccepted }: ConsentModalProps) {
           {loading ? 'Saving...' : 'Accept & Continue'}
           {!loading && <ArrowRight size={14} className="ml-2" />}
         </Button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

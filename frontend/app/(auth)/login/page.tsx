@@ -2,10 +2,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { signIn, signOut, signInWithGoogle, getAppUser, getEducatorApprovalStatus } from '@/lib/auth'
+import { apiFetch } from '@/lib/api'
 import { ShieldCheck, X, ArrowLeft } from 'lucide-react'
+import { staggerContainer, staggerItem, easings } from '@/lib/motion'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -56,28 +59,22 @@ export default function LoginPage() {
     setAdminError('')
     setAdminLoading(true)
 
-    // Validate credentials against env-configured values
-    const expectedId = process.env.NEXT_PUBLIC_ADMIN_ID
-    const expectedPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD
-    const adminKey = process.env.NEXT_PUBLIC_ADMIN_ACCESS_KEY || ''
-
-    await new Promise((r) => setTimeout(r, 300)) // brief delay to prevent instant guess
-
-    if (!expectedId || !expectedPassword) {
-      setAdminError('Admin access is not configured.')
-      setAdminLoading(false)
-      return
-    }
-
-    if (adminId === expectedId && adminPassword === expectedPassword) {
-      if (adminKey) {
-        sessionStorage.setItem('adminAccessKey', adminKey)
+    // Verify credentials server-side — the admin key never ships to the browser.
+    try {
+      const { accessKey } = await apiFetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: adminId, password: adminPassword }),
+      })
+      if (accessKey) {
+        sessionStorage.setItem('adminAccessKey', accessKey)
       }
       router.push('/admin')
-    } else {
-      setAdminError('Incorrect credentials.')
+    } catch (err: unknown) {
+      setAdminError(err instanceof Error ? err.message : 'Incorrect credentials.')
+    } finally {
+      setAdminLoading(false)
     }
-    setAdminLoading(false)
   }
 
   return (
@@ -229,7 +226,7 @@ export default function LoginPage() {
       </div>
 
       {/* Main login card */}
-      <div
+      <motion.div
         className="w-full max-w-sm flex flex-col gap-6 rounded-xl border p-8"
         style={{
           background: 'rgba(18, 42, 36, 0.55)',
@@ -237,6 +234,9 @@ export default function LoginPage() {
           backdropFilter: 'blur(24px)',
           boxShadow: '0 8px 40px rgba(0,0,0,0.40)',
         }}
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: easings.smooth }}
       >
         <div>
           <Link
@@ -260,6 +260,63 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-semibold text-[#E8F5F1]">Sign in</h1>
           <p className="text-[#A8C5BC] text-sm mt-1">AI-powered presentation coaching</p>
+        </div>
+
+        <motion.form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div variants={staggerItem}>
+            <Input
+              label="Email"
+              type="email"
+              placeholder="you@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              style={{ color: '#E8F5F1', background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(58,125,106,0.35)' }}
+            />
+          </motion.div>
+          <motion.div variants={staggerItem}>
+            <Input
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              style={{ color: '#E8F5F1', background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(58,125,106,0.35)' }}
+            />
+          </motion.div>
+          <AnimatePresence>
+            {error && (
+              <motion.p
+                className="text-[#ff8080] text-sm"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {error}
+              </motion.p>
+            )}
+          </AnimatePresence>
+          <motion.div variants={staggerItem}>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign in →'}
+            </Button>
+          </motion.div>
+        </motion.form>
+
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px" style={{ background: 'rgba(58,125,106,0.25)' }} />
+          <span className="text-[#7AB5A8] text-xs">or</span>
+          <div className="flex-1 h-px" style={{ background: 'rgba(58,125,106,0.25)' }} />
         </div>
 
         {/* Google sign-in */}
@@ -288,46 +345,13 @@ export default function LoginPage() {
           {googleLoading ? 'Redirecting…' : 'Continue with Google'}
         </button>
 
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px" style={{ background: 'rgba(58,125,106,0.25)' }} />
-          <span className="text-[#7AB5A8] text-xs">or</span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(58,125,106,0.25)' }} />
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Email"
-            type="email"
-            placeholder="you@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            style={{ color: '#E8F5F1', background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(58,125,106,0.35)' }}
-          />
-          <Input
-            label="Password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            style={{ color: '#E8F5F1', background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(58,125,106,0.35)' }}
-          />
-          {error && <p className="text-[#ff8080] text-sm">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign in →'}
-          </Button>
-        </form>
-
         <p className="text-[#A8C5BC] text-sm text-center">
           Don&apos;t have an account?{' '}
           <Link href="/register" className="text-[#5BB5A0] hover:underline">
             Create one
           </Link>
         </p>
-      </div>
+      </motion.div>
     </>
   )
 }

@@ -1,19 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lora } from "next/font/google";
+import { Poppins, Lora, Libre_Baskerville } from "next/font/google";
 import { Toaster } from "sonner";
 import ThemeProvider from "@/components/ThemeProvider";
 import "./globals.css";
 
-const inter = Inter({
+const poppins = Poppins({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 const lora = Lora({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-lora",
+  style: ["normal", "italic"],
+});
+
+const libreBaskerville = Libre_Baskerville({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-libre-baskerville",
+  weight: ["400", "700"],
   style: ["normal", "italic"],
 });
 
@@ -33,7 +42,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${lora.variable} h-full`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${poppins.variable} ${lora.variable} ${libreBaskerville.variable} h-full`}
+      suppressHydrationWarning
+    >
       <head>
         {/* Prevent flash of wrong theme */}
         <script

@@ -6,7 +6,6 @@ import { Topbar } from '@/components/Topbar'
 import { ConsentModal } from '@/components/ConsentModal'
 import { OnboardingTour } from '@/components/OnboardingTour'
 import { getAppUser, type AppUser } from '@/lib/auth'
-import ThemeToggle from '@/components/ui/theme-toggle'
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null)
@@ -54,7 +53,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         <ConsentModal userId={user.id} onAccepted={() => { setShowConsent(false); setTourForceShow(true) }} />
       )}
       {!showConsent && <OnboardingTour forceShow={tourForceShow} />}
-      <ThemeToggle />
     </div>
   )
 }

@@ -351,7 +351,7 @@ export default function CourseDetailPage() {
       {/* Invite code + rubric strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Invite code */}
-        <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
+        <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>INVITE CODE</div>
           <div className="flex items-center gap-3">
             <code className="font-mono text-xl font-bold text-[#f59e0b]">{course.invite_code}</code>
@@ -359,11 +359,11 @@ export default function CourseDetailPage() {
               {copied ? <Check size={14} style={{ color: '#22c55e' }} /> : <Copy size={14} />}
             </button>
           </div>
-          <p className="text-xs" style={{ color: '#4a4035' }}>Share this code with students — they enter it in My Courses to request to join.</p>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Share this code with students — they enter it in My Courses to request to join.</p>
         </div>
 
         {/* Rubric PDF */}
-        <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
+        <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>RUBRIC PDF</div>
           {course.rubric_path ? (
             <div className="flex items-center gap-2">
@@ -407,7 +407,7 @@ export default function CourseDetailPage() {
       {/* AI Rubric Generator */}
       <div
         className="rounded-xl border overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.90)', borderColor: showAiPanel ? 'rgba(245,158,11,0.35)' : 'rgba(180,165,148,0.22)' }}
+        style={{ background: 'var(--bg-panel)', borderColor: showAiPanel ? 'rgba(245,158,11,0.35)' : 'rgba(180,165,148,0.22)' }}
       >
         {/* Header toggle */}
         <button
@@ -446,7 +446,7 @@ export default function CourseDetailPage() {
                     background: 'rgba(180,165,148,0.08)',
                     borderColor: 'rgba(245,158,11,0.15)',
                     color: 'var(--text-primary)',
-                    colorScheme: 'light',
+                    colorScheme: 'dark',
                   }}
                 >
                   {PRESENTATION_TYPES.map((t) => (
@@ -466,7 +466,7 @@ export default function CourseDetailPage() {
                     background: 'rgba(180,165,148,0.08)',
                     borderColor: 'rgba(245,158,11,0.15)',
                     color: 'var(--text-primary)',
-                    colorScheme: 'light',
+                    colorScheme: 'dark',
                   }}
                 >
                   <option value="4">4 Bands (1–4)</option>
@@ -478,7 +478,7 @@ export default function CourseDetailPage() {
             {/* Focus areas */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Assessment Criteria <span style={{ color: '#4a4035' }}>(select all that apply)</span>
+                Assessment Criteria <span style={{ color: 'var(--text-secondary)' }}>(select all that apply)</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {FOCUS_AREAS.map((area) => {
@@ -530,7 +530,7 @@ export default function CourseDetailPage() {
                   <button
                     onClick={copyRubric}
                     className="flex items-center gap-1.5 text-xs transition-colors"
-                    style={{ color: rubricCopied ? '#22c55e' : '#6b6050' }}
+                    style={{ color: rubricCopied ? '#22c55e' : 'var(--text-secondary)' }}
                   >
                     {rubricCopied ? <Check size={12} /> : <Copy size={12} />}
                     {rubricCopied ? 'Copied!' : 'Copy to clipboard'}
@@ -548,7 +548,7 @@ export default function CourseDetailPage() {
                     lineHeight: 1.7,
                   }}
                 />
-                <p className="text-xs" style={{ color: '#4a4035' }}>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                   Tip: Copy the rubric and paste it into a Word document to format and save as PDF, then upload it above.
                 </p>
               </div>
@@ -590,9 +590,9 @@ export default function CourseDetailPage() {
       {tab === 'members' && (
         <div className="flex flex-col gap-4">
           {/* Invite by email */}
-          <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
+          <div className="flex flex-col gap-3 rounded-xl border p-4" style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>INVITE BY EMAIL</div>
-            <p className="text-xs" style={{ color: '#4a4035' }}>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               Enter the email of a registered student to add them directly. They will appear as a pending request.
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
@@ -662,8 +662,8 @@ export default function CourseDetailPage() {
             {approved.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-24 rounded-xl border gap-2"
                 style={{ borderColor: 'rgba(245,158,11,0.08)' }}>
-                <Users size={20} style={{ color: '#4a4035', opacity: 0.5 }} />
-                <p className="text-xs" style={{ color: '#4a4035' }}>No enrolled students yet. Share the invite code above.</p>
+                <Users size={20} style={{ color: 'var(--text-tertiary)' }} />
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No enrolled students yet. Share the invite code above.</p>
               </div>
             ) : (
               approved.map((m) => (
@@ -697,13 +697,13 @@ export default function CourseDetailPage() {
           {assignments.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 rounded-xl border gap-3"
               style={{ borderColor: 'rgba(245,158,11,0.08)' }}>
-              <ClipboardList size={24} style={{ color: '#4a4035', opacity: 0.5 }} />
-              <p className="text-xs" style={{ color: '#4a4035' }}>No assignments yet. Create one to get started.</p>
+              <ClipboardList size={24} style={{ color: 'var(--text-tertiary)' }} />
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No assignments yet. Create one to get started.</p>
             </div>
           ) : (
             assignments.map((a) => (
               <div key={a.id} className="flex items-start gap-4 rounded-xl border p-4"
-                style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-semibold text-[var(--text-primary)]">{a.title}</span>
@@ -739,13 +739,13 @@ export default function CourseDetailPage() {
           {assignments.filter(a => a.exam_mode).length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 rounded-xl border gap-3"
               style={{ borderColor: 'rgba(245,158,11,0.08)' }}>
-              <CalendarClock size={24} style={{ color: '#4a4035', opacity: 0.5 }} />
-              <p className="text-xs" style={{ color: '#4a4035' }}>No mock exams scheduled yet.</p>
+              <CalendarClock size={24} style={{ color: 'var(--text-tertiary)' }} />
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No mock exams scheduled yet.</p>
             </div>
           ) : (
             assignments.filter(a => a.exam_mode).map((a) => (
               <div key={a.id} className="flex items-start gap-4 rounded-xl border p-4"
-                style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="text-sm font-semibold text-[var(--text-primary)]">{a.title}</span>
@@ -786,7 +786,7 @@ export default function CourseDetailPage() {
           <span className="text-[var(--text-tertiary)] text-sm">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</span>
           {submissions.length === 0 ? (
             <div className="flex items-center justify-center h-32 rounded-xl border" style={{ borderColor: 'rgba(245,158,11,0.08)' }}>
-              <p className="text-xs" style={{ color: '#4a4035' }}>No submissions yet.</p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No submissions yet.</p>
             </div>
           ) : (
             submissions.map((s, idx) => {
@@ -795,7 +795,7 @@ export default function CourseDetailPage() {
               const anonLabel = `Student ${String.fromCharCode(65 + (idx % 26))}`
               return (
                 <div key={s.id} className="flex flex-col gap-2 rounded-xl border p-4 sm:flex-row sm:items-center sm:gap-4"
-                  style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
+                  style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-[var(--text-primary)]">{anonLabel}</span>
@@ -830,7 +830,7 @@ export default function CourseDetailPage() {
         >
           <div
             className="rounded-2xl border p-4 md:p-6 w-full max-w-[calc(100vw-2rem)] md:max-w-lg flex flex-col gap-4"
-            style={{ background: '#FAFAF8', borderColor: 'rgba(180,165,148,0.35)', boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}
+            style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-medium)', boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">

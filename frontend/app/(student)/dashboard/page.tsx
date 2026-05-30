@@ -2,11 +2,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Marquee } from '@/components/ui/marquee'
 import { supabase } from '@/lib/supabase'
 import { swrFetcher } from '@/lib/api'
+import { staggerContainer, staggerItem, springPop } from '@/lib/motion'
 
 const MUET_VIDEOS = [
   {
@@ -513,12 +515,18 @@ export default function DashboardPage() {
 
       {/* ── 5. Full metric cards — DESKTOP ONLY ── */}
       {!isEmpty && (
-        <div className="hidden md:grid md:col-start-1 grid-cols-3 gap-3">
+        <motion.div
+          className="hidden md:grid md:col-start-1 grid-cols-3 gap-3"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           {isLoading
             ? [0, 1, 2].map((i) => <SkeletonCard key={i} />)
             : metrics.map((m) => (
-                <div
+                <motion.div
                   key={m.label}
+                  variants={staggerItem}
                   className="flex flex-col gap-1 rounded-lg border p-4"
                   style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}
                 >
@@ -527,9 +535,9 @@ export default function DashboardPage() {
                   </span>
                   <span className="font-mono text-2xl font-semibold" style={{ color: m.color }}>{m.value}</span>
                   <span className="text-xs" style={{ color: m.trendColor ?? 'var(--text-secondary)' }}>{m.sub}</span>
-                </div>
+                </motion.div>
               ))}
-        </div>
+        </motion.div>
       )}
 
       {/* ── 6. MUET video resources ── */}
@@ -619,14 +627,19 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <motion.div
+              className="flex flex-col gap-2"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+            >
               {recentSessions.map((s) => {
                 const band = s.feedback_reports?.band_score
                 const wpm  = s.feedback_reports?.wpm_avg
                 const date = formatDate(s.feedback_reports?.generated_at ?? s.session_date)
                 return (
+                  <motion.div key={s.report_id} variants={staggerItem}>
                   <Link
-                    key={s.report_id}
                     href={`/results/${s.report_id}`}
                     className="flex items-center justify-between rounded-lg border p-3 transition-all group"
                     style={{
@@ -658,6 +671,7 @@ export default function DashboardPage() {
                       <span className="text-sm transition-colors" style={{ color: 'var(--text-tertiary)' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-teal)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}>→</span>
                     </div>
                   </Link>
+                  </motion.div>
                 )
               })}
               {sessions.length > 5 && (
@@ -669,20 +683,29 @@ export default function DashboardPage() {
                   View all {sessions.length} sessions →
                 </Link>
               )}
-            </div>
+            </motion.div>
           )}
         </div>}
 
       {/* ── Video modal ─────────────────────────────────────────────────── */}
+      <AnimatePresence>
       {activeVideo && (
-        <div
+        <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           onClick={() => setActiveVideo(null)}
         >
-          <div
+          <motion.div
             className="relative w-full max-w-3xl rounded-2xl overflow-hidden"
             style={{ boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}
+            variants={springPop}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             onClick={e => e.stopPropagation()}
           >
             {/* Close button */}
@@ -707,9 +730,10 @@ export default function DashboardPage() {
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
               />
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   )
 }

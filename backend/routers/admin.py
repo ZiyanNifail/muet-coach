@@ -4,7 +4,11 @@ Educator approval queue: list pending, approve, reject.
 
 All routes require role='admin' via the require_admin dependency (CRIT-02 fix).
 """
+import os
+import secrets
+
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from services.supabase_client import (
     db_get_educator_approvals,
     db_update_educator_approval,
@@ -14,6 +18,35 @@ from services.supabase_client import (
 from services.auth_deps import require_admin
 
 router = APIRouter()
+
+
+class AdminLoginRequest(BaseModel):
+    id: str
+    password: str
+
+
+@router.post("/login")
+async def admin_login(body: AdminLoginRequest):
+    """
+    Verify admin credentials server-side and return the admin access key.
+
+    Credentials and the key live only in backend env vars so they are never
+    shipped to the browser. The returned key is sent by the admin panel as the
+    X-Admin-Key header (see require_admin).
+    """
+    expected_id = os.getenv("ADMIN_ID", "")
+    expected_password = os.getenv("ADMIN_PASSWORD", "")
+    admin_key = os.getenv("ADMIN_ACCESS_KEY", "")
+
+    if not expected_id or not expected_password or not admin_key:
+        raise HTTPException(503, "Admin access is not configured.")
+
+    id_ok = secrets.compare_digest(body.id, expected_id)
+    pw_ok = secrets.compare_digest(body.password, expected_password)
+    if not (id_ok and pw_ok):
+        raise HTTPException(401, "Incorrect credentials.")
+
+    return {"accessKey": admin_key}
 
 
 @router.get("/educator-approvals")

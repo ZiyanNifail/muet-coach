@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { supabase, getAuthHeaders } from '@/lib/supabase'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
@@ -8,6 +9,7 @@ import {
   PlusCircle, Users, BookOpen, Clock, ChevronRight,
   FileCheck, AlertCircle, BarChart2, CheckCircle,
 } from 'lucide-react'
+import { staggerContainer, staggerItem } from '@/lib/motion'
 
 interface Course {
   id: string
@@ -147,7 +149,12 @@ export default function EducatorDashboard() {
       </div>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
         {[
           { label: 'COURSES', value: String(courses.length), icon: BookOpen, color: '#f59e0b' },
           { label: 'TOTAL STUDENTS', value: String(totalStudents), icon: Users, color: '#94a3b8' },
@@ -156,17 +163,17 @@ export default function EducatorDashboard() {
         ].map((m) => {
           const Icon = m.icon
           return (
-            <div key={m.label} className="flex items-center gap-4 rounded-xl border p-4"
+            <motion.div key={m.label} variants={staggerItem} className="flex items-center gap-4 rounded-xl border p-4"
               style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}>
               <Icon size={20} style={{ color: m.color, opacity: 0.7, flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>{m.label}</div>
                 <div className="font-mono text-xl font-semibold" style={{ color: m.color }}>{m.value}</div>
               </div>
-            </div>
+            </motion.div>
           )
         })}
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left 2/3: courses + recent submissions */}
@@ -190,9 +197,15 @@ export default function EducatorDashboard() {
                 <Link href="/educator/courses/new"><Button variant="secondary">Create First Course</Button></Link>
               </div>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <motion.div
+                className="flex flex-col gap-2.5"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+              >
                 {courses.map((course) => (
-                  <Link key={course.id} href={`/educator/courses/${course.id}`} className="no-underline">
+                  <motion.div key={course.id} variants={staggerItem} whileHover={{ y: -1 }}>
+                  <Link href={`/educator/courses/${course.id}`} className="no-underline">
                     <div className="flex items-center gap-4 rounded-xl border p-4 transition-colors hover:border-white/10 cursor-pointer"
                       style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}>
                       <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
@@ -215,8 +228,9 @@ export default function EducatorDashboard() {
                       <ChevronRight size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
                     </div>
                   </Link>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
           </div>
 

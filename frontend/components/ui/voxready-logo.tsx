@@ -26,7 +26,10 @@ export function VoxReadyLogo({
         style={{ color: 'var(--accent-teal)' }}
       />
       {showWordmark && (
-        <span className="text-xl leading-none tracking-tight select-none">
+        <span
+          className="text-xl leading-none tracking-tight select-none"
+          style={{ fontFamily: 'var(--font-libre-baskerville, Georgia, serif)' }}
+        >
           <span className="font-bold" style={{ color: 'var(--accent-teal)' }}>fluency</span>
           <span className="font-normal" style={{ color: 'var(--text-primary)' }}>.my</span>
         </span>

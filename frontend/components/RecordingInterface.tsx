@@ -8,6 +8,7 @@ interface RecordingInterfaceProps {
   mode: 'unguided' | 'guided' | 'exam'
   maxSecs?: number
   notes?: string
+  aiPoints?: string[]
   onComplete: (blob: Blob, durationSecs: number) => void
   onCancel?: (action: 'restart' | 'dashboard') => void
 }
@@ -56,7 +57,7 @@ const COACHING_RULES = [
   { icon: Eye,   label: 'Eye contact',    desc: 'Gaze detection every 5 s' },
 ]
 
-export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComplete, onCancel }: RecordingInterfaceProps) {
+export function RecordingInterface({ topic, mode, maxSecs = 300, notes, aiPoints, onComplete, onCancel }: RecordingInterfaceProps) {
   const cfg = MODE_CONFIG[mode]
 
   const videoRef    = useRef<HTMLVideoElement>(null)
@@ -404,6 +405,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
     if (mode !== 'guided' || status !== 'recording') return
 
     let rafHandle = 0
+    let destroyed = false
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let landmarker: any = null
     let tessellation: { start: number; end: number }[] = []
@@ -429,6 +431,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
     }
 
     function loop(now: number) {
+      if (destroyed) return
       rafHandle = requestAnimationFrame(loop)
       if (now - lastFrameTime < FRAME_INTERVAL) return
       lastFrameTime = now
@@ -436,6 +439,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
       const video  = videoRef.current
       const canvas = faceMeshCanvasRef.current
       if (!video || !canvas || video.readyState < 2 || !landmarker) return
+      if (video.videoWidth === 0 || video.videoHeight === 0) return
 
       const w = canvas.offsetWidth; const h = canvas.offsetHeight
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h }
@@ -445,7 +449,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
       ctx.clearRect(0, 0, w, h)
 
       try {
-        const results = landmarker.detectForVideo(video, now)
+        const results = landmarker.detectForVideo(video, performance.now())
         if (!results.faceLandmarks?.length) return
         const lm = results.faceLandmarks[0]
 
@@ -523,7 +527,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
         landmarker = await FaceLandmarker.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-            delegate: 'GPU',
+            delegate: 'CPU',
           },
           runningMode: 'VIDEO',
           numFaces: 1,
@@ -540,6 +544,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
     init()
 
     return () => {
+      destroyed = true
       cancelAnimationFrame(rafHandle)
       try { landmarker?.close() } catch { /* ignore */ }
       faceLandmarkerRef.current = null
@@ -772,7 +777,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
             </span>
             <span className="text-[10px] hidden sm:inline" style={{ color: 'var(--text-tertiary)' }}>{cfg.badge}</span>
           </div>
-          <span className="text-xs truncate max-w-[45%] sm:max-w-[55%] text-right" style={{ color: 'var(--text-secondary)' }}>{topic}</span>
+
         </div>
 
         {/* Video feed */}
@@ -828,16 +833,18 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
             </div>
           )}
 
-          {/* Live subtitle strip — rendered once, updated via DOM ref to avoid re-renders */}
-          <div className="absolute inset-x-0 bottom-0"
-            style={{ height: 48, background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
-              display: 'flex', alignItems: 'flex-end', padding: '0 16px 10px', overflow: 'hidden' }}>
+          {/* Live subtitle strip — above waveform, rendered once, updated via DOM ref */}
+          <div className="absolute inset-x-0 flex justify-center px-4"
+            style={{ bottom: 44, pointerEvents: 'none', zIndex: 10 }}>
             <p ref={subtitleDomRef} style={{
               display: 'none',
-              fontSize: 14, fontWeight: 500, lineHeight: 1.4,
+              fontSize: 14, fontWeight: 500, lineHeight: 1.5,
               color: '#f0ede6',
-              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-              maxWidth: '100%', wordBreak: 'break-word',
+              background: 'rgba(0,0,0,0.78)',
+              borderRadius: 6,
+              padding: '4px 12px',
+              maxWidth: '90%', wordBreak: 'break-word',
+              textAlign: 'center',
             }} />
           </div>
 
@@ -896,18 +903,30 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
       {/* ── Right panel: transcript + guided coaching rules ──────────────── */}
       <div className="flex flex-col gap-3 w-full lg:w-64 xl:w-72 min-h-0 overflow-hidden">
 
-        {/* Notes panel — visible when brainstorm notes exist */}
-        {notes && (
-          <div className="rounded-xl border p-4 flex flex-col gap-2"
-            style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}>
-            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
-              Your Notes
-            </p>
-            <div className="overflow-y-auto" style={{ maxHeight: 140 }}>
+        {/* Topic + Notes / AI Points panel */}
+        <div className="rounded-xl border p-4 flex flex-col gap-3 overflow-y-auto" style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', maxHeight: 260 }}>
+          <div>
+            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>Topic</p>
+            <p className="text-sm font-medium leading-snug" style={{ color: 'var(--text-primary)' }}>{topic}</p>
+          </div>
+          {aiPoints && aiPoints.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#22c55e' }}>AI Points</p>
+              {aiPoints.map((pt, i) => (
+                <div key={i} className="flex items-start gap-1.5">
+                  <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600, lineHeight: '18px', flexShrink: 0 }}>{i + 1}.</span>
+                  <span className="text-xs leading-relaxed" style={{ color: 'var(--text-primary)' }}>{pt}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {notes && (
+            <div className="flex flex-col gap-1.5">
+              <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Your Notes</p>
               <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>{notes}</p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Guided coaching rules panel */}
         {mode === 'guided' && (
@@ -993,58 +1012,6 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, onComple
           </div>
         )}
 
-        {/* Live transcript panel — all modes */}
-        <div className="flex-1 rounded-xl border flex flex-col overflow-hidden"
-          style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', minHeight: 180, contain: 'layout' }}>
-          <div className="px-3 border-b flex items-center justify-between"
-            style={{ borderColor: 'var(--border-subtle)', height: 32, flexShrink: 0 }}>
-            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
-              Live Transcript
-            </p>
-            {/* Fixed-width right slot prevents layout shift when badge appears */}
-            <span style={{ minWidth: 80, display: 'flex', justifyContent: 'flex-end' }}>
-              {speechAvailable === false && (
-                <span className="text-[9px] text-[#f59e0b]">Speech API unavailable</span>
-              )}
-              {speechAvailable === true && status === 'recording' && (
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]"
-                    style={{ animation: 'pulse 1.5s ease-in-out infinite' }} />
-                  <span className="text-[9px] text-[#22c55e]">Live</span>
-                </span>
-              )}
-            </span>
-          </div>
-
-          <div ref={transcriptScrollRef} className="flex-1 overflow-y-auto p-3 space-y-0.5" style={{ maxHeight: 260 }}>
-            {transcript.length === 0 ? (
-              speechAvailable === false ? (
-                <div className="flex flex-col gap-2">
-                  <p className="text-[11px] text-[#f59e0b]">Live transcript unavailable.</p>
-                  <p className="text-[10px] leading-4" style={{ color: 'var(--text-tertiary)' }}>
-                    Use <strong style={{ color: 'var(--text-secondary)' }}>Chrome or Edge</strong> for live transcript.
-                    Firefox, Safari, and Opera do not support this API.
-                    Your recording is still saved — the AI will transcribe it after you stop.
-                  </p>
-                </div>
-              ) : (
-                <p className="text-[11px] italic" style={{ color: 'var(--text-tertiary)' }}>
-                  {status === 'recording' ? 'Start speaking — transcript will appear here…' : 'Transcript will appear when recording starts.'}
-                </p>
-              )
-            ) : (
-              transcript.map((line, i) => (
-                <p key={i} className="text-xs leading-relaxed" style={{ color: 'var(--text-primary)' }}>{line}</p>
-              ))
-            )}
-          </div>
-
-          <div className="px-3 py-1.5 border-t" style={{ borderColor: 'var(--border-subtle)', height: 28, flexShrink: 0 }}>
-            <p className="text-[9px]" style={{ color: 'var(--text-tertiary)' }}>
-              {transcript.length > 0 ? `${transcriptRef.current.split(/\s+/).filter(Boolean).length} words` : ''}
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   )

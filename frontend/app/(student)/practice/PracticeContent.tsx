@@ -194,6 +194,7 @@ export function PracticeContent() {
   const [topic, setTopic] = useState<Topic | null>(null)
   const [lowBandwidth, setLowBandwidth] = useState(false)
   const [notes, setNotes] = useState('')
+  const [sessionAiPoints, setSessionAiPoints] = useState<string[]>([])
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [processingStatus, setProcessingStatus] = useState<'uploading' | 'analysing' | 'done'>('uploading')
@@ -263,7 +264,7 @@ export function PracticeContent() {
     setStep('brainstorm')
   }
 
-  function handleBrainstormReady(n: string) { setNotes(n); setStep('recording') }
+  function handleBrainstormReady(n: string, pts?: string[]) { setNotes(n); setSessionAiPoints(pts || []); setStep('recording') }
 
   async function handleRecordingComplete(blob: Blob, durationSecs: number) {
     setStep('processing')
@@ -476,7 +477,7 @@ export function PracticeContent() {
           <div className="p-4 md:p-6">
             <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Brainstorm</h1>
           </div>
-          <BrainstormPanel topic={topic.topic} onReady={handleBrainstormReady} onSkip={() => setStep('recording')} onClose={goBack} />
+          <BrainstormPanel topic={topic.topic} onReady={handleBrainstormReady} onSkip={() => setStep('recording')} onClose={goBack} hideAI={mode === 'unguided'} />
         </>
       )}
 
@@ -498,6 +499,7 @@ export function PracticeContent() {
           mode={mode}
           maxSecs={assignmentInfo?.exam_mode && assignmentInfo.exam_duration_mins ? assignmentInfo.exam_duration_mins * 60 : 300}
           notes={notes || undefined}
+          aiPoints={sessionAiPoints.length > 0 ? sessionAiPoints : undefined}
           onComplete={handleRecordingComplete}
           onCancel={(action) => {
             if (action === 'restart') {

@@ -1,10 +1,44 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+/**
+ * Typed error thrown by apiFetch/swrFetcher. `status` is 0 for network-level
+ * failures (backend unreachable / cold start). Callers and SWR `onError` can
+ * branch on `status` (e.g. 401 → re-auth) without parsing strings.
+ */
+export class ApiError extends Error {
+  status: number
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
+async function parseError(res: Response): Promise<string> {
+  try {
+    const text = await res.text()
+    if (!text) return `Request failed (${res.status})`
+    try {
+      const json = JSON.parse(text)
+      return json.detail || json.message || `Request failed (${res.status})`
+    } catch {
+      // Non-JSON body (e.g. HTML error page) — don't surface raw markup.
+      return `Request failed (${res.status})`
+    }
+  } catch {
+    return `Request failed (${res.status})`
+  }
+}
+
 export async function apiFetch(path: string, options?: RequestInit) {
-  const res = await fetch(`${API_URL}${path}`, options)
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}${path}`, options)
+  } catch {
+    throw new ApiError(0, 'Could not reach the server. Check your connection and try again.')
+  }
   if (!res.ok) {
-    const error = await res.text()
-    throw new Error(error || `API error: ${res.status}`)
+    throw new ApiError(res.status, await parseError(res))
   }
   return res.json()
 }
@@ -20,7 +54,14 @@ export async function swrFetcher([path, token]: [string, string | null]) {
   const headers: Record<string, string> = token
     ? { Authorization: `Bearer ${token}` }
     : {}
-  const res = await fetch(`${API_URL}${path}`, { headers })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}${path}`, { headers })
+  } catch {
+    throw new ApiError(0, 'Could not reach the server. Check your connection and try again.')
+  }
+  if (!res.ok) {
+    throw new ApiError(res.status, await parseError(res))
+  }
   return res.json()
 }

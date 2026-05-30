@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer,
@@ -14,6 +15,7 @@ import { TranscriptViewer } from '@/components/TranscriptViewer'
 import { VideoPlayer } from '@/components/VideoPlayer'
 import { LearningPathPanel } from '@/components/LearningPathPanel'
 import { RubricPanel, type RubricBands } from '@/components/RubricPanel'
+import { staggerContainer, staggerItem, easings } from '@/lib/motion'
 
 interface Report {
   id: string
@@ -134,13 +136,14 @@ function BandRing({ score }: { score: number }) {
   return (
     <svg width={140} height={140} viewBox="0 0 140 140">
       <circle cx={70} cy={70} r={R} fill="none" stroke="rgba(180,165,148,0.22)" strokeWidth={10} />
-      <circle
+      <motion.circle
         cx={70} cy={70} r={R} fill="none"
         stroke={color} strokeWidth={10}
-        strokeDasharray={`${dash} ${C}`}
         strokeLinecap="round"
         transform="rotate(-90 70 70)"
-        style={{ transition: 'stroke-dasharray 1s ease' }}
+        initial={{ strokeDasharray: `0 ${C}` }}
+        animate={{ strokeDasharray: `${dash} ${C}` }}
+        transition={{ duration: 1.4, ease: easings.smooth, delay: 0.15 }}
       />
       <text x={70} y={65} textAnchor="middle" fill={color}
         fontSize={28} fontWeight={700} fontFamily="monospace">
@@ -169,9 +172,12 @@ function PostureBar({ score }: { score: number }) {
         </span>
       </div>
       <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(180,165,148,0.22)' }}>
-        <div
+        <motion.div
           className="h-full rounded-full"
-          style={{ width: `${pct}%`, background: color, transition: 'width 1s ease' }}
+          style={{ background: color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1, ease: easings.smooth, delay: 0.3 }}
         />
       </div>
     </div>
@@ -358,9 +364,12 @@ function ConfidenceCard({ score, sentiment, clarity, pitch, energy }: {
           <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>/100 · {label}</span>
         </div>
         <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'rgba(180,165,148,0.22)' }}>
-          <div
+          <motion.div
             className="h-full rounded-full"
-            style={{ width: `${pct}%`, background: color, transition: 'width 1.2s ease' }}
+            style={{ background: color }}
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 1.2, ease: easings.smooth, delay: 0.4 }}
           />
         </div>
       </div>
@@ -630,7 +639,12 @@ export default function ResultsPage() {
   })()
 
   return (
-    <div className="p-4 md:p-6 flex flex-col gap-6 w-full min-w-0">
+    <motion.div
+      className="p-4 md:p-6 flex flex-col gap-6 w-full min-w-0"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: easings.smooth }}
+    >
       {/* Exam locked state — results hidden until educator finalizes */}
       {examLocked && !educatorGrade && (
         <div
@@ -895,9 +909,12 @@ export default function ResultsPage() {
 
       {/* Advice cards */}
       {r.advice_cards && r.advice_cards.length > 0 && (
-        <div
+        <motion.div
           className="flex flex-col gap-3 rounded-xl border p-5"
           style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
         >
           <div className="flex items-center justify-between">
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
@@ -906,17 +923,18 @@ export default function ResultsPage() {
             <span className="text-[var(--text-tertiary)] text-xs">{r.advice_cards.length} items</span>
           </div>
           {r.advice_cards.map((card, i) => (
-            <div
+            <motion.div
               key={i}
+              variants={staggerItem}
               className="flex items-start gap-3 rounded-lg border p-3"
               style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.22)' }}
             >
               <span className="text-[var(--text-tertiary)] text-sm mt-0.5 shrink-0">▸</span>
               <p className="flex-1 min-w-0 text-sm text-[var(--text-secondary)]">{card.text}</p>
               <Badge variant={IMPACT_VARIANT[card.impact]}>{card.impact}</Badge>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* IMP-01: Learning path recommendation */}
@@ -938,6 +956,6 @@ export default function ResultsPage() {
           <Link href="/courses"><Button variant="secondary" className="min-h-[44px]">Back to My Courses</Button></Link>
         </div>
       )}
-    </div>
+    </motion.div>
   )
 }

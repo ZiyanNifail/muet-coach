@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import { EducatorSidebar } from '@/components/EducatorSidebar'
 import { Topbar } from '@/components/Topbar'
 import { getAppUser, type AppUser } from '@/lib/auth'
-import ThemeToggle from '@/components/ui/theme-toggle'
 
 export default function EducatorLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null)
@@ -37,7 +36,6 @@ export default function EducatorLayout({ children }: { children: React.ReactNode
         <EducatorSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className="flex-1 overflow-y-scroll">{children}</main>
       </div>
-      <ThemeToggle />
     </div>
   )
 }

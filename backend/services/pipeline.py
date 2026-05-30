@@ -207,6 +207,8 @@ async def run_pipeline(
                 filler_density=filler_density,
                 posture_score=posture_score,
                 lexical_diversity=lexical_diversity,
+                duration_secs=duration_secs,
+                word_count=word_count,
             )
             rule_subbands = compute_subband_scores(
                 wpm_avg=wpm_avg,
@@ -231,6 +233,10 @@ async def run_pipeline(
             "filler_density": filler_density,
             "posture_score": posture_score,
             "lexical_diversity": lexical_diversity,
+            "word_count": word_count,
+            "voice_clarity_score": voice_clarity_score,
+            "discourse_marker_count": discourse_marker_count,
+            "sentence_length_variance": sentence_length_variance,
             "duration_secs": duration_secs,
             "session_mode": session_mode,
         }

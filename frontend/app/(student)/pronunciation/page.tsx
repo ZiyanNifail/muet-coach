@@ -1,8 +1,10 @@
 'use client'
 import { useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase, getAuthHeaders } from '@/lib/supabase'
 import { AudioRecorder } from '@/components/AudioRecorder'
 import { Badge } from '@/components/ui/Badge'
+import { fadeUp, springPop, staggerContainer, staggerItem, easings } from '@/lib/motion'
 import {
   Volume2, CheckCircle, XCircle, RotateCcw, ArrowRight,
   BookOpen, Lightbulb, ChevronRight, Loader2,
@@ -46,13 +48,23 @@ type Stage = 'input' | 'syllables' | 'sentence' | 'done'
 
 function ScoreRing({ score }: { score: number }) {
   const color = score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'
+  const R = 26
+  const C = 2 * Math.PI * R
+  const dash = (score / 100) * C
   return (
     <div className="flex flex-col items-center gap-1">
-      <div
-        className="w-14 h-14 rounded-full flex items-center justify-center font-mono font-bold text-lg"
-        style={{ background: `${color}18`, border: `2px solid ${color}`, color }}
-      >
-        {score}
+      <div className="relative w-14 h-14 flex items-center justify-center">
+        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 60 60">
+          <circle cx={30} cy={30} r={R} fill="none" stroke={`${color}25`} strokeWidth={4} />
+          <motion.circle
+            cx={30} cy={30} r={R} fill="none"
+            stroke={color} strokeWidth={4} strokeLinecap="round"
+            initial={{ strokeDasharray: `0 ${C}` }}
+            animate={{ strokeDasharray: `${dash} ${C}` }}
+            transition={{ duration: 1, ease: easings.smooth, delay: 0.1 }}
+          />
+        </svg>
+        <span className="relative font-mono font-bold text-sm" style={{ color }}>{score}</span>
       </div>
       <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>/ 100</span>
     </div>
@@ -298,11 +310,15 @@ export default function PronunciationPage() {
       {/* Step indicator */}
       <StepIndicator stage={stage} />
 
+      <AnimatePresence mode="wait">
+
       {/* ── Stage 1: Input ────────────────────────────────────────────────── */}
       {stage === 'input' && (
-        <div
+        <motion.div
+          key="input"
           className="flex flex-col gap-5 rounded-2xl border p-6"
           style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}
+          variants={fadeUp} initial="hidden" animate="visible" exit="exit"
         >
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 8 }}>
@@ -356,12 +372,12 @@ export default function PronunciationPage() {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Stage 2: Syllables ────────────────────────────────────────────── */}
       {stage === 'syllables' && wordData && (
-        <div className="flex flex-col gap-4">
+        <motion.div key="syllables" className="flex flex-col gap-4" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
           {/* Word header card */}
           <div
             className="rounded-2xl border p-5 flex flex-col gap-3"
@@ -395,8 +411,10 @@ export default function PronunciationPage() {
               const isDone = r?.pass || r?.exhausted
               return (
                 <div key={i} className="flex flex-col items-center gap-1">
-                  <div
-                    className="px-4 py-2 rounded-xl font-mono font-semibold text-sm transition-all"
+                  <motion.div
+                    className="px-4 py-2 rounded-xl font-mono font-semibold text-sm"
+                    animate={{ scale: isCurrent ? 1.08 : 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     style={{
                       background: r?.pass
                         ? 'rgba(34,197,94,0.12)'
@@ -412,11 +430,10 @@ export default function PronunciationPage() {
                         : 'var(--border-subtle)'
                       }`,
                       color: r?.pass ? '#22c55e' : r?.exhausted ? 'var(--accent-red)' : isCurrent ? 'var(--accent-teal)' : 'var(--text-tertiary)',
-                      transform: isCurrent ? 'scale(1.08)' : 'scale(1)',
                     }}
                   >
                     {i === wordData.stress_index ? <strong>{syl}</strong> : syl}
-                  </div>
+                  </motion.div>
                   {r?.pass && <CheckCircle size={12} style={{ color: '#22c55e' }} />}
                   {r?.exhausted && <XCircle size={12} style={{ color: '#ef4444' }} />}
                   {!isDone && isCurrent && (
@@ -473,7 +490,7 @@ export default function PronunciationPage() {
 
             {/* Result display */}
             {!sylChecking && curSylResult && (curSylResult.score !== null) && (
-              <div className="flex flex-col gap-3">
+              <motion.div className="flex flex-col gap-3" variants={springPop} initial="hidden" animate="visible">
                 <div className="flex items-center gap-4">
                   <ScoreRing score={curSylResult.score} />
                   <div className="flex-1">
@@ -506,15 +523,15 @@ export default function PronunciationPage() {
                       : <>Continue to Sentence <ArrowRight size={14} className="ml-1.5" /></>}
                   </Button>
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Stage 3: Sentence ─────────────────────────────────────────────── */}
       {stage === 'sentence' && wordData && (
-        <div className="flex flex-col gap-4">
+        <motion.div key="sentence" className="flex flex-col gap-4" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
           {/* Context card */}
           <div
             className="rounded-2xl border p-5 flex flex-col gap-3"
@@ -572,7 +589,7 @@ export default function PronunciationPage() {
             )}
 
             {sentenceResult && !sentenceChecking && (
-              <div className="flex flex-col gap-4">
+              <motion.div className="flex flex-col gap-4" variants={springPop} initial="hidden" animate="visible">
                 {/* Transcript */}
                 {sentenceResult.transcript && (
                   <div className="rounded-lg border px-4 py-3"
@@ -609,15 +626,15 @@ export default function PronunciationPage() {
                     See Summary <ArrowRight size={14} className="ml-1.5" />
                   </Button>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Stage 4: Done ─────────────────────────────────────────────────── */}
       {stage === 'done' && wordData && (
-        <div className="flex flex-col gap-4">
+        <motion.div key="done" className="flex flex-col gap-4" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
           {/* Summary card */}
           <div
             className="rounded-2xl border p-4 md:p-6 flex flex-col gap-5"
@@ -646,11 +663,11 @@ export default function PronunciationPage() {
               <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 8 }}>
                 SYLLABLE RESULTS · {sylPassCount}/{wordData.syllables.length} passed
               </div>
-              <div className="flex flex-col gap-2">
+              <motion.div className="flex flex-col gap-2" variants={staggerContainer} initial="hidden" animate="visible">
                 {wordData.syllables.map((syl, i) => {
                   const r = sylResults[i]
                   return (
-                    <div key={i} className="flex items-center gap-3 rounded-lg border px-3 py-2"
+                    <motion.div key={i} variants={staggerItem} className="flex items-center gap-3 rounded-lg border px-3 py-2"
                       style={{
                         background: r?.pass ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.03)',
                         borderColor: r?.pass ? 'rgba(34,197,94,0.20)' : 'rgba(239,68,68,0.15)',
@@ -663,10 +680,10 @@ export default function PronunciationPage() {
                       {r?.score !== null && (
                         <span className="ml-auto font-mono text-xs" style={{ color: 'var(--text-tertiary)' }}>{r.score}/100</span>
                       )}
-                    </div>
+                    </motion.div>
                   )
                 })}
-              </div>
+              </motion.div>
             </div>
 
             {/* Sentence result */}
@@ -697,8 +714,10 @@ export default function PronunciationPage() {
               Practice Same Word Again
             </Button>
           </div>
-        </div>
+        </motion.div>
       )}
+
+      </AnimatePresence>
     </div>
   )
 }

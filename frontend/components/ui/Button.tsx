@@ -18,6 +18,8 @@ export function Button({
     <button
       className={clsx(
         'inline-flex items-center justify-center font-medium rounded-lg transition-all cursor-pointer',
+        'active:scale-[0.97] disabled:active:scale-100',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A7D6A]/40 focus-visible:ring-offset-1',
         'disabled:opacity-40 disabled:cursor-not-allowed',
         {
           'bg-[#3A7D6A] text-white hover:bg-[#2d6356] font-semibold': variant === 'primary',

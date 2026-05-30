@@ -821,6 +821,35 @@ def db_get_exam_invitations_for_assignment(assignment_id: str) -> list:
         return []
 
 
+def db_get_all_educator_exam_submissions(educator_id: str) -> list:
+    """All presentations for this educator's standalone MUET exam assignments."""
+    sb = get_supabase()
+    if sb is None:
+        return []
+    try:
+        exam_res = (
+            sb.table("assignments")
+            .select("id, title")
+            .eq("educator_id", educator_id)
+            .eq("exam_mode", True)
+            .is_("course_id", "null")
+            .execute()
+        )
+        exam_map = {e["id"]: e["title"] for e in (exam_res.data or [])}
+        if not exam_map:
+            return []
+        res = (
+            sb.table("presentations")
+            .select("*, users!presentations_student_id_fkey(full_name, email), feedback_reports(band_score, generated_at), assignments(title, exam_mode)")
+            .in_("assignment_id", list(exam_map.keys()))
+            .order("uploaded_at", desc=True)
+            .execute()
+        )
+        return res.data or []
+    except Exception:
+        return []
+
+
 def db_get_exam_submission_statuses(student_id: str) -> list:
     """For each accepted exam invitation, return submission state and grade release status."""
     sb = get_supabase()

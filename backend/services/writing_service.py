@@ -25,9 +25,9 @@ Band 1: Very limited — severe errors, incomprehensible
 
 Return ONLY valid JSON:
 {
-  "task1_band": <float 1.0–6.0, one decimal>,
-  "task2_band": <float 1.0–6.0, one decimal>,
-  "overall_band": <float 1.0–6.0, one decimal>,
+  "task1_band": <integer 1-6>,
+  "task2_band": <integer 1-6>,
+  "overall_band": <integer 1-6>,
   "advice_cards": [
     {"criterion": "content|language|organisation", "task": 1, "impact": "HIGH|MED|LOW", "text": "..."},
     {"criterion": "content|language|organisation", "task": 1, "impact": "HIGH|MED|LOW", "text": "..."},
@@ -63,7 +63,7 @@ async def evaluate_writing(
 
     def _call():
         return client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_content},
@@ -77,9 +77,9 @@ async def evaluate_writing(
     raw = resp.choices[0].message.content or "{}"
     data = json.loads(raw)
 
-    task1_band = float(data.get("task1_band", 3.0))
-    task2_band = float(data.get("task2_band", 3.0))
-    overall_band = round((task1_band + task2_band * 2) / 3, 1)
+    task1_band = int(round(max(1.0, min(6.0, float(data.get("task1_band", 3))))))
+    task2_band = int(round(max(1.0, min(6.0, float(data.get("task2_band", 3))))))
+    overall_band = int(round((task1_band + task2_band * 2) / 3))
 
     return {
         "task1_band": task1_band,

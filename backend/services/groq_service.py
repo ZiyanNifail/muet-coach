@@ -84,13 +84,45 @@ async def _chat(prompt: str, max_tokens: int = 400, temperature: float = 0.4) ->
         return None
 
 
-FALLBACK_ADVICE = [
-    {"impact": "HIGH", "text": "You used filler words like 'um' or 'uh' frequently. These make you sound unsure. Try pausing silently instead — a quiet pause sounds more confident."},
-    {"impact": "MED",  "text": "Your eye contact was low during this session. Try looking directly at the camera instead of glancing away — aim for at least 70% of the time."},
-    {"impact": "MED",  "text": "You repeated the same words several times. Instead of saying 'good' repeatedly, try alternatives like 'beneficial', 'effective', or 'valuable'."},
-    {"impact": "LOW",  "text": "You jumped between points without connecting them. Try saying 'firstly...', 'another reason is...', 'in conclusion...' to guide your listener."},
-    {"impact": "LOW",  "text": "Most of your sentences started with 'I'. Try mixing it up — for example, 'This shows that...' or 'One key point is...' adds variety."},
-]
+def _build_fallback_advice(metrics: dict) -> list[dict]:
+    """Metric-aware fallback advice cards used when Groq is unavailable."""
+    cards: list[dict] = []
+    fd = metrics.get("filler_density") or 0
+    ec = metrics.get("eye_contact_pct")
+    wpm = metrics.get("wpm_avg")
+
+    if fd > 5:
+        cards.append({
+            "impact": "HIGH",
+            "text": f"You used filler words {fd:.0f} times per minute. Try pausing silently instead — a quiet pause sounds far more confident than 'um' or 'uh'.",
+        })
+    if ec is not None and ec < 60:
+        cards.append({
+            "impact": "HIGH",
+            "text": f"Your eye contact was {ec:.0f}% — below the 70% target. Try looking directly at the camera more consistently throughout your talk.",
+        })
+    if wpm is not None and wpm < 100:
+        cards.append({
+            "impact": "MED",
+            "text": f"You spoke at {wpm:.0f} WPM, which is quite slow. Aim for 110–160 WPM to sound more fluent and natural.",
+        })
+    elif wpm is not None and wpm > 170:
+        cards.append({
+            "impact": "MED",
+            "text": f"You spoke at {wpm:.0f} WPM, which is too fast for listeners to follow comfortably. Slow down to 110–160 WPM.",
+        })
+
+    generic = [
+        {"impact": "LOW", "text": "Connect your ideas with phrases like 'firstly', 'another key reason is', or 'in conclusion' — this guides your listener through your talk."},
+        {"impact": "LOW", "text": "Try using more varied vocabulary. Instead of repeating simple words, use synonyms or more precise alternatives to show a wider range."},
+        {"impact": "LOW", "text": "Practise recording yourself regularly. Watching your own recordings is the fastest way to spot habits you don't notice in the moment."},
+    ]
+    for g in generic:
+        if len(cards) >= 5:
+            break
+        cards.append(g)
+    return cards[:5]
+
 
 RUBRIC_CRITERIA = (
     "task_fulfilment",
@@ -103,7 +135,7 @@ RUBRIC_CRITERIA = (
 SYSTEM_PROMPT = """You are an expert English proficiency examiner specialising in MUET (Malaysian University English Test) oral communication.
 You will receive a student's transcript, performance metrics, and rule-based anchor scores for each criterion.
 
-MUET SPEAKING RUBRIC — score each criterion 1.0–6.0:
+MUET SPEAKING RUBRIC — score each criterion 1–6 (integers only, no decimals):
 - task_fulfilment: Did the student address the topic with adequate content and idea development?
 - coherence_cohesion: Is the speech logically organised with discourse markers and smooth flow?
 - lexical_resource: Does the student use varied, precise vocabulary suited to the task?
@@ -111,33 +143,33 @@ MUET SPEAKING RUBRIC — score each criterion 1.0–6.0:
 - pronunciation: Is speech clear, well-stressed, and easy to understand?
 
 BAND DESCRIPTORS (apply to each criterion):
-- Band 1 (1.0–1.4): Minimal — barely communicates, virtually no control
-- Band 2 (1.5–2.4): Very limited — only short utterances, frequent breakdown
-- Band 3 (2.5–3.4): Limited — conveys basic meaning, many errors, restricted range
-- Band 4 (3.5–4.4): Satisfactory — meaning clear, some errors, adequate range
-- Band 5 (4.5–5.4): Good — generally accurate and fluent, good range
-- Band 6 (5.5–6.0): Excellent — highly accurate, wide range, near-native fluency
+- Band 1: Minimal — barely communicates, virtually no control
+- Band 2: Very limited — only short utterances, frequent breakdown
+- Band 3: Limited — conveys basic meaning, many errors, restricted range
+- Band 4: Satisfactory — meaning clear, some errors, adequate range
+- Band 5: Good — generally accurate and fluent, good range
+- Band 6: Excellent — highly accurate, wide range, near-native fluency
 
 CRITICAL RULES:
-- Each criterion score MUST stay within ±0.5 of its provided rule_subband anchor.
-- If filler density >10/min: coherence_cohesion cannot exceed 3.5.
-- If filler density >5/min: coherence_cohesion cannot exceed 4.4.
-- If transcript is <20 words: all criteria MUST be 1.0.
-- A score above 4.0 requires WPM 110–160 AND filler density <5/min.
-- Do NOT default to 4.0–4.5 when evidence is ambiguous — score conservatively.
-- band_score MUST equal the mean of the 5 criterion scores, rounded to 1 decimal place.
-- Each justification must be exactly one concise sentence (max 20 words).
+- Each criterion score MUST stay within ±1 of its provided rule_subband anchor.
+- If filler density >10/min: coherence_cohesion cannot exceed 3.
+- If filler density >5/min: coherence_cohesion cannot exceed 4.
+- If transcript is <20 words: all criteria MUST be 1.
+- A score of 5 or above requires WPM 110–160 AND filler density <5/min.
+- Do NOT default to 4 when evidence is ambiguous — score conservatively.
+- band_score MUST equal the mean of the 5 criterion scores, rounded to the nearest integer.
+- Each justification must be 1–2 sentences (max 40 words). Reference the actual metric value where relevant (e.g. "spoke at 145 WPM" or "used 8 discourse markers").
 
 Respond ONLY with valid JSON — no markdown fences, no extra keys:
 {
   "rubric_bands": {
-    "task_fulfilment":            {"score": <float 1.0-6.0>, "justification": "<one sentence>"},
-    "coherence_cohesion":         {"score": <float 1.0-6.0>, "justification": "<one sentence>"},
-    "lexical_resource":           {"score": <float 1.0-6.0>, "justification": "<one sentence>"},
-    "grammatical_range_accuracy": {"score": <float 1.0-6.0>, "justification": "<one sentence>"},
-    "pronunciation":              {"score": <float 1.0-6.0>, "justification": "<one sentence>"}
+    "task_fulfilment":            {"score": <integer 1-6>, "justification": "<1–2 sentences referencing actual metrics>"},
+    "coherence_cohesion":         {"score": <integer 1-6>, "justification": "<1–2 sentences referencing actual metrics>"},
+    "lexical_resource":           {"score": <integer 1-6>, "justification": "<1–2 sentences referencing actual metrics>"},
+    "grammatical_range_accuracy": {"score": <integer 1-6>, "justification": "<1–2 sentences referencing actual metrics>"},
+    "pronunciation":              {"score": <integer 1-6>, "justification": "<1–2 sentences referencing actual metrics>"}
   },
-  "band_score": <float — mean of 5 scores>,
+  "band_score": <integer — mean of 5 scores, rounded>,
   "advice_cards": [
     {"impact": "HIGH|MED|LOW", "text": "<plain-English tip that quotes an actual phrase from the transcript and shows a better alternative — e.g. 'You said \"I like it\" — try \"I strongly believe this is beneficial\" to sound more persuasive.'>"},
     {"impact": "HIGH|MED|LOW", "text": "..."},
@@ -153,7 +185,7 @@ ADVICE CARD RULES (strictly follow):
 - Format: "You said [quote]. [Why it's weak in one short sentence]. Try: [improved version]."
 - If the issue is filler words, quote the actual filler (e.g. "You said 'um' 14 times"). Suggest a pause instead.
 - If the issue is eye contact or posture (from metrics), describe the physical behaviour plainly.
-- Keep each card under 35 words. Friendly and encouraging tone, not critical."""
+- Keep each card under 55 words. Friendly and encouraging tone, not critical."""
 
 
 async def generate_feedback(
@@ -172,11 +204,11 @@ async def generate_feedback(
     """
     client = _get_groq_client()
     if client is None:
-        return {"band_score": None, "advice_cards": FALLBACK_ADVICE, "rubric_bands": rule_subbands}
+        return {"band_score": None, "advice_cards": _build_fallback_advice(metrics), "rubric_bands": rule_subbands}
 
     word_count = len(transcript.split()) if transcript else 0
     if word_count < 5:
-        return {"band_score": rule_band, "advice_cards": FALLBACK_ADVICE, "rubric_bands": rule_subbands}
+        return {"band_score": rule_band, "advice_cards": _build_fallback_advice(metrics), "rubric_bands": rule_subbands}
 
     session_mode = metrics.get("session_mode", "unguided")
 
@@ -189,19 +221,23 @@ async def generate_feedback(
             f"- {crit}: {rule_subbands[crit]['score']}"
             for crit in RUBRIC_CRITERIA if crit in rule_subbands
         )
-        subband_block = f"\nRULE-BASED SUB-BAND ANCHORS (stay within ±0.5 of each):\n{anchor_lines}\n"
+        subband_block = f"\nRULE-BASED SUB-BAND ANCHORS (stay within ±1 of each):\n{anchor_lines}\n"
     else:
         subband_block = f"\nRULE-BASED OVERALL BAND (calibrated baseline): {rule_band if rule_band else 'N/A'}\n"
 
     user_content = (
         subband_block
-        + f"\nTRANSCRIPT ({word_count} words):\n{transcript}\n\n"
+        + f"\nTRANSCRIPT ({word_count} words):\n{transcript[:5000]}\n\n"
         + "METRICS:\n"
         + f"- Average WPM: {fmt(metrics.get('wpm_avg'))}\n"
         + f"- Eye contact: {fmt(metrics.get('eye_contact_pct'), '%')}\n"
         + f"- Filler words per minute: {fmt(metrics.get('filler_density'))}\n"
         + f"- Posture score: {fmt(metrics.get('posture_score'), '/100')}\n"
         + f"- Lexical diversity (TTR): {fmt(metrics.get('lexical_diversity'))}\n"
+        + f"- Word count: {fmt(metrics.get('word_count'))}\n"
+        + f"- Voice clarity score: {fmt(metrics.get('voice_clarity_score'), '%')}\n"
+        + f"- Discourse markers detected: {fmt(metrics.get('discourse_marker_count'))}\n"
+        + f"- Sentence length variance: {fmt(metrics.get('sentence_length_variance'))}\n"
         + f"- Session duration: {fmt(metrics.get('duration_secs'), 's')}\n"
         + f"- Session mode: {session_mode} "
         + f"({'real-time coaching was active' if session_mode == 'guided' else 'no interruptions during recording'})\n"
@@ -218,7 +254,7 @@ async def generate_feedback(
                     {"role": "user", "content": user_content},
                 ],
                 temperature=0.2,
-                max_tokens=1200,
+                max_tokens=1600,
                 response_format={"type": "json_object"},
             )
 
@@ -239,34 +275,33 @@ async def generate_feedback(
                 if rule_subbands and crit in rule_subbands:
                     validated_rubric[crit] = rule_subbands[crit].copy()
                 continue
-            score = round(max(1.0, min(6.0, float(entry.get("score", 3.5)))), 1)
-            justification = str(entry.get("justification", ""))[:200]
-            # Per-criterion anchor clamp (mirrors overall band clamp at lines 200-207)
+            score = int(round(max(1.0, min(6.0, float(entry.get("score", 3))))))
+            justification = str(entry.get("justification", ""))[:400]
             if rule_subbands and crit in rule_subbands:
                 anchor = rule_subbands[crit]["score"]
                 diff = score - anchor
-                if abs(diff) > 0.5:
-                    score = round(max(1.0, min(6.0, anchor + (0.5 if diff > 0 else -0.5))), 1)
+                if abs(diff) > 1:
+                    score = int(round(max(1.0, min(6.0, anchor + (1 if diff > 0 else -1)))))
             validated_rubric[crit] = {"score": score, "justification": justification}
 
         # ── Compute final overall band from validated sub-bands ───────────────
         if len(validated_rubric) == len(RUBRIC_CRITERIA):
             scores = [v["score"] for v in validated_rubric.values()]
-            final_band = round(max(1.0, min(6.0, sum(scores) / len(scores))), 1)
+            final_band = int(round(max(1.0, min(6.0, sum(scores) / len(scores)))))
         else:
             # Partial rubric — fall back to old overall merge logic
-            llm_band = round(max(1.0, min(6.0, float(data.get("band_score", 0)))), 1)
+            llm_band = int(round(max(1.0, min(6.0, float(data.get("band_score", 0))))))
             if rule_band is not None:
                 diff = abs(llm_band - rule_band)
-                if diff <= 1.0:
-                    final_band = round((llm_band + rule_band) / 2, 1)
+                if diff <= 1:
+                    final_band = int(round((llm_band + rule_band) / 2))
                 else:
-                    final_band = round(max(1.0, min(6.0, rule_band + (0.5 if llm_band > rule_band else -0.5))), 1)
+                    final_band = int(round(max(1.0, min(6.0, rule_band + (1 if llm_band > rule_band else -1)))))
             else:
                 final_band = llm_band
 
         # ── Validate advice cards ─────────────────────────────────────────────
-        cards = data.get("advice_cards", FALLBACK_ADVICE)
+        cards = data.get("advice_cards", [])
         validated = []
         for c in cards[:5]:
             if isinstance(c, dict) and "text" in c and "impact" in c:
@@ -275,7 +310,7 @@ async def generate_feedback(
                     impact = "MED"
                 validated.append({"impact": impact, "text": str(c["text"])})
         if not validated:
-            validated = FALLBACK_ADVICE
+            validated = _build_fallback_advice(metrics)
 
         return {
             "band_score": final_band,
@@ -284,4 +319,29 @@ async def generate_feedback(
         }
     except Exception:
         logger.exception("Groq generate_feedback failed — falling back to rule-based advice")
-        return {"band_score": rule_band, "advice_cards": FALLBACK_ADVICE, "rubric_bands": rule_subbands}
+        return {"band_score": rule_band, "advice_cards": _build_fallback_advice(metrics), "rubric_bands": rule_subbands}
+
+
+async def generate_brainstorm_points(topic: str) -> list[str]:
+    """
+    Generate up to 5 extremely brief talking points for a MUET speaking topic.
+    Each point is 4–8 words — just enough to spark an idea.
+    Returns an empty list if Groq is unavailable.
+    """
+    prompt = (
+        f'A student is about to give a MUET speaking presentation on this topic: "{topic}"\n\n'
+        "Give them exactly 5 extremely brief talking points (4–8 words each) they can use as ideas.\n"
+        "Each point must be a short phrase, not a full sentence.\n"
+        "Respond ONLY with valid JSON — no markdown, no extra keys:\n"
+        '{"points": ["...", "...", "...", "...", "..."]}'
+    )
+    raw = await _chat(prompt, max_tokens=180, temperature=0.7)
+    if not raw:
+        return []
+    try:
+        raw = re.sub(r'```(?:json)?\s*|\s*```', '', raw).strip()
+        data = json.loads(raw)
+        return [str(p).strip() for p in data.get("points", [])[:5] if str(p).strip()]
+    except Exception:
+        logger.exception("generate_brainstorm_points parse failed")
+        return []

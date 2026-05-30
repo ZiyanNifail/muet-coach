@@ -129,7 +129,7 @@ export default function ProgressPage() {
   const improvement = latestBand != null && firstBand != null ? (latestBand - firstBand).toFixed(1) : null
 
   return (
-    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-4xl">
+    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-4xl mx-auto w-full">
       {/* Header */}
       <div>
         <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>

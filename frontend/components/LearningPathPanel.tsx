@@ -1,8 +1,10 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import type { RubricBands } from '@/components/RubricPanel'
+import { fadeUp, staggerContainer, staggerItem } from '@/lib/motion'
 
 interface SessionPoint {
   session_date: string
@@ -186,9 +188,12 @@ export function LearningPathPanel({ studentId, rubricBands }: { studentId: strin
   const isRubricDriven = !!rubricBands && RUBRIC_CRITERIA_KEYS.includes(metric as typeof RUBRIC_CRITERIA_KEYS[number])
 
   return (
-    <div
+    <motion.div
       className="flex flex-col gap-3 rounded-xl border p-5"
       style={{ background: 'var(--bg-panel)', borderColor: 'rgba(139,92,246,0.25)' }}
+      variants={fadeUp}
+      initial="hidden"
+      animate="visible"
     >
       <div className="flex items-center justify-between">
         <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8b5cf6' }}>
@@ -209,10 +214,11 @@ export function LearningPathPanel({ studentId, rubricBands }: { studentId: strin
         }
       </p>
 
-      <div className="flex flex-col gap-2">
+      <motion.div className="flex flex-col gap-2" variants={staggerContainer} initial="hidden" animate="visible">
         {drills.map((drill, i) => (
-          <div
+          <motion.div
             key={i}
+            variants={staggerItem}
             className="flex gap-3 rounded-lg border p-3"
             style={{ background: 'rgba(180,165,148,0.04)', borderColor: 'rgba(139,92,246,0.1)' }}
           >
@@ -223,13 +229,13 @@ export function LearningPathPanel({ studentId, rubricBands }: { studentId: strin
               {String(i + 1).padStart(2, '0')}
             </span>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{drill}</p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <Link href="/practice" className="text-xs self-start mt-1" style={{ color: '#8b5cf6' }}>
         Start a practice session →
       </Link>
-    </div>
+    </motion.div>
   )
 }

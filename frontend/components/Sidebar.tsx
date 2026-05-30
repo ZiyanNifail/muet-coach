@@ -1,30 +1,39 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { motion, LayoutGroup, AnimatePresence } from 'framer-motion'
 import { clsx } from 'clsx'
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
+import { springs } from '@/lib/motion'
 import {
   Mic,
-  Mic2,
   TrendingUp,
   History,
   BookOpen,
   LayoutDashboard,
-  Volume2,
   Upload,
-  Headphones,
-  PenLine,
   GraduationCap,
+  Briefcase,
+  Sparkles,
+  ChevronRight,
+  Mic2,
+  Radio,
 } from 'lucide-react'
+
+const subItems = {
+  speaking: [
+    { label: 'Unguided Session', href: '/practice?mode=unguided', icon: Mic },
+    { label: 'Guided Session',   href: '/practice?mode=guided',   icon: Radio },
+  ],
+}
 
 const studentNav = [
   {
     section: 'PRACTICE',
     items: [
-      { label: 'Dashboard',        href: '/dashboard',             icon: LayoutDashboard },
-      { label: 'Unguided Session', href: '/practice?mode=unguided', icon: Mic },
-      { label: 'Guided Session',   href: '/practice?mode=guided',  icon: Mic2 },
-      { label: 'Upload Video',     href: '/upload',                icon: Upload },
+      { label: 'Dashboard',         href: '/dashboard', icon: LayoutDashboard },
+      { label: 'Speaking Practice', href: null,         icon: Mic2,  expandKey: 'speaking' as const },
+      { label: 'Upload Video',      href: '/upload',    icon: Upload },
     ],
   },
   {
@@ -41,11 +50,9 @@ const studentNav = [
   {
     section: 'IMPROVE',
     items: [
-      { label: 'Full Mock Exam',  href: '/exam',          icon: GraduationCap },
-      { label: 'Filler Drill',    href: '/filler-drill',  icon: Mic2          },
-      { label: 'Pronunciation',   href: '/pronunciation', icon: Volume2       },
-      { label: 'Listening Test',  href: '/listening',     icon: Headphones    },
-      { label: 'Writing Test',    href: '/writing',       icon: PenLine       },
+      { label: 'Full Mock Exam',   href: '/exam',       icon: GraduationCap },
+      { label: 'Mock Interview',   href: '/interview',  icon: Briefcase     },
+      { label: 'Skills Practice',  href: '/skills',     icon: Sparkles      },
     ],
   },
 ]
@@ -53,6 +60,10 @@ const studentNav = [
 function SidebarNav({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [expanded, setExpanded] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return pathname === '/practice' ? 'speaking' : null
+  })
 
   function isActive(href: string) {
     const [hrefPath, hrefQuery] = href.split('?')
@@ -65,8 +76,12 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
     return true
   }
 
+  function isSectionActive(key: 'speaking') {
+    return subItems[key].some(i => isActive(i.href))
+  }
+
   return (
-    <>
+    <LayoutGroup id="student-nav">
       {studentNav.map((group) => (
         <div key={group.section} data-tour={`section-${group.section.toLowerCase()}`}>
           <div
@@ -77,33 +92,123 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
           </div>
           <div className="flex flex-col gap-0.5 px-2">
             {group.items.map((item) => {
-              const active = isActive(item.href)
+              // Expandable accordion item
+              if ('expandKey' in item && item.expandKey) {
+                const key = item.expandKey
+                const open = expanded === key
+                const sectionActive = isSectionActive(key)
+                const Icon = item.icon
+                return (
+                  <div key={`expand-${key}`}>
+                    <div className="relative">
+                      {sectionActive && !open && (
+                        <motion.div
+                          layoutId="student-nav-pill"
+                          className="absolute inset-0 rounded-lg"
+                          style={{ background: 'var(--accent-teal-dim)' }}
+                          transition={springs.gentle}
+                        />
+                      )}
+                      <button
+                        onClick={() => setExpanded(open ? null : key)}
+                        className={clsx(
+                          'relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors',
+                          sectionActive && !open ? 'font-medium' : 'hover:bg-[var(--bg-surface)]'
+                        )}
+                        style={sectionActive && !open ? { color: 'var(--accent-teal)' } : { color: 'var(--text-tertiary)' }}
+                      >
+                        <Icon size={14} strokeWidth={1.75} />
+                        <span className="flex-1 text-left">{item.label}</span>
+                        <motion.span
+                          animate={{ rotate: open ? 90 : 0 }}
+                          transition={{ duration: 0.18 }}
+                        >
+                          <ChevronRight size={12} strokeWidth={2} />
+                        </motion.span>
+                      </button>
+                    </div>
+
+                    <AnimatePresence initial={false}>
+                      {open && (
+                        <motion.div
+                          key="sub"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: 'easeInOut' }}
+                          style={{ overflow: 'hidden' }}
+                        >
+                          <div className="flex flex-col gap-0.5 pl-3 pt-0.5 pb-0.5">
+                            {subItems[key].map((sub) => {
+                              const active = isActive(sub.href)
+                              const SubIcon = sub.icon
+                              return (
+                                <div key={sub.href} className="relative">
+                                  {active && (
+                                    <motion.div
+                                      layoutId="student-nav-pill"
+                                      className="absolute inset-0 rounded-lg"
+                                      style={{ background: 'var(--accent-teal-dim)' }}
+                                      transition={springs.gentle}
+                                    />
+                                  )}
+                                  <Link
+                                    href={sub.href}
+                                    onClick={onClose}
+                                    className={clsx(
+                                      'relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors no-underline',
+                                      active ? 'font-medium' : 'hover:bg-[var(--bg-surface)]'
+                                    )}
+                                    style={active ? { color: 'var(--accent-teal)' } : { color: 'var(--text-tertiary)' }}
+                                  >
+                                    <SubIcon size={12} strokeWidth={1.75} />
+                                    {sub.label}
+                                  </Link>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )
+              }
+
+              // Regular link item
+              const active = isActive(item.href!)
               const Icon = item.icon
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className={clsx(
-                    'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all no-underline',
-                    active
-                      ? 'font-medium'
-                      : 'hover:bg-[var(--bg-surface)]'
+                <div key={item.href} className="relative">
+                  {active && (
+                    <motion.div
+                      layoutId="student-nav-pill"
+                      className="absolute inset-0 rounded-lg"
+                      style={{ background: 'var(--accent-teal-dim)' }}
+                      transition={springs.gentle}
+                    />
                   )}
-                  style={active
-                    ? { background: 'var(--accent-teal-dim)', color: 'var(--accent-teal)' }
-                    : { color: 'var(--text-tertiary)' }
-                  }
-                >
-                  <Icon size={14} strokeWidth={1.75} />
-                  {item.label}
-                </Link>
+                  <Link
+                    href={item.href!}
+                    onClick={onClose}
+                    className={clsx(
+                      'relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors no-underline',
+                      active ? 'font-medium' : 'hover:bg-[var(--bg-surface)]'
+                    )}
+                    style={active ? { color: 'var(--accent-teal)' } : { color: 'var(--text-tertiary)' }}
+                  >
+                    <motion.span whileHover={{ x: 1 }} transition={{ duration: 0.12 }}>
+                      <Icon size={14} strokeWidth={1.75} />
+                    </motion.span>
+                    {item.label}
+                  </Link>
+                </div>
               )
             })}
           </div>
         </div>
       ))}
-    </>
+    </LayoutGroup>
   )
 }
 

@@ -73,6 +73,26 @@
   --dot-processing: #B8860B;
   --dot-complete:   #9B8E80;
   --dot-error:      #C0392B;
+
+  /* Landing page tokens */
+  --lp-bg:               #ffffff;
+  --lp-bg-muted:         #F7F7F7;
+  --lp-card-bg:          #F7F7F7;
+  --lp-card-border:      #EEEEEE;
+  --lp-border:           #E5E5E5;
+  --lp-text-primary:     #111111;
+  --lp-text-secondary:   #555555;
+  --lp-text-muted:       #777777;
+  --lp-text-dim:         #999999;
+  --lp-stat-before:      #CCCCCC;
+  --lp-step-num:         #E0E0E0;
+  --lp-ring-track:       #EBEBEB;
+  --lp-accent:           #3A7D6A;
+  --lp-accent-dim:       rgba(58,125,106,0.10);
+  --lp-dot-grid:         rgba(0,0,0,0.04);
+  --lp-hover-bg:         #EFEFEF;
+  --lp-placeholder-bg:   linear-gradient(135deg, #EEF7F3 0%, #D8EFE8 100%);
+  --lp-page-gradient:    linear-gradient(180deg, rgba(240,250,246,0.7) 0%, rgba(240,250,246,0) 18%, rgba(240,250,246,0) 82%, rgba(240,250,246,0.5) 100%);
 }
 
 /* ── Dark mode overrides ── */
@@ -107,6 +127,65 @@
   --dot-processing: #D4A44C;
   --dot-complete:   #6B9E93;
   --dot-error:      #F07070;
+
+  /* Landing page tokens — dark (fallback via .dark class) */
+  --lp-bg:               #0B1410;
+  --lp-bg-muted:         #0E1C17;
+  --lp-card-bg:          rgba(61,184,150,0.06);
+  --lp-card-border:      rgba(61,184,150,0.13);
+  --lp-border:           rgba(61,184,150,0.16);
+  --lp-text-primary:     #E8F5F1;
+  --lp-text-secondary:   #A8C5BC;
+  --lp-text-muted:       #7BA89F;
+  --lp-text-dim:         #5A8B82;
+  --lp-stat-before:      #2A4A42;
+  --lp-step-num:         #1A3530;
+  --lp-ring-track:       #1A3530;
+  --lp-accent:           #3DB896;
+  --lp-accent-dim:       rgba(61,184,150,0.12);
+  --lp-dot-grid:         rgba(61,184,150,0.07);
+  --lp-hover-bg:         rgba(61,184,150,0.08);
+  --lp-placeholder-bg:   linear-gradient(135deg, #0E2520 0%, #142E28 100%);
+  --lp-page-gradient:    linear-gradient(180deg, rgba(13,31,26,0.8) 0%, rgba(13,31,26,0) 18%, rgba(13,31,26,0) 82%, rgba(13,31,26,0.6) 100%);
+}
+
+/* Landing page — smooth theme transitions on ALL child elements */
+main[data-lp-theme] * {
+  transition:
+    background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    background     0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    color          0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color   0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    fill           0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke         0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow     0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Don't let the theme transition override Framer Motion transform/opacity animations */
+main[data-lp-theme] [style*="transform"],
+main[data-lp-theme] [style*="opacity"] {
+  transition-property: background-color, background, color, border-color, fill, stroke, box-shadow;
+}
+
+/* Landing page dark vars driven directly by React data attribute */
+main[data-lp-theme="dark"] {
+  --lp-bg:               #0B1410;
+  --lp-bg-muted:         #0E1C17;
+  --lp-card-bg:          rgba(61,184,150,0.06);
+  --lp-card-border:      rgba(61,184,150,0.13);
+  --lp-border:           rgba(61,184,150,0.16);
+  --lp-text-primary:     #E8F5F1;
+  --lp-text-secondary:   #A8C5BC;
+  --lp-text-muted:       #7BA89F;
+  --lp-text-dim:         #5A8B82;
+  --lp-stat-before:      #2A4A42;
+  --lp-step-num:         #1A3530;
+  --lp-ring-track:       #1A3530;
+  --lp-accent:           #3DB896;
+  --lp-accent-dim:       rgba(61,184,150,0.12);
+  --lp-dot-grid:         rgba(61,184,150,0.07);
+  --lp-hover-bg:         rgba(61,184,150,0.08);
+  --lp-placeholder-bg:   linear-gradient(135deg, #0E2520 0%, #142E28 100%);
+  --lp-page-gradient:    linear-gradient(180deg, rgba(13,31,26,0.8) 0%, rgba(13,31,26,0) 18%, rgba(13,31,26,0) 82%, rgba(13,31,26,0.6) 100%);
 }
 
 html {
@@ -114,6 +193,7 @@ html {
   color: var(--text-primary, #1C1A17);
   font-family: 'Inter', system-ui, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
 }
 
 body {
@@ -121,7 +201,13 @@ body {
   color: var(--text-primary, #1C1A17);
   min-height: 100vh;
   overflow-y: scroll;
+  overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }
 
 /* Reusable utility classes */
@@ -223,5 +309,16 @@ body {
 /* Serif headings via Lora — apply selectively */
 .font-serif {
   font-family: 'Lora', Georgia, serif;
+}
+
+/* Landing page — rainbow color cycle for "after" stat values */
+@keyframes lp-rainbow {
+  0%   { color: #3DB896; }
+  16%  { color: #6366f1; }
+  33%  { color: #f59e0b; }
+  50%  { color: #ec4899; }
+  66%  { color: #3B82F6; }
+  83%  { color: #22c55e; }
+  100% { color: #3DB896; }
 }
 

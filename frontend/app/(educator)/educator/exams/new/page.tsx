@@ -78,7 +78,7 @@ export default function ScheduleExamPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-xl border p-5"
-        style={{ background: 'rgba(255,255,255,0.90)', borderColor: 'rgba(180,165,148,0.22)' }}>
+        style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}>
 
         {/* Title */}
         <div className="flex flex-col gap-1.5">
@@ -104,7 +104,7 @@ export default function ScheduleExamPage() {
             value={scheduledAt}
             onChange={e => setScheduledAt(e.target.value)}
             className="rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors"
-            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: 'var(--text-primary)' }}
+            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: 'var(--text-primary)', colorScheme: 'dark' }}
             onFocus={e => (e.target.style.borderColor = 'rgba(139,92,246,0.35)')}
             onBlur={e => (e.target.style.borderColor = 'rgba(180,165,148,0.30)')}
           />
@@ -135,7 +135,7 @@ export default function ScheduleExamPage() {
             value={topicId}
             onChange={e => setTopicId(e.target.value)}
             className="rounded-lg border px-3 py-2.5 text-sm outline-none"
-            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: topicId ? '#1C1A17' : '#9B8E80' }}
+            style={{ background: 'rgba(180,165,148,0.08)', borderColor: 'rgba(180,165,148,0.30)', color: topicId ? 'var(--text-primary)' : 'var(--text-tertiary)', colorScheme: 'dark' }}
           >
             <option value="">Random / not specified</option>
             {topics.map(t => (
