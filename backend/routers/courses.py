@@ -181,6 +181,35 @@ async def get_course(
     return {"course": course}
 
 
+@router.delete("/{course_id}")
+async def delete_course(
+    course_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Permanently delete a course and all related data (members, assignments,
+    submissions cascade via DB foreign-key rules). Only the owning educator
+    may delete their own course.
+    """
+    sb = get_supabase()
+    if sb is None:
+        raise HTTPException(503, "Database not configured.")
+
+    course = db_get_course(course_id)
+    if not course:
+        raise HTTPException(404, "Course not found.")
+    if course.get("educator_id") != user_id:
+        raise HTTPException(403, "Access denied — you do not own this course.")
+
+    try:
+        sb.table("courses").delete().eq("id", course_id).execute()
+    except Exception as exc:
+        logger.error("delete_course error: %s", exc)
+        raise HTTPException(500, f"Failed to delete course: {exc}")
+
+    return {"message": "Course deleted successfully."}
+
+
 # ── Educator: rubric PDF upload ───────────────────────────────────────────────
 
 @router.post("/{course_id}/rubric")

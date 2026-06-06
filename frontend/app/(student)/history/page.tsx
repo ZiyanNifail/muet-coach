@@ -5,7 +5,7 @@ import { supabase, getAuthHeaders } from '@/lib/supabase'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { GitCompare, ExternalLink, Mic, Mic2, GraduationCap, Briefcase } from 'lucide-react'
+import { GitCompare, ExternalLink, Mic, Mic2, GraduationCap, Briefcase, PenLine, Headphones } from 'lucide-react'
 import { staggerContainer, staggerItem } from '@/lib/motion'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -36,13 +36,35 @@ interface InterviewSession {
   created_at: string
 }
 
-type TabKey = 'unguided' | 'guided' | 'exam' | 'interview'
+interface WritingSession {
+  id: string
+  created_at: string
+  task1_band: number | null
+  task2_band: number | null
+  overall_band: number | null
+  task2_topic: string | null
+}
+
+interface ListeningSession {
+  id: string
+  created_at: string
+  overall_band: number | null
+  section_scores: {
+    A: { correct: number; total: number }
+    B: { correct: number; total: number }
+    C: { correct: number; total: number }
+  } | null
+}
+
+type TabKey = 'unguided' | 'guided' | 'exam' | 'interview' | 'writing' | 'listening'
 
 const TABS: { key: TabKey; label: string; icon: React.ElementType; mode?: string }[] = [
-  { key: 'unguided', label: 'Unguided',    icon: Mic,           mode: 'unguided' },
-  { key: 'guided',   label: 'Guided',      icon: Mic2,          mode: 'guided'   },
-  { key: 'exam',     label: 'Mock Exam',   icon: GraduationCap, mode: 'exam'     },
-  { key: 'interview',label: 'Mock Interview', icon: Briefcase             },
+  { key: 'unguided',  label: 'Unguided',   icon: Mic,           mode: 'unguided' },
+  { key: 'guided',    label: 'Guided',     icon: Mic2,          mode: 'guided'   },
+  { key: 'exam',      label: 'Mock Exam',  icon: GraduationCap, mode: 'exam'     },
+  { key: 'interview', label: 'Interview',  icon: Briefcase                       },
+  { key: 'writing',   label: 'Writing',    icon: PenLine                         },
+  { key: 'listening', label: 'Listening',  icon: Headphones                      },
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -105,10 +127,12 @@ function MetricDiff({ label, a, b, unit = '', lowerBetter = false }: {
 
 function EmptyState({ tab }: { tab: TabKey }) {
   const links: Record<TabKey, { href: string; label: string }> = {
-    unguided:  { href: '/practice?mode=unguided', label: 'Start an unguided session' },
-    guided:    { href: '/practice?mode=guided',   label: 'Start a guided session'    },
-    exam:      { href: '/exam',                   label: 'Take a full mock exam'     },
-    interview: { href: '/interview',              label: 'Start a mock interview'    },
+    unguided:  { href: '/practice?mode=unguided', label: 'Start an unguided session'  },
+    guided:    { href: '/practice?mode=guided',   label: 'Start a guided session'     },
+    exam:      { href: '/exam',                   label: 'Take a full mock exam'      },
+    interview: { href: '/interview',              label: 'Start a mock interview'     },
+    writing:   { href: '/writing',               label: 'Start a writing session'    },
+    listening: { href: '/listening',             label: 'Start a listening session'  },
   }
   const { href, label } = links[tab]
   return (
@@ -252,12 +276,115 @@ function InterviewTable({ sessions }: { sessions: InterviewSession[] }) {
   )
 }
 
+// ── Writing sessions table ─────────────────────────────────────────────────────
+
+function WritingTable({ sessions }: { sessions: WritingSession[] }) {
+  return (
+    <div className="rounded-xl border overflow-x-auto" style={{ borderColor: 'var(--border-subtle)' }}>
+      <div
+        className="grid gap-4 px-5 py-3"
+        style={{
+          gridTemplateColumns: '1fr auto auto auto',
+          background: 'var(--bg-surface)',
+          borderBottom: '1px solid var(--border-subtle)',
+          fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)',
+        }}
+      >
+        <span>Date</span>
+        <span>Task 1</span>
+        <span>Task 2</span>
+        <span>Overall</span>
+      </div>
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+        {sessions.map((s, i) => (
+          <motion.div
+            key={s.id}
+            variants={staggerItem}
+            className="grid gap-4 px-5 py-3.5 items-center"
+            style={{ gridTemplateColumns: '1fr auto auto auto', borderTop: i === 0 ? 'none' : '1px solid var(--border-subtle)' }}
+          >
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{fmt(s.created_at)}</span>
+            <span className="font-mono text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {s.task1_band != null ? s.task1_band.toFixed(1) : '—'}
+            </span>
+            <span className="font-mono text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {s.task2_band != null ? s.task2_band.toFixed(1) : '—'}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {s.overall_band != null ? s.overall_band.toFixed(1) : '—'}
+              </span>
+              {s.overall_band != null && <Badge variant={bandVariant(s.overall_band)}>{bandLabel(s.overall_band)}</Badge>}
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
+    </div>
+  )
+}
+
+// ── Listening sessions table ───────────────────────────────────────────────────
+
+function ListeningTable({ sessions }: { sessions: ListeningSession[] }) {
+  return (
+    <div className="rounded-xl border overflow-x-auto" style={{ borderColor: 'var(--border-subtle)' }}>
+      <div
+        className="grid gap-4 px-5 py-3"
+        style={{
+          gridTemplateColumns: '1fr auto auto auto auto',
+          background: 'var(--bg-surface)',
+          borderBottom: '1px solid var(--border-subtle)',
+          fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)',
+        }}
+      >
+        <span>Date</span>
+        <span>Sec A</span>
+        <span>Sec B</span>
+        <span>Sec C</span>
+        <span>Band</span>
+      </div>
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+        {sessions.map((s, i) => {
+          const sec = s.section_scores
+          return (
+            <motion.div
+              key={s.id}
+              variants={staggerItem}
+              className="grid gap-4 px-5 py-3.5 items-center"
+              style={{ gridTemplateColumns: '1fr auto auto auto auto', borderTop: i === 0 ? 'none' : '1px solid var(--border-subtle)' }}
+            >
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{fmt(s.created_at)}</span>
+              <span className="font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>
+                {sec?.A ? `${sec.A.correct}/${sec.A.total}` : '—'}
+              </span>
+              <span className="font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>
+                {sec?.B ? `${sec.B.correct}/${sec.B.total}` : '—'}
+              </span>
+              <span className="font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>
+                {sec?.C ? `${sec.C.correct}/${sec.C.total}` : '—'}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {s.overall_band != null ? s.overall_band.toFixed(1) : '—'}
+                </span>
+                {s.overall_band != null && <Badge variant={bandVariant(s.overall_band)}>{bandLabel(s.overall_band)}</Badge>}
+              </div>
+            </motion.div>
+          )
+        })}
+      </motion.div>
+    </div>
+  )
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function HistoryPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('unguided')
   const [allSpeaking, setAllSpeaking] = useState<SpeakingSession[]>([])
   const [interviews, setInterviews] = useState<InterviewSession[]>([])
+  const [writingSessions, setWritingSessions] = useState<WritingSession[]>([])
+  const [listeningSessions, setListeningSessions] = useState<ListeningSession[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<string[]>([])
@@ -270,9 +397,11 @@ export default function HistoryPage() {
         if (!user) { setLoading(false); return }
         const headers = await getAuthHeaders()
 
-        const [speakRes, intRes] = await Promise.all([
+        const [speakRes, intRes, wrRes, lisRes] = await Promise.all([
           fetch(`${API_URL}/api/reports/history/${user.id}`, { headers }),
           fetch(`${API_URL}/api/interview/sessions`, { headers }),
+          fetch(`${API_URL}/api/writing/sessions`, { headers }),
+          fetch(`${API_URL}/api/listening/sessions`, { headers }),
         ])
 
         if (speakRes.ok) {
@@ -282,6 +411,14 @@ export default function HistoryPage() {
         if (intRes.ok) {
           const d = await intRes.json()
           setInterviews(d.sessions || [])
+        }
+        if (wrRes.ok) {
+          const d = await wrRes.json()
+          setWritingSessions(d.sessions || [])
+        }
+        if (lisRes.ok) {
+          const d = await lisRes.json()
+          setListeningSessions(d.sessions || [])
         }
       } catch {
         setError('Could not load session history.')
@@ -303,7 +440,7 @@ export default function HistoryPage() {
   const tabSessions = (mode: string) =>
     allSpeaking.filter(s => (s.session_mode || 'unguided') === mode)
 
-  const activeSpeaking = activeTab !== 'interview'
+  const activeSpeaking = (activeTab !== 'interview' && activeTab !== 'writing' && activeTab !== 'listening')
     ? tabSessions(activeTab === 'exam' ? 'exam' : activeTab)
     : []
 
@@ -332,7 +469,7 @@ export default function HistoryPage() {
         </div>
 
         {/* Compare button — only for speaking tabs */}
-        {activeTab !== 'interview' && activeSpeaking.length >= 2 && !comparing && (
+        {activeTab !== 'interview' && activeTab !== 'writing' && activeTab !== 'listening' && activeSpeaking.length >= 2 && !comparing && (
           <Button variant="ghost" onClick={() => setComparing(true)} className="min-h-[44px]">
             <GitCompare size={14} className="mr-2" />
             Compare sessions
@@ -351,6 +488,10 @@ export default function HistoryPage() {
           const Icon = tab.icon
           const count = tab.key === 'interview'
             ? interviews.length
+            : tab.key === 'writing'
+            ? writingSessions.length
+            : tab.key === 'listening'
+            ? listeningSessions.length
             : tabSessions(tab.mode!).length
           const active = activeTab === tab.key
           return (
@@ -431,6 +572,18 @@ export default function HistoryPage() {
                 <EmptyState tab="interview" />
               ) : (
                 <InterviewTable sessions={interviews} />
+              )
+            ) : activeTab === 'writing' ? (
+              writingSessions.length === 0 ? (
+                <EmptyState tab="writing" />
+              ) : (
+                <WritingTable sessions={writingSessions} />
+              )
+            ) : activeTab === 'listening' ? (
+              listeningSessions.length === 0 ? (
+                <EmptyState tab="listening" />
+              ) : (
+                <ListeningTable sessions={listeningSessions} />
               )
             ) : (
               activeSpeaking.length === 0 ? (

@@ -7,6 +7,7 @@ import { WritingIntro } from './components/WritingIntro'
 import { Task1Panel } from './components/Task1Panel'
 import { Task2Panel } from './components/Task2Panel'
 import { WritingResults } from './components/WritingResults'
+import { useNavigationGuard } from '@/lib/navGuard'
 
 type Step = 'intro' | 'tasks' | 'submitting' | 'results'
 
@@ -22,6 +23,7 @@ const TOTAL_SECS = 90 * 60
 
 export function WritingContent() {
   const [step, setStep] = useState<Step>('intro')
+  useNavigationGuard(step !== 'intro' && step !== 'results', 'Writing')
   const [task1Text, setTask1Text] = useState('')
   const [task2Text, setTask2Text] = useState('')
   const [secsLeft, setSecsLeft] = useState(TOTAL_SECS)

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import {
   PlusCircle, Users, BookOpen, Clock, ChevronRight,
-  FileCheck, AlertCircle, BarChart2, CheckCircle,
+  FileCheck, AlertCircle, BarChart2, CheckCircle, Trash2,
 } from 'lucide-react'
 import { staggerContainer, staggerItem } from '@/lib/motion'
 
@@ -39,6 +39,8 @@ export default function EducatorDashboard() {
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([])
   const [recentSubs, setRecentSubs] = useState<{ id: string; course_id: string; student: string; band: number | null; date: string; status: string }[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -112,6 +114,27 @@ export default function EducatorDashboard() {
   }, [])
 
   const totalStudents = courses.reduce((acc, c) => acc + (c.course_members?.[0]?.count ?? 0), 0)
+
+  async function handleDeleteCourse(courseId: string) {
+    setDeleting(true)
+    const authHdr = await getAuthHeaders()
+    try {
+      const res = await fetch(`${API_URL}/api/courses/${courseId}`, { method: 'DELETE', headers: authHdr })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.detail || 'Failed to delete course.')
+      } else {
+        setCourses((prev) => prev.filter((c) => c.id !== courseId))
+        setRecentSubs((prev) => prev.filter((s) => s.course_id !== courseId))
+        setPendingItems((prev) => prev.filter((p) => p.course_id !== courseId))
+      }
+    } catch {
+      alert('Network error — could not delete course.')
+    } finally {
+      setDeleting(false)
+      setConfirmDeleteId(null)
+    }
+  }
 
   function bandColor(b: number | null) {
     if (b == null) return '#C4B8A8'
@@ -205,29 +228,40 @@ export default function EducatorDashboard() {
               >
                 {courses.map((course) => (
                   <motion.div key={course.id} variants={staggerItem} whileHover={{ y: -1 }}>
-                  <Link href={`/educator/courses/${course.id}`} className="no-underline">
-                    <div className="flex items-center gap-4 rounded-xl border p-4 transition-colors hover:border-white/10 cursor-pointer"
+                    <div className="relative flex items-center rounded-xl border transition-colors group"
                       style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', transition: 'background 0.3s ease' }}>
-                      <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-                        style={{ background: 'rgba(245,158,11,0.10)' }}>
-                        <BookOpen size={16} style={{ color: '#f59e0b' }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{course.name}</span>
-                          <Badge variant="amber">{course.subject_code}</Badge>
-                          {course.rubric_path && <Badge variant="green">Rubric</Badge>}
+                      <Link href={`/educator/courses/${course.id}`} className="no-underline flex-1 min-w-0">
+                        <div className="flex items-center gap-4 p-4 cursor-pointer">
+                          <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+                            style={{ background: 'rgba(245,158,11,0.10)' }}>
+                            <BookOpen size={16} style={{ color: '#f59e0b' }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{course.name}</span>
+                              <Badge variant="amber">{course.subject_code}</Badge>
+                              {course.rubric_path && <Badge variant="green">Rubric</Badge>}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                              <span className="flex items-center gap-1">
+                                <Users size={10} /> {course.course_members?.[0]?.count ?? 0} students
+                              </span>
+                              <span>Code: <code className="font-mono" style={{ color: 'var(--text-secondary)' }}>{course.invite_code}</code></span>
+                            </div>
+                          </div>
+                          <ChevronRight size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
                         </div>
-                        <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                          <span className="flex items-center gap-1">
-                            <Users size={10} /> {course.course_members?.[0]?.count ?? 0} students
-                          </span>
-                          <span>Code: <code className="font-mono" style={{ color: 'var(--text-secondary)' }}>{course.invite_code}</code></span>
-                        </div>
-                      </div>
-                      <ChevronRight size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+                      </Link>
+                      {/* Delete button — appears on hover */}
+                      <button
+                        onClick={(e) => { e.preventDefault(); setConfirmDeleteId(course.id) }}
+                        className="shrink-0 mr-3 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)' }}
+                        title="Delete course"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                  </Link>
                   </motion.div>
                 ))}
               </motion.div>
@@ -340,6 +374,49 @@ export default function EducatorDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDeleteId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)' }}
+          onClick={() => !deleting && setConfirmDeleteId(null)}
+        >
+          <div
+            className="rounded-2xl border p-6 w-full max-w-sm flex flex-col gap-4"
+            style={{ background: 'var(--bg-panel)', borderColor: 'rgba(239,68,68,0.25)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.20)' }}>
+                <Trash2 size={18} style={{ color: '#ef4444' }} />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Delete course?</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                  {courses.find((c) => c.id === confirmDeleteId)?.name}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              This will permanently remove the course, all enrolled members, assignments, and submissions. This cannot be undone.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" onClick={() => setConfirmDeleteId(null)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleDeleteCourse(confirmDeleteId)}
+                disabled={deleting}
+                style={{ background: '#ef4444', color: '#fff' }}
+              >
+                {deleting ? 'Deleting...' : 'Delete course'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

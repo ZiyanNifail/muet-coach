@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { supabase, getAuthHeaders } from '@/lib/supabase'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import {
   ArrowLeft, Upload, FileText, X, CheckCircle, XCircle,
   PlusCircle, Users, ClipboardList, ExternalLink, Copy, Check,
-  Sparkles, ChevronDown, ChevronUp, AlertCircle, CalendarClock, Mail,
+  Sparkles, ChevronDown, ChevronUp, AlertCircle, CalendarClock, Mail, Trash2,
 } from 'lucide-react'
 
 interface Member {
@@ -81,6 +81,7 @@ const FOCUS_AREAS = [
 
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const router = useRouter()
 
   const [course, setCourse] = useState<Course | null>(null)
   const [members, setMembers] = useState<Member[]>([])
@@ -112,6 +113,10 @@ export default function CourseDetailPage() {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
   const [inviteSearch, setInviteSearch] = useState('')
   const [bulkInviting, setBulkInviting] = useState(false)
+
+  // Delete course
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // AI Rubric generation
   const [showAiPanel, setShowAiPanel] = useState(false)
@@ -211,6 +216,26 @@ export default function CourseDetailPage() {
       setInviteMsg(err instanceof Error ? err.message : 'Invite failed.')
     } finally {
       setInviting(false)
+    }
+  }
+
+  async function handleDeleteCourse() {
+    setDeleting(true)
+    const authHdr: Record<string, string> = tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {}
+    try {
+      const res = await fetch(`${API_URL}/api/courses/${id}`, { method: 'DELETE', headers: authHdr })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.detail || 'Failed to delete course.')
+        setDeleting(false)
+        setShowDeleteConfirm(false)
+        return
+      }
+      router.push('/educator/dashboard')
+    } catch {
+      alert('Network error — could not delete course.')
+      setDeleting(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -338,13 +363,22 @@ export default function CourseDetailPage() {
           <h1 className="text-2xl font-semibold text-[var(--text-primary)]">{course.name}</h1>
           {course.description && <p className="text-[var(--text-secondary)] text-sm mt-1">{course.description}</p>}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <Link href={`/educator/courses/${id}/assignments/new`}>
             <Button variant="secondary">
               <PlusCircle size={14} className="mr-2" />
               New Assignment
             </Button>
           </Link>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all"
+            style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.20)' }}
+            title="Delete this course"
+          >
+            <Trash2 size={13} />
+            Delete
+          </button>
         </div>
       </div>
 
@@ -821,6 +855,44 @@ export default function CourseDetailPage() {
           )}
         </div>
       )}
+      {/* Delete course confirmation modal */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)' }}
+          onClick={() => !deleting && setShowDeleteConfirm(false)}
+        >
+          <div
+            className="rounded-2xl border p-6 w-full max-w-sm flex flex-col gap-4"
+            style={{ background: 'var(--bg-panel)', borderColor: 'rgba(239,68,68,0.25)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.20)' }}>
+                <Trash2 size={18} style={{ color: '#ef4444' }} />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Delete course?</h2>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{course?.name}</p>
+              </div>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              This will permanently remove the course, all enrolled members, assignments, and submissions. This cannot be undone.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button onClick={handleDeleteCourse} disabled={deleting}
+                style={{ background: '#ef4444', color: '#fff' }}>
+                {deleting ? 'Deleting...' : 'Delete course'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Exam invite modal */}
       {inviteModalExamId && (
         <div

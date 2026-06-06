@@ -151,7 +151,29 @@ async def get_student_history(
             .order("session_date", desc=True)
             .execute()
         )
-        return {"sessions": res.data or []}
+        sessions = res.data or []
+
+        # session_history has no session_mode column — fetch it from presentations
+        # via the presentation_id stored in each feedback_report row.
+        presentation_ids = [
+            s["feedback_reports"]["presentation_id"]
+            for s in sessions
+            if isinstance(s.get("feedback_reports"), dict)
+            and s["feedback_reports"].get("presentation_id")
+        ]
+        if presentation_ids:
+            pres_res = (
+                sb.table("presentations")
+                .select("id, session_mode")
+                .in_("id", presentation_ids)
+                .execute()
+            )
+            mode_map: dict = {p["id"]: p.get("session_mode") for p in (pres_res.data or [])}
+            for s in sessions:
+                pres_id = (s.get("feedback_reports") or {}).get("presentation_id")
+                s["session_mode"] = mode_map.get(pres_id) or "unguided"
+
+        return {"sessions": sessions}
     except Exception as exc:
         logger.warning("History query failed: %s", exc)
         return {"sessions": []}

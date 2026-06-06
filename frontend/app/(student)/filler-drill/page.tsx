@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { fadeUp, staggerContainer, staggerItem, springPop } from '@/lib/motion'
+import { useNavigationGuard } from '@/lib/navGuard'
 
 const FILLERS = [
   'um', 'uh', 'er', 'ah', 'like', 'you know', 'basically',
@@ -34,6 +35,8 @@ export default function FillerDrillPage() {
   const [hits, setHits] = useState<FillerHit[]>([])
   const [lastHit, setLastHit] = useState<string | null>(null)
   const [supported, setSupported] = useState(true)
+
+  useNavigationGuard(phase === 'countdown' || phase === 'recording', 'the Filler Drill')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recogRef = useRef<any>(null)

@@ -91,18 +91,180 @@ function impactStyle(impact: 'HIGH' | 'MED' | 'LOW') {
   return { dot: '#22c55e', bg: 'rgba(34,197,94,0.10)', border: 'rgba(34,197,94,0.22)' }
 }
 
+// ── Today's Plan helpers ──────────────────────────────────────────────────────
+
+function toDateKey(d: Date) {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+}
+
+function calcStreak(sessions: SessionPoint[]): number {
+  if (!sessions.length) return 0
+  const daySet = new Set<string>()
+  for (const s of sessions) {
+    const raw = s.feedback_reports?.generated_at ?? s.session_date
+    if (raw) daySet.add(toDateKey(new Date(raw)))
+  }
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  const start = daySet.has(toDateKey(today)) ? today : daySet.has(toDateKey(yesterday)) ? yesterday : null
+  if (!start) return 0
+  let streak = 0
+  const cur = new Date(start)
+  while (daySet.has(toDateKey(cur))) { streak++; cur.setDate(cur.getDate() - 1) }
+  return streak
+}
+
+const WEAKEST_TO_WARMUP: Record<string, { step: string; href: string }> = {
+  pronunciation:              { step: 'Pronunciation Practice', href: '/pronunciation'       },
+  coherence_cohesion:         { step: 'Filler Drill',           href: '/filler-drill'         },
+  lexical_resource:           { step: 'Writing Practice',       href: '/writing'              },
+  task_fulfilment:            { step: 'Guided Session',         href: '/practice?mode=guided' },
+  grammatical_range_accuracy: { step: 'Writing Practice',       href: '/writing'              },
+}
+
+const CRITERION_LABEL: Record<string, string> = {
+  task_fulfilment:            'Task Fulfilment',
+  coherence_cohesion:         'Coherence',
+  lexical_resource:           'Vocabulary',
+  grammatical_range_accuracy: 'Grammar',
+  pronunciation:              'Pronunciation',
+}
+
+function TodaysPlan({
+  rubricBands,
+  latestBand,
+  latestReportId,
+  loading,
+}: {
+  rubricBands: Record<string, { score: number }> | null
+  latestBand: number | null
+  latestReportId: string | null
+  loading: boolean
+}) {
+  if (loading) {
+    return (
+      <div
+        className="md:col-start-1 rounded-xl border p-5 flex flex-col gap-4 animate-pulse"
+        style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}
+      >
+        <div className="h-2 w-28 rounded" style={{ background: 'var(--border-subtle)' }} />
+        {[0, 1, 2].map(i => (
+          <div key={i} className="flex items-center gap-3">
+            <div className="w-6 h-6 rounded-full flex-shrink-0" style={{ background: 'var(--border-subtle)' }} />
+            <div className="flex flex-col gap-1 flex-1">
+              <div className="h-3 rounded" style={{ background: 'var(--border-subtle)', width: i === 2 ? '40%' : '60%' }} />
+              <div className="h-2 rounded" style={{ background: 'var(--bg-surface)', width: '80%' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  let weakestCriterion: string | null = null
+  let weakestScore = 99
+  if (rubricBands) {
+    for (const [crit, val] of Object.entries(rubricBands)) {
+      if (val.score < weakestScore) { weakestScore = val.score; weakestCriterion = crit }
+    }
+  }
+
+  const warmup = weakestCriterion
+    ? (WEAKEST_TO_WARMUP[weakestCriterion] ?? WEAKEST_TO_WARMUP.pronunciation)
+    : WEAKEST_TO_WARMUP.pronunciation
+  const criterionLabel = weakestCriterion ? (CRITERION_LABEL[weakestCriterion] ?? '') : ''
+
+  const steps = [
+    {
+      n: '1', role: 'WARM UP', accent: '#3A7D6A',
+      label: warmup.step,
+      href: warmup.href,
+      sub: weakestCriterion && criterionLabel
+        ? `Your ${criterionLabel} was Band ${weakestScore.toFixed(1)} — focus here first`
+        : 'Targeted skill drill to warm up',
+    },
+    {
+      n: '2', role: 'PRACTICE', accent: '#22c55e',
+      label: 'Guided Session',
+      href: '/practice?mode=guided',
+      sub: 'Real-time coaching · full AI analysis after',
+    },
+    {
+      n: '3', role: 'REVIEW', accent: '#94a3b8',
+      label: 'View last session',
+      href: latestReportId ? `/results/${latestReportId}` : '/history',
+      sub: latestBand != null ? `Last score: Band ${latestBand.toFixed(1)}` : 'See your detailed feedback',
+    },
+  ]
+
+  return (
+    <div
+      className="md:col-start-1 rounded-xl border p-5 flex flex-col gap-3"
+      style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}
+    >
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
+          TODAY&apos;S PLAN
+        </div>
+        {latestBand != null && (
+          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+            Based on your last session · Band {latestBand.toFixed(1)}
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-col">
+        {steps.map((step) => (
+          <Link
+            key={step.n}
+            href={step.href}
+            className="group flex items-start gap-3 rounded-lg px-3 py-3 -mx-3 no-underline transition-colors"
+            style={{ color: 'inherit' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(180,165,148,0.06)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}
+          >
+            <div
+              className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5"
+              style={{ background: `${step.accent}18`, border: `1px solid ${step.accent}35` }}
+            >
+              <span style={{ fontSize: 10, fontWeight: 700, color: step.accent }}>{step.n}</span>
+            </div>
+            <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: step.accent, flexShrink: 0 }}>
+                    {step.role}
+                  </span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{step.label}</span>
+                </div>
+                <span className="flex-shrink-0 text-sm opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-tertiary)' }}>→</span>
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.4 }}>{step.sub}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Calendar + Focus areas ────────────────────────────────────────────────────
+
 function RightPanel({
   sessions,
   isLoading,
   latestBand,
   adviceCards,
   adviceLoading,
+  streak,
 }: {
   sessions: SessionPoint[]
   isLoading: boolean
   latestBand: number | null
   adviceCards: AdviceCard[]
   adviceLoading: boolean
+  streak: number
 }) {
   const now = new Date()
   const year = now.getFullYear()
@@ -166,7 +328,14 @@ function RightPanel({
           >
             PRACTICE ACTIVITY
           </div>
-          <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{monthName}</span>
+          <div className="flex items-center gap-2.5">
+            {streak > 0 && (
+              <span style={{ fontSize: 10, fontWeight: 600, color: '#f59e0b' }}>
+                🔥 {streak} {streak === 1 ? 'day' : 'days'}
+              </span>
+            )}
+            <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{monthName}</span>
+          </div>
         </div>
 
         {isLoading ? (
@@ -399,6 +568,7 @@ export default function DashboardPage() {
     revalidateOnFocus: false,
   })
   const adviceCards: AdviceCard[] = reportData?.report?.advice_cards ?? []
+  const rubricBands: Record<string, { score: number }> | null = reportData?.report?.rubric_bands ?? null
 
   const latestBand = bands.at(-1) ?? null
   const prevBand   = bands.length >= 2 ? bands[bands.length - 2] : null
@@ -408,6 +578,7 @@ export default function DashboardPage() {
     ? Number((latestBand - prevBand).toFixed(1))
     : null
 
+  const streak = calcStreak(sessions)
   const recentSessions = [...sessions].reverse().slice(0, 5)
 
   const metrics = [
@@ -483,7 +654,7 @@ export default function DashboardPage() {
 
       {/* ── 3. Right panel (calendar + focus) — 3rd on mobile, col-2 on desktop ── */}
       <div className="md:col-start-2 md:row-start-1 md:row-span-5">
-        <RightPanel sessions={sessions} isLoading={isLoading} latestBand={latestBand} adviceCards={adviceCards} adviceLoading={adviceLoading} />
+        <RightPanel sessions={sessions} isLoading={isLoading} latestBand={latestBand} adviceCards={adviceCards} adviceLoading={adviceLoading} streak={streak} />
       </div>
 
       {/* ── 4. Empty / onboarding state ── */}
@@ -538,6 +709,16 @@ export default function DashboardPage() {
                 </motion.div>
               ))}
         </motion.div>
+      )}
+
+      {/* ── 5.5. Today's plan ── */}
+      {!isEmpty && (
+        <TodaysPlan
+          rubricBands={rubricBands}
+          latestBand={latestBand}
+          latestReportId={latestReportId}
+          loading={isLoading || adviceLoading}
+        />
       )}
 
       {/* ── 6. MUET video resources ── */}

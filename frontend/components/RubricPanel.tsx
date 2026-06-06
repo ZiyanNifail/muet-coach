@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { staggerContainer, staggerItem, easings } from '@/lib/motion'
+import { toBand, bandDescriptor, nextBandDescriptor } from '@/lib/muetDescriptors'
 
 export interface RubricBand {
   score: number
@@ -119,7 +120,17 @@ export function RubricPanel({ rubricBands }: { rubricBands: RubricBands | null |
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2, ease: easings.smooth }}
                   >
-                    {band.justification}
+                    <p>{band.justification}</p>
+                    <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
+                      <span style={{ fontWeight: 600 }}>Band {toBand(band.score)}</span>
+                      {` — ${bandDescriptor(band.score)}`}
+                    </p>
+                    {nextBandDescriptor(band.score) && (
+                      <p className="mt-1" style={{ color: 'var(--text-tertiary)', opacity: 0.85 }}>
+                        <span style={{ fontWeight: 600 }}>Next: Band {nextBandDescriptor(band.score)!.band}</span>
+                        {` — ${nextBandDescriptor(band.score)!.text}`}
+                      </p>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

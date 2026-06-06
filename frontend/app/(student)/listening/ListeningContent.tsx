@@ -6,6 +6,7 @@ import { LISTENING_QUESTIONS } from '@/lib/listeningQuestions'
 import { ListeningIntro } from './components/ListeningIntro'
 import { SectionPlayer } from './components/SectionPlayer'
 import { ListeningResults } from './components/ListeningResults'
+import { useNavigationGuard } from '@/lib/navGuard'
 
 type Step = 'intro' | 'section_A' | 'section_B' | 'section_C' | 'submitting' | 'results'
 
@@ -20,6 +21,7 @@ const SECTION_ORDER: Step[] = ['section_A', 'section_B', 'section_C']
 
 export function ListeningContent() {
   const [step, setStep] = useState<Step>('intro')
+  useNavigationGuard(step !== 'intro' && step !== 'results', 'Listening')
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [result, setResult] = useState<SessionResult | null>(null)
   const [error, setError] = useState('')

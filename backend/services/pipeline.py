@@ -297,7 +297,15 @@ async def run_pipeline(
 
     except Exception as exc:
         logger.error("Pipeline failed for %s: %s", presentation_id, exc, exc_info=True)
-        await db_update_presentation(presentation_id, {"status": "failed"})
+        try:
+            await db_update_presentation(presentation_id, {"status": "failed"})
+        except Exception as db_exc:
+            # If the status update itself fails (e.g. Supabase down), log and
+            # continue — the finally block still runs cleanup.
+            logger.error(
+                "Could not mark presentation %s as failed: %s — it may remain stuck in 'processing'",
+                presentation_id, db_exc,
+            )
     finally:
         # Clean up temp frames/chunks to save disk space; keep wav + video
         _cleanup(os.path.join(work_dir, "chunks"))
@@ -338,7 +346,12 @@ async def _store_video(
             await db_update_presentation(presentation_id, {"video_path": storage_key})
             logger.info("Video stored at %s", storage_key)
         else:
-            logger.info("Supabase Storage not configured — video kept locally only.")
+            logger.warning(
+                "Supabase Storage upload returned no key for %s — the 'recordings' bucket "
+                "may be missing/misconfigured. Video kept locally; report will stream it via "
+                "/video-file. Create the private 'recordings' bucket to use signed URLs.",
+                presentation_id,
+            )
     except Exception as exc:
         logger.warning("Video storage step failed (non-fatal): %s", exc)
 

@@ -101,6 +101,19 @@ const DRILLS: Record<string, { title: string; drills: string[] }> = {
   },
 }
 
+const DRILL_ROUTES: Record<string, { href: string; label: string }> = {
+  eye_contact:                { href: '/practice',      label: 'Start a guided session →' },
+  pace:                       { href: '/practice',      label: 'Start a guided session →' },
+  filler_words:               { href: '/filler-drill',  label: 'Try the filler-word drill →' },
+  posture:                    { href: '/practice',      label: 'Start a guided session →' },
+  band_score:                 { href: '/practice',      label: 'Start a guided session →' },
+  task_fulfilment:            { href: '/practice',      label: 'Start a guided session →' },
+  coherence_cohesion:         { href: '/practice',      label: 'Start a guided session →' },
+  lexical_resource:           { href: '/practice',      label: 'Start a guided session →' },
+  grammatical_range_accuracy: { href: '/practice',      label: 'Start a guided session →' },
+  pronunciation:              { href: '/pronunciation', label: 'Open pronunciation practice →' },
+}
+
 const RUBRIC_CRITERIA_KEYS = [
   'task_fulfilment',
   'coherence_cohesion',
@@ -233,9 +246,18 @@ export function LearningPathPanel({ studentId, rubricBands }: { studentId: strin
         ))}
       </motion.div>
 
-      <Link href="/practice" className="text-xs self-start mt-1" style={{ color: '#8b5cf6' }}>
-        Start a practice session →
-      </Link>
+      <div className="flex flex-col gap-2 mt-1 pt-3 border-t" style={{ borderColor: 'rgba(139,92,246,0.12)' }}>
+        <p style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+          Do these drills, then record a new session to measure your improvement.
+        </p>
+        <Link
+          href={(DRILL_ROUTES[metric] ?? DRILL_ROUTES.band_score).href}
+          className="text-xs self-start font-medium"
+          style={{ color: '#8b5cf6' }}
+        >
+          {(DRILL_ROUTES[metric] ?? DRILL_ROUTES.band_score).label}
+        </Link>
+      </div>
     </motion.div>
   )
 }

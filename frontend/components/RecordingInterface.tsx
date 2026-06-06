@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Pause, Play, Square, AlertTriangle, Camera, Eye, Mic, Clock, X, RotateCcw, LayoutDashboard } from 'lucide-react'
 import { Button } from './ui/Button'
+import { suppressMediapipeLogs } from '@/lib/suppressMediapipeLogs'
+import { useMediaDevices } from '@/lib/useMediaDevices'
 
 interface RecordingInterfaceProps {
   topic: string
@@ -82,6 +84,8 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, aiPoints
 
   const cancelledRef = useRef(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+
+  const { buildVideoConstraints, buildAudioConstraints, clearCamera, clearMic } = useMediaDevices()
 
   const [status, setStatus]             = useState<'initialising' | 'recording' | 'paused' | 'done'>('initialising')
   const [error, setError]               = useState('')
@@ -516,6 +520,7 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, aiPoints
 
     async function init() {
       try {
+        suppressMediapipeLogs()
         const { FaceLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision')
         tessellation  = FaceLandmarker.FACE_LANDMARKS_TESSELATION as { start: number; end: number }[]
         leftEyeConns  = FaceLandmarker.FACE_LANDMARKS_LEFT_EYE   as { start: number; end: number }[]
@@ -589,17 +594,27 @@ export function RecordingInterface({ topic, mode, maxSecs = 300, notes, aiPoints
 
     async function getVideoTrack(): Promise<MediaStreamTrack> {
       try {
-        const s = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } } })
+        const s = await navigator.mediaDevices.getUserMedia({ video: buildVideoConstraints() })
         return s.getVideoTracks()[0]
-      } catch {
+      } catch (err) {
+        // Selected camera unplugged — drop it and fall back to any camera.
+        if ((err as DOMException)?.name === 'OverconstrainedError') clearCamera()
         const s = await navigator.mediaDevices.getUserMedia({ video: true })
         return s.getVideoTracks()[0]
       }
     }
 
     async function getAudioTrack(): Promise<MediaStreamTrack> {
-      const s = await navigator.mediaDevices.getUserMedia({ audio: true })
-      return s.getAudioTracks()[0]
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ audio: buildAudioConstraints() })
+        return s.getAudioTracks()[0]
+      } catch (err) {
+        if ((err as DOMException)?.name === 'OverconstrainedError') clearMic()
+        const s = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
+        })
+        return s.getAudioTracks()[0]
+      }
     }
 
     async function init() {

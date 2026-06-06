@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Poppins, Lora, Libre_Baskerville } from "next/font/google";
 import { Toaster } from "sonner";
 import ThemeProvider from "@/components/ThemeProvider";
+import { ProcessingProvider } from "@/lib/processingContext";
+import { NavGuardProvider } from "@/lib/navGuard";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -57,7 +59,11 @@ export default function RootLayout({
       </head>
       <body className="min-h-full antialiased" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
         <ThemeProvider>
-          {children}
+          <ProcessingProvider>
+            <NavGuardProvider>
+              {children}
+            </NavGuardProvider>
+          </ProcessingProvider>
           <Toaster
             position="bottom-right"
             toastOptions={{

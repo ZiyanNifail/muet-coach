@@ -6,9 +6,14 @@ Pure-Python; no external AI dependencies.
 import re
 from typing import Any
 
-# Single-word fillers (matched after stripping punctuation)
-STANDALONE_FILLERS = {"um", "uh", "ah", "er", "hmm", "like", "so", "basically",
-                      "actually", "right", "okay", "ok", "well", "literally"}
+# Always disfluent — flag every occurrence
+TRUE_FILLERS = {"um", "uh", "ah", "er", "hmm", "like"}
+
+# Words that are legitimate discourse markers when used sparingly, but become
+# disfluent fillers when overused. Only flagged when a single word appears
+# CONTEXTUAL_THRESHOLD or more times in the transcript.
+CONTEXTUAL_FILLERS = {"so", "basically", "actually", "right", "okay", "ok", "well", "literally"}
+CONTEXTUAL_THRESHOLD = 3
 
 # Multi-word filler phrases — checked first via regex substitution
 PHRASE_FILLERS = re.compile(
@@ -23,31 +28,44 @@ def detect_fillers(transcript: str) -> dict:
     Returns { filler_count: int, marked_transcript: str }
     where marked_transcript wraps each filler in [brackets].
 
-    Multi-word phrases are matched first (regex), then single words.
+    TRUE_FILLERS (um, uh, ah, er, hmm, like) are flagged on every occurrence.
+    CONTEXTUAL_FILLERS (so, actually, basically, well, …) are only flagged when
+    they appear >= CONTEXTUAL_THRESHOLD times — below that threshold they are
+    likely intentional discourse markers, not disfluencies.
+    Multi-word phrases are matched first via regex.
     """
     if not transcript:
         return {"filler_count": 0, "marked_transcript": ""}
 
     filler_count = 0
 
-    # Step 1: replace multi-word filler phrases with [phrase] tokens
+    # Phase 1: mark multi-word phrase fillers
     def _replace_phrase(m: re.Match) -> str:
         nonlocal filler_count
         filler_count += 1
         return f"[{m.group(0).lower()}]"
 
     marked = PHRASE_FILLERS.sub(_replace_phrase, transcript)
-
-    # Step 2: word-level pass for single-word fillers
     tokens = marked.split()
+
+    # Phase 2: count contextual fillers to decide which are overused
+    contextual_counts: dict[str, int] = {}
+    for tok in tokens:
+        if tok.startswith("["):
+            continue
+        clean = re.sub(r"[^\w]", "", tok).lower()
+        if clean in CONTEXTUAL_FILLERS:
+            contextual_counts[clean] = contextual_counts.get(clean, 0) + 1
+    active_contextual = {w for w, n in contextual_counts.items() if n >= CONTEXTUAL_THRESHOLD}
+
+    # Phase 3: word-level marking pass
     result_tokens: list[str] = []
     for tok in tokens:
         if tok.startswith("["):
-            # Already a tagged phrase — preserve it
             result_tokens.append(tok)
             continue
         clean = re.sub(r"[^\w]", "", tok).lower()
-        if clean in STANDALONE_FILLERS:
+        if clean in TRUE_FILLERS or clean in active_contextual:
             result_tokens.append(f"[{clean}]")
             filler_count += 1
         else:

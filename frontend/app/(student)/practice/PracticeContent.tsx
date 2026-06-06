@@ -5,10 +5,14 @@ import { Button } from '@/components/ui/Button'
 import { TopicWheel } from '@/components/TopicWheel'
 import { BrainstormPanel } from '@/components/BrainstormPanel'
 import { RecordingInterface } from '@/components/RecordingInterface'
+import { SessionPrep, type PrepResult } from '@/components/SessionPrep'
+import { SpeakingPrepStep } from '../exam/components/SpeakingPrepStep'
 import { AlertTriangle, Mic, Mic2, CalendarClock, X, FileText, Upload } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useProcessing } from '@/lib/processingContext'
+import { useNavigationGuard } from '@/lib/navGuard'
 
-type Step = 'mode' | 'topic' | 'brainstorm' | 'slides' | 'recording' | 'processing'
+type Step = 'mode' | 'topic' | 'brainstorm' | 'slides' | 'prep' | 'examPrep' | 'recording' | 'processing'
 type Mode = 'unguided' | 'guided'
 
 const MODE_OPTIONS = [
@@ -182,10 +186,14 @@ export function PracticeContent() {
   // searchParams differ between server render and client hydration.
   const [step, setStep] = useState<Step>('mode')
   const [mode, setMode] = useState<Mode>('unguided')
+  // MUET Task A exam conditions: 2-min prep timer + 2-min timed recording, no pausing,
+  // no AI brainstorm. Only meaningful with the unguided baseline mode.
+  const [examConditions, setExamConditions] = useState(false)
 
   useEffect(() => {
     if (initialMode) {
       setMode(initialMode)
+      if (initialMode === 'unguided' && searchParams.get('exam') === '1') setExamConditions(true)
       setStep('topic')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -202,7 +210,14 @@ export function PracticeContent() {
   const [assignmentInfo, setAssignmentInfo] = useState<AssignmentInfo | null>(null)
   const [recordingKey, setRecordingKey] = useState(0)
   const [slideFile, setSlideFile] = useState<File | null>(null)
+  const [prepResult, setPrepResult] = useState<PrepResult | null>(null)
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [uploadFailed, setUploadFailed] = useState(false)
+  const blobRef = useRef<Blob | null>(null)
+  const durationRef = useRef<number>(0)
+  const currentPresentationIdRef = useRef<string | null>(null)
+  const { addJob } = useProcessing()
+  useNavigationGuard(step !== 'mode' && step !== 'processing', 'your session')
 
   useEffect(() => {
     if (processingStatus !== 'analysing') return
@@ -242,7 +257,7 @@ export function PracticeContent() {
           setTopic({ id: a.exam_topic_id || 'exam', topic: topicText })
           setStep('brainstorm')
         } else {
-          setStep(a.slide_required ? 'slides' : 'recording')
+          setStep(a.slide_required ? 'slides' : 'prep')
         }
       } catch {}
     })
@@ -255,21 +270,27 @@ export function PracticeContent() {
   function goBack() { router.push('/dashboard') }
 
   function handleModeSelect(m: Mode) {
+    if (m !== 'unguided') setExamConditions(false)  // exam conditions only pair with the baseline mode
     setMode(m)
     setStep('topic')
   }
 
   function handleTopicSelect(t: Topic) {
     setTopic(t)
-    setStep('brainstorm')
+    // Exam conditions skip the AI brainstorm step (not exam-realistic) — go straight to tech check.
+    setStep(examConditions ? 'prep' : 'brainstorm')
   }
 
-  function handleBrainstormReady(n: string, pts?: string[]) { setNotes(n); setSessionAiPoints(pts || []); setStep('recording') }
+  function handleBrainstormReady(n: string, pts?: string[]) { setNotes(n); setSessionAiPoints(pts || []); setStep('prep') }
 
   async function handleRecordingComplete(blob: Blob, durationSecs: number) {
+    blobRef.current = blob
+    durationRef.current = durationSecs
+    currentPresentationIdRef.current = null
     setStep('processing')
     setProcessingStatus('uploading')
     setUploadError(null)
+    setUploadFailed(false)
 
     if (!checkBandwidth()) setLowBandwidth(true)
 
@@ -289,8 +310,13 @@ export function PracticeContent() {
         const formData = new FormData()
         formData.append('video', blob, 'recording.webm')
         formData.append('student_id', studentId)
-        formData.append('session_mode', isExamMode ? 'exam' : mode)
+        formData.append('session_mode', (isExamMode || examConditions) ? 'exam' : mode)
         formData.append('duration_secs', String(Math.round(durationSecs)))
+        if (prepResult) {
+          formData.append('prep_passed', String(prepResult.passed))
+          formData.append('ambient_db', String(prepResult.ambientDb))
+          formData.append('speaking_db', String(prepResult.speakingDb))
+        }
         if (assignmentIdParam) formData.append('assignment_id', assignmentIdParam)
         if (topic) {
           formData.append('topic_id', topic.id)
@@ -309,13 +335,19 @@ export function PracticeContent() {
           authToken,
         )
         presentationId = result.presentation_id
+        currentPresentationIdRef.current = presentationId
         break
-      } catch {
+      } catch (err) {
         if (attempt < delays.length) {
           await new Promise((r) => setTimeout(r, delays[attempt]))
         } else {
-          setUploadError('Upload failed after 3 attempts. Showing demo results.')
-          setTimeout(() => router.push('/results/demo'), 2500)
+          const isNetwork = !navigator.onLine || (err instanceof Error && err.message === 'Network error')
+          setUploadFailed(true)
+          setUploadError(
+            isNetwork
+              ? 'No internet connection detected. Check your connection and try again.'
+              : 'Upload failed after multiple attempts. The server may be temporarily unavailable — try again in a few minutes.'
+          )
           return
         }
       }
@@ -437,6 +469,36 @@ export function PracticeContent() {
                     )}
                   </div>
 
+                  {/* Exam-conditions toggle — unguided only (MUET Task A) */}
+                  {opt.mode === 'unguided' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setExamConditions(v => !v) }}
+                      className="flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors"
+                      style={{
+                        background: examConditions ? 'rgba(245,158,11,0.08)' : 'rgba(180,165,148,0.04)',
+                        borderColor: examConditions ? 'rgba(245,158,11,0.45)' : 'rgba(180,165,148,0.2)',
+                      }}
+                    >
+                      <span
+                        className="relative flex-shrink-0 rounded-full transition-colors"
+                        style={{ width: 34, height: 20, background: examConditions ? '#f59e0b' : 'rgba(180,165,148,0.4)' }}
+                      >
+                        <span
+                          className="absolute top-0.5 rounded-full bg-white transition-all"
+                          style={{ width: 16, height: 16, left: examConditions ? 16 : 2 }}
+                        />
+                      </span>
+                      <span className="flex flex-col">
+                        <span className="text-xs font-semibold" style={{ color: examConditions ? '#d97706' : 'var(--text-secondary)' }}>
+                          MUET exam conditions
+                        </span>
+                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                          2 min prep · 2 min timed · no pausing · no AI help
+                        </span>
+                      </span>
+                    </button>
+                  )}
+
                   {/* Bottom row: features + button */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 sm:pl-13">
                     <div className="flex gap-3 flex-wrap">
@@ -477,7 +539,7 @@ export function PracticeContent() {
           <div className="p-4 md:p-6">
             <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Brainstorm</h1>
           </div>
-          <BrainstormPanel topic={topic.topic} onReady={handleBrainstormReady} onSkip={() => setStep('recording')} onClose={goBack} hideAI={mode === 'unguided'} />
+          <BrainstormPanel topic={topic.topic} onReady={handleBrainstormReady} onSkip={() => setStep('prep')} onClose={goBack} hideAI={mode === 'unguided'} />
         </>
       )}
 
@@ -485,9 +547,25 @@ export function PracticeContent() {
       {step === 'slides' && (
         <SlideUploadStep
           required={assignmentInfo?.slide_required ?? false}
-          onContinue={(file) => { setSlideFile(file); setStep('recording') }}
-          onSkip={() => setStep('recording')}
+          onContinue={(file) => { setSlideFile(file); setStep('prep') }}
+          onSkip={() => setStep('prep')}
           onClose={goBack}
+        />
+      )}
+
+      {/* Step: Session prep (mic + framing) */}
+      {step === 'prep' && (
+        <SessionPrep
+          onReady={(r) => { setPrepResult(r); setStep(examConditions ? 'examPrep' : 'recording') }}
+          onSkip={() => { setPrepResult({ passed: false, speakingDb: 0, ambientDb: 0, framingOk: false }); setStep(examConditions ? 'examPrep' : 'recording') }}
+        />
+      )}
+
+      {/* Step: Exam prep timer (MUET Task A — 2 min to plan, then auto-records) */}
+      {step === 'examPrep' && (topic || assignmentInfo) && (
+        <SpeakingPrepStep
+          topic={topic?.topic ?? assignmentInfo?.title ?? ''}
+          onReady={() => setStep('recording')}
         />
       )}
 
@@ -496,10 +574,10 @@ export function PracticeContent() {
         <RecordingInterface
           key={recordingKey}
           topic={topic?.topic ?? assignmentInfo?.title ?? ''}
-          mode={mode}
-          maxSecs={assignmentInfo?.exam_mode && assignmentInfo.exam_duration_mins ? assignmentInfo.exam_duration_mins * 60 : 300}
-          notes={notes || undefined}
-          aiPoints={sessionAiPoints.length > 0 ? sessionAiPoints : undefined}
+          mode={examConditions ? 'exam' : mode}
+          maxSecs={examConditions ? 120 : (assignmentInfo?.exam_mode && assignmentInfo.exam_duration_mins ? assignmentInfo.exam_duration_mins * 60 : 300)}
+          notes={examConditions ? undefined : (notes || undefined)}
+          aiPoints={(examConditions || mode === 'unguided') ? undefined : (sessionAiPoints.length > 0 ? sessionAiPoints : undefined)}
           onComplete={handleRecordingComplete}
           onCancel={(action) => {
             if (action === 'restart') {
@@ -516,67 +594,119 @@ export function PracticeContent() {
         <div className="flex-1 flex items-center justify-center p-4 md:p-6">
           <div
             className="max-w-sm w-full flex flex-col gap-5 rounded-xl border p-8"
-            style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)' }}
+            style={{ background: 'var(--bg-panel)', borderColor: uploadFailed ? 'rgba(239,68,68,0.25)' : 'var(--border-subtle)' }}
           >
-            {lowBandwidth && (
-              <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs" style={{ background: 'rgba(245,158,11,0.08)', color: '#d97706' }}>
-                <AlertTriangle size={13} />
-                <span>Slow connection detected — upload may take longer</span>
-              </div>
-            )}
-
-            <div>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>
-                PROCESSING
-              </p>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {processingStatus === 'uploading' ? 'Uploading your session…' : 'Analysing your session…'}
-              </h2>
-            </div>
-
-            {processingStatus === 'uploading' && (
-              <div className="flex flex-col gap-2">
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-medium)' }}>
-                  <div className="h-full rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, background: 'var(--accent-teal)' }} />
-                </div>
-                <p className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>{uploadProgress}%</p>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3">
-              {[
-                { label: 'Uploading video',         done: processingStatus !== 'uploading', active: processingStatus === 'uploading' },
-                { label: 'Transcribing audio',      done: pipelineStage > 1,               active: pipelineStage === 1 },
-                { label: 'Analysing body language', done: pipelineStage > 2,               active: pipelineStage === 2 },
-                { label: 'Generating feedback',     done: false,                            active: pipelineStage === 3 },
-              ].map(({ label, done, active }) => (
-                <div key={label} className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{
-                      background: done ? 'rgba(58,125,106,0.12)' : active ? 'rgba(58,125,106,0.08)' : 'rgba(180,165,148,0.12)',
-                      border: `1px solid ${done ? 'rgba(58,125,106,0.35)' : active ? 'rgba(58,125,106,0.25)' : 'rgba(180,165,148,0.20)'}`,
-                    }}
-                  >
-                    {done ? (
-                      <span style={{ color: '#3A7D6A', fontSize: 10, fontWeight: 700 }}>✓</span>
-                    ) : active ? (
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3A7D6A', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />
-                    ) : (
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(180,165,148,0.45)', display: 'inline-block' }} />
-                    )}
+            {uploadFailed ? (
+              <>
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <AlertTriangle size={20} style={{ color: '#ef4444' }} />
                   </div>
-                  <span className="text-sm" style={{ color: done ? 'var(--accent-teal)' : active ? 'var(--text-primary)' : 'var(--text-tertiary)', fontWeight: active ? 500 : 400 }}>
-                    {label}
-                  </span>
+                  <div>
+                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ef4444', marginBottom: 6 }}>
+                      UPLOAD FAILED
+                    </p>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                      {uploadError}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() => handleRecordingComplete(blobRef.current!, durationRef.current)}
+                    className="min-h-[44px]"
+                  >
+                    Retry Upload
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => { setStep('recording'); setUploadFailed(false); setUploadError(null) }}
+                    className="min-h-[44px]"
+                  >
+                    Record Again
+                  </Button>
+                  <Button variant="ghost" onClick={() => router.push('/dashboard')} className="min-h-[44px]">
+                    Go to Dashboard
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                {lowBandwidth && (
+                  <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs" style={{ background: 'rgba(245,158,11,0.08)', color: '#d97706' }}>
+                    <AlertTriangle size={13} />
+                    <span>Slow connection detected — upload may take longer</span>
+                  </div>
+                )}
 
-            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              Analysis takes 1–3 minutes. Do not close this tab.
-            </p>
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 6 }}>
+                    PROCESSING
+                  </p>
+                  <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {processingStatus === 'uploading' ? 'Uploading your session…' : 'Analysing your session…'}
+                  </h2>
+                </div>
 
-            {uploadError && <p className="text-xs" style={{ color: '#dc2626' }}>{uploadError}</p>}
+                {processingStatus === 'uploading' && (
+                  <div className="flex flex-col gap-2">
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-medium)' }}>
+                      <div className="h-full rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, background: 'var(--accent-teal)' }} />
+                    </div>
+                    <p className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>{uploadProgress}%</p>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3">
+                  {[
+                    { label: 'Uploading video',         done: processingStatus !== 'uploading', active: processingStatus === 'uploading' },
+                    { label: 'Transcribing audio',      done: pipelineStage > 1,               active: pipelineStage === 1 },
+                    { label: 'Analysing body language', done: pipelineStage > 2,               active: pipelineStage === 2 },
+                    { label: 'Generating feedback',     done: false,                            active: pipelineStage === 3 },
+                  ].map(({ label, done, active }) => (
+                    <div key={label} className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{
+                          background: done ? 'rgba(58,125,106,0.12)' : active ? 'rgba(58,125,106,0.08)' : 'rgba(180,165,148,0.12)',
+                          border: `1px solid ${done ? 'rgba(58,125,106,0.35)' : active ? 'rgba(58,125,106,0.25)' : 'rgba(180,165,148,0.20)'}`,
+                        }}
+                      >
+                        {done ? (
+                          <span style={{ color: '#3A7D6A', fontSize: 10, fontWeight: 700 }}>✓</span>
+                        ) : active ? (
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3A7D6A', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                        ) : (
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(180,165,148,0.45)', display: 'inline-block' }} />
+                        )}
+                      </div>
+                      <span className="text-sm" style={{ color: done ? 'var(--accent-teal)' : active ? 'var(--text-primary)' : 'var(--text-tertiary)', fontWeight: active ? 500 : 400 }}>
+                        {label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {processingStatus === 'analysing' && currentPresentationIdRef.current && (
+                  <button
+                    onClick={() => {
+                      addJob(currentPresentationIdRef.current!, topic?.topic ?? assignmentInfo?.title ?? '')
+                      router.push('/dashboard')
+                    }}
+                    className="text-sm font-medium self-start transition-opacity hover:opacity-70"
+                    style={{ color: 'var(--accent-teal)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  >
+                    Continue exploring →
+                  </button>
+                )}
+
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  {processingStatus === 'uploading'
+                    ? 'Upload may take a moment on slow connections.'
+                    : "Analysis takes 1–3 minutes — you'll get a notification when it's done."}
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}

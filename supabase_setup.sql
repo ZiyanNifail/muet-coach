@@ -101,11 +101,18 @@ CREATE TABLE IF NOT EXISTS presentations (
   topic_id UUID REFERENCES muet_topics(id),
   brainstorm_notes TEXT,
   duration_secs INTEGER,
+  prep_passed BOOLEAN,
+  prep_ambient_db REAL,
+  prep_speaking_db REAL,
   video_path TEXT,
   audio_path TEXT,
   uploaded_at TIMESTAMPTZ DEFAULT now(),
   status TEXT DEFAULT 'processing' CHECK (status IN ('processing', 'complete', 'failed'))
 );
+-- Idempotent for existing databases
+ALTER TABLE presentations ADD COLUMN IF NOT EXISTS prep_passed BOOLEAN;
+ALTER TABLE presentations ADD COLUMN IF NOT EXISTS prep_ambient_db REAL;
+ALTER TABLE presentations ADD COLUMN IF NOT EXISTS prep_speaking_db REAL;
 ALTER TABLE presentations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "presentations_student_select" ON presentations FOR SELECT USING (auth.uid() = student_id);
 CREATE POLICY "presentations_student_insert" ON presentations FOR INSERT WITH CHECK (auth.uid() = student_id);

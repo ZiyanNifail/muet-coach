@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase, getAuthHeaders } from '@/lib/supabase'
 import { AudioRecorder } from '@/components/AudioRecorder'
@@ -10,9 +10,11 @@ import {
   BookOpen, Lightbulb, ChevronRight, Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { useNavigationGuard } from '@/lib/navGuard'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const MAX_RETRIES = 3
+
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -123,9 +125,27 @@ function StepIndicator({ stage }: { stage: Stage }) {
 
 export default function PronunciationPage() {
   const [stage, setStage] = useState<Stage>('input')
+  useNavigationGuard(stage !== 'input', 'Pronunciation')
   const [inputWord, setInputWord] = useState('')
   const [validating, setValidating] = useState(false)
   const [inputError, setInputError] = useState<string | null>(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [suggestions, setSuggestions] = useState<string[]>([])
+
+  useEffect(() => {
+    const q = inputWord.trim()
+    if (q.length < 2) { setSuggestions([]); return }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(q)}*&max=8`)
+        const data: { word: string }[] = await res.json()
+        setSuggestions(data.map(d => d.word))
+      } catch {
+        setSuggestions([])
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [inputWord])
 
   const [wordData, setWordData] = useState<WordData | null>(null)
   const [currentSyl, setCurrentSyl] = useState(0)
@@ -292,7 +312,7 @@ export default function PronunciationPage() {
   const sylPassCount = sylResults.filter((r) => r.pass).length
 
   return (
-    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-2xl w-full">
+    <div className="p-4 md:p-6 flex flex-col gap-6 max-w-2xl w-full mx-auto">
       {/* Header */}
       <div>
         <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>
@@ -325,19 +345,45 @@ export default function PronunciationPage() {
               ENTER A WORD TO PRACTISE
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="e.g. beneficial, enthusiasm, articulate…"
-                value={inputWord}
-                onChange={(e) => { setInputWord(e.target.value); setInputError(null) }}
-                onKeyDown={(e) => e.key === 'Enter' && !validating && handleValidate()}
-                className="flex-1 rounded-xl border px-4 py-3 text-base outline-none transition-colors"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
-                onFocus={(e) => (e.target.style.borderColor = 'var(--accent-teal)')}
-                onBlur={(e) => (e.target.style.borderColor = 'var(--border-subtle)')}
-                autoFocus
-              />
-              <Button onClick={handleValidate} disabled={!inputWord.trim() || validating}>
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="e.g. beneficial, enthusiasm, articulate…"
+                  value={inputWord}
+                  onChange={(e) => { setInputWord(e.target.value); setInputError(null); setShowSuggestions(true) }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !validating) { setShowSuggestions(false); handleValidate() }
+                    if (e.key === 'Escape') setShowSuggestions(false)
+                  }}
+                  className="w-full rounded-xl border px-4 py-3 text-base outline-none transition-colors"
+                  style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+                  onFocus={(e) => { e.target.style.borderColor = 'var(--accent-teal)'; setShowSuggestions(true) }}
+                  onBlur={(e) => { e.target.style.borderColor = 'var(--border-subtle)'; setTimeout(() => setShowSuggestions(false), 150) }}
+                  autoFocus
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div
+                    className="absolute left-0 right-0 top-full mt-1 rounded-xl border overflow-hidden z-20"
+                    style={{ background: 'var(--bg-panel)', borderColor: 'var(--border-subtle)', boxShadow: '0 4px 16px rgba(0,0,0,0.18)' }}
+                  >
+                    {suggestions.map((w) => (
+                      <button
+                        key={w}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => { setInputWord(w); setInputError(null); setShowSuggestions(false) }}
+                        className="w-full text-left px-4 py-2.5 text-sm transition-colors"
+                        style={{ color: 'var(--text-primary)', background: 'transparent' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-surface)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <span style={{ color: 'var(--accent-teal)', fontWeight: 600 }}>{w.slice(0, inputWord.trim().length)}</span>
+                        <span>{w.slice(inputWord.trim().length)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Button onClick={() => { setShowSuggestions(false); handleValidate() }} disabled={!inputWord.trim() || validating}>
                 {validating
                   ? <><Loader2 size={14} className="mr-2 animate-spin" />Checking…</>
                   : <>Check Word <ChevronRight size={14} className="ml-1" /></>}

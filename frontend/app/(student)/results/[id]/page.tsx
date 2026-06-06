@@ -9,12 +9,13 @@ import {
 } from 'recharts'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Download } from 'lucide-react'
+import { AlertTriangle, Clock, Download, Lock, WifiOff } from 'lucide-react'
 import { getAuthHeaders, supabase } from '@/lib/supabase'
 import { TranscriptViewer } from '@/components/TranscriptViewer'
 import { VideoPlayer } from '@/components/VideoPlayer'
 import { LearningPathPanel } from '@/components/LearningPathPanel'
 import { RubricPanel, type RubricBands } from '@/components/RubricPanel'
+import { ModelAnswerCard } from '@/components/ModelAnswerCard'
 import { staggerContainer, staggerItem, easings } from '@/lib/motion'
 
 interface Report {
@@ -99,6 +100,129 @@ const DEMO_REPORT: Report = {
   ],
 }
 
+interface PrevMetrics {
+  band_score: number | null
+  wpm_avg: number | null
+  filler_count: number | null
+  eye_contact_pct: number | null
+  presentation_id?: string
+}
+
+function parseFillerBreakdown(transcript: string | null): Array<[string, number]> {
+  if (!transcript) return []
+  const matches = transcript.match(/\[([^\]]+)\]/g) || []
+  const counts: Record<string, number> = {}
+  for (const m of matches) {
+    const word = m.slice(1, -1).toLowerCase().trim()
+    if (word) counts[word] = (counts[word] || 0) + 1
+  }
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5)
+}
+
+function DeltaChip({ delta, improved, neutral }: { delta: string; improved: boolean; neutral?: boolean }) {
+  if (neutral) return <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>= {delta}</span>
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 font-mono font-bold"
+      style={{
+        fontSize: 10,
+        color: improved ? '#4ade80' : '#f87171',
+        background: improved ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)',
+        padding: '1px 5px',
+        borderRadius: 4,
+      }}
+    >
+      {improved ? '↑' : '↓'} {delta}
+    </span>
+  )
+}
+
+function ComparisonPanel({ current, prev }: { current: Report; prev: PrevMetrics }) {
+  type Metric = {
+    label: string
+    curr: number | null
+    prevVal: number | null
+    format: (v: number) => string
+    isImproved: (c: number, p: number) => boolean | 'neutral'
+  }
+  const metrics: Metric[] = [
+    {
+      label: 'BAND',
+      curr: current.band_score,
+      prevVal: prev.band_score,
+      format: v => v.toFixed(1),
+      isImproved: (c, p) => Math.abs(c - p) < 0.05 ? 'neutral' : c > p,
+    },
+    {
+      label: 'WPM',
+      curr: current.wpm_avg,
+      prevVal: prev.wpm_avg,
+      format: v => String(Math.round(Math.abs(v))),
+      isImproved: (c, p) => {
+        const dist = (v: number) => v < 130 ? 130 - v : v > 150 ? v - 150 : 0
+        if (Math.abs(c - p) < 1) return 'neutral'
+        return dist(c) < dist(p)
+      },
+    },
+    {
+      label: 'FILLERS',
+      curr: current.filler_count,
+      prevVal: prev.filler_count,
+      format: v => String(Math.abs(Math.round(v))),
+      isImproved: (c, p) => Math.abs(c - p) < 1 ? 'neutral' : c < p,
+    },
+    {
+      label: 'EYE CONTACT',
+      curr: current.eye_contact_pct,
+      prevVal: prev.eye_contact_pct,
+      format: v => `${Math.abs(Math.round(v))}%`,
+      isImproved: (c, p) => Math.abs(c - p) < 1 ? 'neutral' : c > p,
+    },
+  ]
+  const available = metrics.filter(m => m.curr != null && m.prevVal != null)
+  if (available.length === 0) return null
+  return (
+    <motion.div
+      className="flex flex-col gap-3 rounded-xl border p-5"
+      style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.2 }}
+    >
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
+        VS LAST SESSION
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {available.map(({ label, curr, prevVal, format, isImproved }) => {
+          const delta = curr! - prevVal!
+          const status = isImproved(curr!, prevVal!)
+          const isNeutral = status === 'neutral'
+          const improved = status === true
+          return (
+            <div
+              key={label}
+              className="flex flex-col gap-1.5 rounded-lg border p-3"
+              style={{
+                background: isNeutral ? 'rgba(180,165,148,0.06)' : improved ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
+                borderColor: isNeutral ? 'rgba(180,165,148,0.18)' : improved ? 'rgba(34,197,94,0.20)' : 'rgba(239,68,68,0.20)',
+              }}
+            >
+              <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
+                {label}
+              </span>
+              <span className="font-mono text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+                {format(curr!)}
+              </span>
+              <DeltaChip delta={format(Math.abs(delta))} improved={improved} neutral={isNeutral} />
+              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>was {format(prevVal!)}</span>
+            </div>
+          )
+        })}
+      </div>
+    </motion.div>
+  )
+}
+
 const IMPACT_VARIANT = { HIGH: 'red', MED: 'amber', LOW: 'blue' } as const
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -166,7 +290,10 @@ function PostureBar({ score }: { score: number }) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-[var(--text-secondary)]">Posture Score</span>
+        <div className="flex flex-col">
+          <span className="text-xs text-[var(--text-secondary)]">Posture Score</span>
+          <span style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>Delivery indicator · not part of MUET language band</span>
+        </div>
         <span className="text-xs font-mono font-semibold" style={{ color }}>
           {Math.round(pct)}/100 · {postureLabel(score)}
         </span>
@@ -301,10 +428,10 @@ ${r.transcript ? `
 const METRIC_THRESHOLDS = {
   'VOICE CLARITY': {
     target: '≥ 75%',
-    description: 'Measures pronunciation and articulation clarity from Whisper confidence scores.',
+    description: 'Estimated from Whisper transcription confidence. May underestimate speakers with non-native accents — use as a guide alongside the Pronunciation rubric score.',
     check: (v: number) => v >= 75,
     goodLabel: 'Meets target',
-    badLabel: 'Below target. Work on clear enunciation.',
+    badLabel: 'Below target. Work on clear enunciation and microphone placement.',
   },
   'SENTIMENT': {
     target: '≥ 60%',
@@ -467,9 +594,11 @@ export default function ResultsPage() {
   const [report, setReport] = useState<Report | null>(isDemo ? DEMO_REPORT : null)
   const [loading, setLoading] = useState(!isDemo)
   const [error, setError] = useState<string | null>(null)
+  const [errorType, setErrorType] = useState<'network' | 'auth' | 'pipeline' | 'timeout' | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [educatorGrade, setEducatorGrade] = useState<EducatorGrade | null>(null)
   const [examLocked, setExamLocked] = useState(false)
+  const [prevMetrics, setPrevMetrics] = useState<PrevMetrics | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -508,6 +637,25 @@ export default function ResultsPage() {
     fetchGrade()
   }, [id, isDemo])
 
+  // Fetch previous session metrics for comparison panel
+  useEffect(() => {
+    if (isDemo || !userId || !report) return
+    async function fetchPrevious() {
+      try {
+        const authHdr = await getAuthHeaders()
+        const res = await fetch(`${API_URL}/api/reports/history/${userId}`, { headers: authHdr })
+        if (!res.ok) return
+        const { sessions } = await res.json()
+        const prev = (sessions as Array<{ feedback_reports?: PrevMetrics }>).find(
+          s => s.feedback_reports?.presentation_id !== report!.presentation_id &&
+               s.feedback_reports?.band_score != null
+        )
+        if (prev?.feedback_reports) setPrevMetrics(prev.feedback_reports)
+      } catch {}
+    }
+    fetchPrevious()
+  }, [userId, report, isDemo])
+
   useEffect(() => {
     if (isDemo) return
     let cancelled = false
@@ -522,6 +670,7 @@ export default function ResultsPage() {
 
         if (res.status === 401 || res.status === 403) {
           if (!cancelled) {
+            setErrorType('auth')
             setError('Your session has expired. Please log in again to view this report.')
             setLoading(false)
           }
@@ -530,6 +679,7 @@ export default function ResultsPage() {
         if (res.status === 422) {
           const body = await res.json().catch(() => ({}))
           if (!cancelled) {
+            setErrorType('pipeline')
             setError(body.detail || 'Analysis pipeline failed. Please try a new session.')
             setLoading(false)
           }
@@ -548,6 +698,7 @@ export default function ResultsPage() {
         if (!cancelled && statusRes.ok) {
           const { status } = await statusRes.json()
           if (status === 'failed') {
+            setErrorType('pipeline')
             setError('Analysis pipeline failed. Please try uploading again.')
             setLoading(false)
             return
@@ -558,6 +709,7 @@ export default function ResultsPage() {
         attempts++
         if (attempts >= 60) {
           if (!cancelled) {
+            setErrorType('timeout')
             setError('Analysis did not complete. The AI pipeline may have encountered an error. Please try a new session.')
             setLoading(false)
           }
@@ -567,6 +719,7 @@ export default function ResultsPage() {
         if (!cancelled) setTimeout(poll, delay)
       } catch (err) {
         if (!cancelled) {
+          setErrorType('network')
           setError(`Could not load report: ${err instanceof Error ? err.message : 'Network error'}`)
           setLoading(false)
         }
@@ -588,36 +741,86 @@ export default function ResultsPage() {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div
-          className="max-w-sm w-full flex flex-col items-center gap-4 rounded-xl border p-8 text-center"
+          className="max-w-sm w-full flex flex-col items-center gap-5 rounded-xl border p-8 text-center"
           style={{ background: 'var(--bg-panel)', borderColor: 'rgba(180,165,148,0.22)' }}
         >
           <span
             style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: '#f59e0b', boxShadow: '0 0 6px #f59e0b',
+              width: 8, height: 8, borderRadius: '50%',
+              background: 'var(--accent-teal)', boxShadow: '0 0 8px var(--accent-teal)',
               animation: 'pulse 2s ease-in-out infinite', display: 'inline-block',
             }}
           />
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Waiting for analysis...</h2>
-          <p className="text-[var(--text-secondary)] text-sm">The AI is still processing your session.</p>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Analysing your session…</h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              The AI is transcribing your speech, measuring delivery, and generating personalised feedback.
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-2 w-full">
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>This usually takes 1–3 minutes.</p>
+            <Link href="/dashboard">
+              <Button variant="ghost" className="min-h-[44px]">Explore other features →</Button>
+            </Link>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              Come back to this page — or check History — when it's done.
+            </p>
+          </div>
         </div>
       </div>
     )
   }
 
   if (error && !report) {
+    const iconMap = { network: WifiOff, auth: Lock, pipeline: AlertTriangle, timeout: Clock }
+    const ErrorIcon = (errorType && iconMap[errorType]) || AlertTriangle
+    const iconColor = errorType === 'auth' ? '#f59e0b' : '#ef4444'
+    const borderColor = errorType === 'auth' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'
+    const titles = {
+      network: 'No connection',
+      auth: 'Session expired',
+      pipeline: 'Analysis failed',
+      timeout: 'Analysis timed out',
+    }
+    const hints = {
+      network: 'Check your internet connection and try again. The server may also be temporarily down.',
+      auth: 'Your login session has expired. Please sign in again to view this report.',
+      pipeline: 'The AI could not process your recording. This can happen with very short clips or poor audio quality. Try recording a new session.',
+      timeout: 'The AI pipeline took longer than expected. Try refreshing — your report may already be ready.',
+    }
+    const errorTitle = errorType ? titles[errorType] : 'Report unavailable'
+    const errorHint = errorType ? hints[errorType] : error
+
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div
-          className="max-w-md w-full flex flex-col gap-4 rounded-xl border p-8 text-center"
-          style={{ background: 'var(--bg-panel)', borderColor: 'rgba(239,68,68,0.2)' }}
+          className="max-w-md w-full flex flex-col items-center gap-5 rounded-xl border p-8 text-center"
+          style={{ background: 'var(--bg-panel)', borderColor }}
         >
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ef4444' }}>
-            REPORT ERROR
+          <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: `${iconColor}14`, border: `1px solid ${iconColor}33` }}>
+            <ErrorIcon size={20} style={{ color: iconColor }} />
           </div>
-          <p className="text-[var(--text-primary)] text-sm leading-6">{error}</p>
+          <div className="flex flex-col gap-2">
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: iconColor }}>
+              {errorTitle}
+            </div>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              {errorHint}
+            </p>
+          </div>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/practice"><Button variant="secondary" className="min-h-[44px]">New Session</Button></Link>
+            {(errorType === 'network' || errorType === 'timeout') && (
+              <Button onClick={() => window.location.reload()} className="min-h-[44px]">
+                {errorType === 'timeout' ? 'Refresh' : 'Try Again'}
+              </Button>
+            )}
+            {errorType === 'auth' && (
+              <Link href="/login"><Button className="min-h-[44px]">Log In Again</Button></Link>
+            )}
+            {(errorType === 'pipeline' || errorType === null) && (
+              <Link href="/practice"><Button variant="secondary" className="min-h-[44px]">New Session</Button></Link>
+            )}
             <Link href="/dashboard"><Button variant="ghost" className="min-h-[44px]">Dashboard</Button></Link>
           </div>
         </div>
@@ -628,6 +831,11 @@ export default function ResultsPage() {
   if (!report) return null
 
   const r = report
+  const fillerBreakdown = parseFillerBreakdown(r.transcript)
+  const fillerSub = fillerBreakdown.length > 0
+    ? fillerBreakdown.map(([w, n]) => `${w}×${n}`).join(' · ')
+    : r.filler_density != null ? `${r.filler_density.toFixed(1)}/min` : ''
+
   const chartData = (() => {
     if (!r.pace_timeseries || r.pace_timeseries.length < 2) return null
     const mapped = r.pace_timeseries.map((p) => ({
@@ -784,7 +992,7 @@ export default function ResultsPage() {
             {[
               { label: 'AVG WPM', value: r.wpm_avg != null ? String(Math.round(r.wpm_avg)) : '—', color: '#94a3b8', sub: 'Target 130–150' },
               { label: 'EYE CONTACT', value: r.eye_contact_pct != null ? `${Math.round(r.eye_contact_pct)}%` : '—', color: '#22c55e', sub: 'Target ≥70%' },
-              { label: 'FILLERS', value: r.filler_count != null ? `${r.filler_count}` : '—', color: '#f59e0b', sub: r.filler_density != null ? `${r.filler_density.toFixed(1)}/min` : '' },
+              { label: 'FILLERS', value: r.filler_count != null ? `${r.filler_count}` : '—', color: '#f59e0b', sub: fillerSub },
             ].map((m) => (
               <div
                 key={m.label}
@@ -814,6 +1022,9 @@ export default function ResultsPage() {
         </div>
       </div>
 
+      {/* Session comparison — only shown when a previous session exists */}
+      {prevMetrics && <ComparisonPanel current={r} prev={prevMetrics} />}
+
       {/* Composite Confidence Score */}
       {r.confidence_score != null && (
         <ConfidenceCard
@@ -827,6 +1038,9 @@ export default function ResultsPage() {
 
       {/* Per-rubric MUET breakdown */}
       <RubricPanel rubricBands={r.rubric_bands} />
+
+      {/* On-demand Band 5 model answer for this topic */}
+      <ModelAnswerCard topic={r.topic_text} />
 
       {/* WPM pace chart */}
       {chartData && (
@@ -885,6 +1099,7 @@ export default function ResultsPage() {
           transcript={r.transcript}
           fillerCount={r.filler_count ?? null}
           fillerDensity={r.filler_density ?? null}
+          durationSecs={r.duration_secs ?? null}
         />
       )}
 

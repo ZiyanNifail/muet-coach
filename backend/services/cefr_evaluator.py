@@ -1,15 +1,27 @@
 """
 CEFR Evaluation Layer — maps raw metrics to a MUET band score (1.0–6.0).
 
-Band 5 baseline (per PRD FR-AI-09):
-  - WPM: 130–150
-  - Eye contact: >= 60%
-  - Filler density: < 5/min
-  - Posture score: >= 70
+This score is used ONLY as a calibration anchor for the LLM rubric scorer
+(groq_service.py).  The final displayed band is always the mean of the five
+LLM-assessed MUET criteria (task_fulfilment, coherence_cohesion,
+lexical_resource, grammatical_range_accuracy, pronunciation).
+
+Threshold rationale
+-------------------
+WPM 130–150   MUET speaking tasks are 2–3 min timed; 130–150 WPM is the
+              commonly-cited range for clear, measured English delivery
+              (ref: Cambridge ESOL speaking assessment guidelines).
+Eye contact   Camera-gaze proxy for audience engagement. 70 % target aligns
+              with standard presentation rubrics; excluded from band when
+              face detection fails (confidence_flags.face_ok = False).
+Filler density  < 3/min maps to Band 5 fluency; > 10/min indicates speech
+              breakdown (Band ≤ 3).  Contextual fillers (so, well, actually)
+              are only counted when overused — see nlp_service.CONTEXTUAL_THRESHOLD.
+Posture       NOT included in the band anchor — posture is a delivery
+              indicator, not one of the five MUET language criteria.
 
 CRIT-04 fix: metrics that are None (flagged N/A by confidence_flags) are
-excluded from the band calculation entirely rather than defaulting to 0,
-which would unfairly penalise the score when face or audio detection fails.
+excluded from the band calculation rather than defaulting to 0.
 """
 
 # Band 5 thresholds as named constants for auditability (WARN-12 fix).
@@ -83,16 +95,17 @@ def compute_band_score(
             score -= 0.5
         # acceptable range (110–170 excl. ideal): no bonus — neutral
 
-    # Eye contact — skipped entirely when face not detected (None)
+    # Eye contact — delivery proxy; capped at ±0.3 since it is not one of the
+    # five MUET language criteria. Skipped entirely when face not detected (None).
     if eye_contact_pct is not None:
         if eye_contact_pct >= EYE_CONTACT_GOOD:       # ≥70 %
-            score += 0.5
+            score += 0.3
         elif eye_contact_pct >= EYE_CONTACT_OK:        # 50–70 %: neutral
             pass
         elif eye_contact_pct >= EYE_CONTACT_POOR:      # 30–50 %: mild penalty
-            score -= 0.2
-        else:                                           # <30 %: hard penalty
-            score -= 0.5
+            score -= 0.1
+        else:                                           # <30 %
+            score -= 0.3
 
     # Filler density — 5–10/min is penalised (was neutral at 0)
     if filler_density is not None:
@@ -105,14 +118,8 @@ def compute_band_score(
         else:                                           # >10/min
             score -= 0.5
 
-    # Posture — skipped entirely when pose not detected (None)
-    if posture_score is not None:
-        if posture_score >= POSTURE_GOOD:              # ≥80
-            score += 0.3
-        elif posture_score < POSTURE_OK:               # <60: neutral → only poor gets hit
-            pass
-        if posture_score < POSTURE_POOR:               # <40
-            score -= 0.3
+    # Posture deliberately excluded — it is a delivery indicator, not a MUET
+    # language criterion, and should not influence the language band anchor.
 
     # Lexical diversity — length-normalised to reduce short-text inflation
     adj_ttr = _adjusted_ttr(lexical_diversity, word_count)

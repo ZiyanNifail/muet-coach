@@ -1,58 +1,81 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { motion, LayoutGroup, AnimatePresence } from 'framer-motion'
+import { motion, LayoutGroup } from 'framer-motion'
 import { clsx } from 'clsx'
-import { Suspense, useState } from 'react'
+import { Suspense } from 'react'
 import { springs } from '@/lib/motion'
+import { useNavGuard } from '@/lib/navGuard'
 import {
+  LayoutDashboard,
   Mic,
+  Mic2,
+  Radio,
+  Upload,
   TrendingUp,
   History,
   BookOpen,
-  LayoutDashboard,
-  Upload,
   GraduationCap,
+  PenLine,
+  Headphones,
+  Zap,
   Briefcase,
-  Sparkles,
-  ChevronRight,
-  Mic2,
-  Radio,
 } from 'lucide-react'
 
-const subItems = {
-  speaking: [
-    { label: 'Unguided Session', href: '/practice?mode=unguided', icon: Mic },
-    { label: 'Guided Session',   href: '/practice?mode=guided',   icon: Radio },
-  ],
+interface NavItem {
+  label: string
+  href: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: React.ComponentType<any>
+  desc?: string
+  soon?: boolean   // route not yet built — renders as greyed-out with a "Soon" badge
 }
 
-const studentNav = [
+interface NavSection {
+  section: string
+  items: NavItem[]
+}
+
+// Navigation structured as a learning progression: HOME → LEARN → PRACTICE → PROGRESS → TEST.
+// All MUET skill features are surfaced under LEARN so students can discover them without
+// hunting through sub-menus or exam flows.
+const studentNav: NavSection[] = [
+  {
+    section: 'HOME',
+    items: [
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    section: 'LEARN',
+    items: [
+      { label: 'Pronunciation', href: '/pronunciation', icon: Mic,        desc: 'Syllable scoring + tips'   },
+      { label: 'Writing',       href: '/writing',       icon: PenLine,    desc: 'Task 1 & 2 MUET practice' },
+      { label: 'Listening',     href: '/listening',     icon: Headphones, desc: 'MUET MCQ sections'         },
+      { label: 'Filler Drill',  href: '/filler-drill',  icon: Zap,        desc: '60-second challenge'       },
+    ],
+  },
   {
     section: 'PRACTICE',
     items: [
-      { label: 'Dashboard',         href: '/dashboard', icon: LayoutDashboard },
-      { label: 'Speaking Practice', href: null,         icon: Mic2,  expandKey: 'speaking' as const },
-      { label: 'Upload Video',      href: '/upload',    icon: Upload },
+      { label: 'Guided Session',   href: '/practice?mode=guided',   icon: Radio, desc: 'Real-time coaching' },
+      { label: 'Unguided Session', href: '/practice?mode=unguided', icon: Mic2,  desc: 'Baseline recording'  },
+      { label: 'Upload Video',     href: '/upload',                  icon: Upload },
     ],
   },
   {
     section: 'PROGRESS',
     items: [
       { label: 'Band Timeline',   href: '/progress', icon: TrendingUp },
-      { label: 'Session History', href: '/history',  icon: History },
+      { label: 'Session History', href: '/history',  icon: History    },
+      { label: 'My Courses',      href: '/courses',  icon: BookOpen   },
     ],
   },
   {
-    section: 'COURSES',
-    items: [{ label: 'My Courses', href: '/courses', icon: BookOpen }],
-  },
-  {
-    section: 'IMPROVE',
+    section: 'TEST',
     items: [
-      { label: 'Full Mock Exam',   href: '/exam',       icon: GraduationCap },
-      { label: 'Mock Interview',   href: '/interview',  icon: Briefcase     },
-      { label: 'Skills Practice',  href: '/skills',     icon: Sparkles      },
+      { label: 'Full Mock Exam',  href: '/exam',      icon: GraduationCap, desc: 'Simulated MUET conditions'    },
+      { label: 'Mock Interview',  href: '/interview', icon: Briefcase,  desc: 'Job & presentation practice' },
     ],
   },
 ]
@@ -60,10 +83,7 @@ const studentNav = [
 function SidebarNav({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const [expanded, setExpanded] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null
-    return pathname === '/practice' ? 'speaking' : null
-  })
+  const navGuard = useNavGuard()
 
   function isActive(href: string) {
     const [hrefPath, hrefQuery] = href.split('?')
@@ -74,10 +94,6 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
       if (searchParams.get(key) !== val) return false
     }
     return true
-  }
-
-  function isSectionActive(key: 'speaking') {
-    return subItems[key].some(i => isActive(i.href))
   }
 
   return (
@@ -92,92 +108,35 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
           </div>
           <div className="flex flex-col gap-0.5 px-2">
             {group.items.map((item) => {
-              // Expandable accordion item
-              if ('expandKey' in item && item.expandKey) {
-                const key = item.expandKey
-                const open = expanded === key
-                const sectionActive = isSectionActive(key)
-                const Icon = item.icon
-                return (
-                  <div key={`expand-${key}`}>
-                    <div className="relative">
-                      {sectionActive && !open && (
-                        <motion.div
-                          layoutId="student-nav-pill"
-                          className="absolute inset-0 rounded-lg"
-                          style={{ background: 'var(--accent-teal-dim)' }}
-                          transition={springs.gentle}
-                        />
-                      )}
-                      <button
-                        onClick={() => setExpanded(open ? null : key)}
-                        className={clsx(
-                          'relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors',
-                          sectionActive && !open ? 'font-medium' : 'hover:bg-[var(--bg-surface)]'
-                        )}
-                        style={sectionActive && !open ? { color: 'var(--accent-teal)' } : { color: 'var(--text-tertiary)' }}
-                      >
-                        <Icon size={14} strokeWidth={1.75} />
-                        <span className="flex-1 text-left">{item.label}</span>
-                        <motion.span
-                          animate={{ rotate: open ? 90 : 0 }}
-                          transition={{ duration: 0.18 }}
-                        >
-                          <ChevronRight size={12} strokeWidth={2} />
-                        </motion.span>
-                      </button>
-                    </div>
+              const Icon = item.icon
 
-                    <AnimatePresence initial={false}>
-                      {open && (
-                        <motion.div
-                          key="sub"
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2, ease: 'easeInOut' }}
-                          style={{ overflow: 'hidden' }}
-                        >
-                          <div className="flex flex-col gap-0.5 pl-3 pt-0.5 pb-0.5">
-                            {subItems[key].map((sub) => {
-                              const active = isActive(sub.href)
-                              const SubIcon = sub.icon
-                              return (
-                                <div key={sub.href} className="relative">
-                                  {active && (
-                                    <motion.div
-                                      layoutId="student-nav-pill"
-                                      className="absolute inset-0 rounded-lg"
-                                      style={{ background: 'var(--accent-teal-dim)' }}
-                                      transition={springs.gentle}
-                                    />
-                                  )}
-                                  <Link
-                                    href={sub.href}
-                                    onClick={onClose}
-                                    className={clsx(
-                                      'relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors no-underline',
-                                      active ? 'font-medium' : 'hover:bg-[var(--bg-surface)]'
-                                    )}
-                                    style={active ? { color: 'var(--accent-teal)' } : { color: 'var(--text-tertiary)' }}
-                                  >
-                                    <SubIcon size={12} strokeWidth={1.75} />
-                                    {sub.label}
-                                  </Link>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </motion.div>
+              // "Soon" items — not yet built, rendered as non-interactive with a badge
+              if (item.soon) {
+                return (
+                  <div
+                    key={item.href}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg"
+                    style={{ color: 'var(--text-tertiary)', opacity: 0.5, cursor: 'default' }}
+                  >
+                    <Icon size={14} strokeWidth={1.75} className="flex-shrink-0" />
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ fontSize: 13 }}>{item.label}</span>
+                        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.10em', background: 'rgba(180,165,148,0.25)', color: 'var(--text-tertiary)', padding: '1px 4px', borderRadius: 3 }}>
+                          SOON
+                        </span>
+                      </div>
+                      {item.desc && (
+                        <span style={{ fontSize: 9, color: 'var(--text-tertiary)', lineHeight: 1.3, marginTop: 1 }}>
+                          {item.desc}
+                        </span>
                       )}
-                    </AnimatePresence>
+                    </div>
                   </div>
                 )
               }
 
-              // Regular link item
-              const active = isActive(item.href!)
-              const Icon = item.icon
+              const active = isActive(item.href)
               return (
                 <div key={item.href} className="relative">
                   {active && (
@@ -189,18 +148,37 @@ function SidebarNav({ onClose }: { onClose?: () => void }) {
                     />
                   )}
                   <Link
-                    href={item.href!}
-                    onClick={onClose}
+                    href={item.href}
+                    onClick={(e) => {
+                      if (navGuard?.active) {
+                        e.preventDefault()
+                        navGuard.attemptNavigate(item.href, onClose)
+                        return
+                      }
+                      onClose?.()
+                    }}
                     className={clsx(
-                      'relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors no-underline',
+                      'relative flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors no-underline',
                       active ? 'font-medium' : 'hover:bg-[var(--bg-surface)]'
                     )}
                     style={active ? { color: 'var(--accent-teal)' } : { color: 'var(--text-tertiary)' }}
                   >
-                    <motion.span whileHover={{ x: 1 }} transition={{ duration: 0.12 }}>
+                    <motion.span whileHover={{ x: 1 }} transition={{ duration: 0.12 }} className="flex-shrink-0">
                       <Icon size={14} strokeWidth={1.75} />
                     </motion.span>
-                    {item.label}
+                    <div className="flex flex-col min-w-0">
+                      <span style={{ fontSize: 13 }}>{item.label}</span>
+                      {item.desc && (
+                        <span style={{
+                          fontSize: 9,
+                          color: active ? 'rgba(58,125,106,0.65)' : 'var(--text-tertiary)',
+                          lineHeight: 1.3,
+                          marginTop: 1,
+                        }}>
+                          {item.desc}
+                        </span>
+                      )}
+                    </div>
                   </Link>
                 </div>
               )

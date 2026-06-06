@@ -12,7 +12,8 @@ import os
 import uuid
 import logging
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, Header, Depends
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, Header, Depends, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -20,6 +21,7 @@ from services.supabase_client import get_supabase, db_update_presentation, db_ge
 from services.pipeline import run_pipeline
 from services.storage_service import get_video_signed_url
 from services.auth_deps import get_current_user_id
+from services.media_token import mint_video_token, verify_video_token
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +49,9 @@ async def upload_presentation(
     brainstorm_notes: Optional[str] = Form(None),
     duration_secs: Optional[float] = Form(None),
     assignment_id: Optional[str] = Form(None),
+    prep_passed: Optional[bool] = Form(None),
+    ambient_db: Optional[float] = Form(None),
+    speaking_db: Optional[float] = Form(None),
     slides: Optional[UploadFile] = File(None),
     authorization: Optional[str] = Header(None),
 ):
@@ -154,6 +159,9 @@ async def upload_presentation(
         "topic_text": topic_text or None,
         "brainstorm_notes": brainstorm_notes or None,
         "duration_secs": int(duration_secs) if duration_secs else None,
+        "prep_passed": prep_passed,
+        "prep_ambient_db": ambient_db,
+        "prep_speaking_db": speaking_db,
         "video_path": video_path,
         "slide_path": slides_path,
         "status": "processing",
@@ -162,8 +170,20 @@ async def upload_presentation(
         try:
             sb.table("presentations").insert(row).execute()
         except Exception as exc:
-            logger.error("Supabase presentations insert failed — aborting pipeline: %s", exc)
-            raise HTTPException(500, f"Failed to create presentation record in database: {exc}")
+            # Retry without prep_* columns in case the migration hasn't been applied yet
+            prep_keys = ("prep_passed", "prep_ambient_db", "prep_speaking_db")
+            if any(k in str(exc) for k in prep_keys):
+                logger.warning("prep_* columns missing — inserting without them. Run supabase_setup.sql migration.")
+                for k in prep_keys:
+                    row.pop(k, None)
+                try:
+                    sb.table("presentations").insert(row).execute()
+                except Exception as exc2:
+                    logger.error("Supabase presentations insert failed — aborting pipeline: %s", exc2)
+                    raise HTTPException(500, f"Failed to create presentation record in database: {exc2}")
+            else:
+                logger.error("Supabase presentations insert failed — aborting pipeline: %s", exc)
+                raise HTTPException(500, f"Failed to create presentation record in database: {exc}")
 
     # ── Queue AI pipeline ─────────────────────────────────────────────────────
     background_tasks.add_task(
@@ -186,11 +206,17 @@ async def upload_presentation(
 @router.get("/{presentation_id}/video-url")
 async def get_video_url(
     presentation_id: str,
+    request: Request,
     user_id: str = Depends(get_current_user_id),
 ):
     """
-    IMP-03: Return a 1-hour signed URL for the recorded video.
-    Requires auth; verifies ownership before issuing the URL.
+    IMP-03: Return a 1-hour URL for the recorded video.
+
+    Verifies ownership, then branches on where the recording lives:
+      - Supabase Storage key  → signed URL from the `recordings` bucket.
+      - Local file on disk     → URL to the /video-file streaming endpoint with a
+        short-lived HMAC token (covers the case where the Storage upload was
+        skipped/failed, e.g. the bucket isn't configured).
     """
     sb = get_supabase()
     if sb is None:
@@ -211,6 +237,14 @@ async def get_video_url(
         video_path = row.get("video_path")
         if not video_path:
             raise HTTPException(404, "Video not stored for this session")
+
+        # Local file still on disk → stream it directly (storage upload didn't happen).
+        if os.path.exists(video_path):
+            token = mint_video_token(presentation_id)
+            base = str(request.base_url).rstrip("/")
+            return {"url": f"{base}/api/presentations/{presentation_id}/video-file?token={token}"}
+
+        # Otherwise treat video_path as a Supabase Storage key.
         signed_url = get_video_signed_url(video_path)
         if not signed_url:
             raise HTTPException(404, "Could not generate video URL")
@@ -222,6 +256,89 @@ async def get_video_url(
         raise HTTPException(500, "Video URL unavailable")
 
 
+_VIDEO_CONTENT_TYPES = {".webm": "video/webm", ".mp4": "video/mp4", ".mov": "video/quicktime"}
+
+
+@router.get("/{presentation_id}/video-file")
+async def stream_video_file(presentation_id: str, request: Request, token: str):
+    """
+    Stream a locally-stored recording with HTTP Range support so the browser
+    <video> element can seek. Authorised via the short-lived HMAC token minted
+    by /video-url (a <video src> tag cannot send an Authorization header).
+    """
+    if not verify_video_token(presentation_id, token):
+        raise HTTPException(403, "Invalid or expired token")
+
+    sb = get_supabase()
+    if sb is None:
+        raise HTTPException(404, "Video not available")
+    try:
+        res = (
+            sb.table("presentations")
+            .select("video_path")
+            .eq("id", presentation_id)
+            .limit(1)
+            .execute()
+        )
+        row = res.data[0] if res.data else None
+    except Exception as exc:
+        logger.warning("video-file lookup failed for %s: %s", presentation_id, exc)
+        raise HTTPException(500, "Video unavailable")
+
+    video_path = row.get("video_path") if row else None
+    if not video_path or not os.path.exists(video_path):
+        raise HTTPException(404, "Video file not found")
+
+    ext = os.path.splitext(video_path)[1].lower()
+    content_type = _VIDEO_CONTENT_TYPES.get(ext, "application/octet-stream")
+    file_size = os.path.getsize(video_path)
+    chunk_size = 1024 * 1024
+
+    range_header = request.headers.get("range") or request.headers.get("Range")
+    if range_header and range_header.startswith("bytes="):
+        rng = range_header.split("=", 1)[1]
+        start_s, _, end_s = rng.partition("-")
+        try:
+            start = int(start_s) if start_s else 0
+            end = int(end_s) if end_s else file_size - 1
+        except ValueError:
+            start, end = 0, file_size - 1
+        start = max(0, start)
+        end = min(end, file_size - 1)
+        if start > end:
+            raise HTTPException(416, "Requested range not satisfiable")
+        length = end - start + 1
+
+        def iter_range():
+            with open(video_path, "rb") as fh:
+                fh.seek(start)
+                remaining = length
+                while remaining > 0:
+                    data = fh.read(min(chunk_size, remaining))
+                    if not data:
+                        break
+                    remaining -= len(data)
+                    yield data
+
+        headers = {
+            "Content-Range": f"bytes {start}-{end}/{file_size}",
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(length),
+        }
+        return StreamingResponse(iter_range(), status_code=206, headers=headers, media_type=content_type)
+
+    def iter_full():
+        with open(video_path, "rb") as fh:
+            while True:
+                data = fh.read(chunk_size)
+                if not data:
+                    break
+                yield data
+
+    headers = {"Accept-Ranges": "bytes", "Content-Length": str(file_size)}
+    return StreamingResponse(iter_full(), headers=headers, media_type=content_type)
+
+
 @router.post("/brainstorm")
 async def brainstorm_points(topic: str = Form(...)):
     """
@@ -231,6 +348,17 @@ async def brainstorm_points(topic: str = Form(...)):
     from services.groq_service import generate_brainstorm_points
     points = await generate_brainstorm_points(topic)
     return {"points": points}
+
+
+@router.post("/exemplar")
+async def model_answer(topic: str = Form(...)):
+    """
+    Generate a Band 5 MUET Task A model answer for a topic.
+    Called on demand from the results page so the student can shadow it.
+    """
+    from services.groq_service import generate_model_answer
+    exemplar = await generate_model_answer(topic)
+    return {"exemplar": exemplar}
 
 
 @router.get("/{presentation_id}/status")

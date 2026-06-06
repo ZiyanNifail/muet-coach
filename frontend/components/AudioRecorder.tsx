@@ -1,6 +1,8 @@
 'use client'
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { Mic, Square, RotateCcw } from 'lucide-react'
+import { DeviceSelector } from './DeviceSelector'
+import { useMediaDevices } from '@/lib/useMediaDevices'
 
 interface AudioRecorderProps {
   maxSecs?: number
@@ -14,6 +16,10 @@ type RecorderStatus = 'idle' | 'recording' | 'done'
 export function AudioRecorder({ maxSecs = 15, onBlob, disabled = false, label }: AudioRecorderProps) {
   const [status, setStatus] = useState<RecorderStatus>('idle')
   const [elapsed, setElapsed] = useState(0)
+
+  const {
+    microphones, selectedMicId, selectMic, clearMic, refresh, buildAudioConstraints,
+  } = useMediaDevices()
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -61,7 +67,14 @@ export function AudioRecorder({ maxSecs = 15, onBlob, disabled = false, label }:
   async function startRecording() {
     if (disabled) return
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      let stream: MediaStream
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: buildAudioConstraints() })
+      } catch (err) {
+        if ((err as DOMException)?.name === 'OverconstrainedError') clearMic()
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      }
+      refresh()
 
       // Waveform analyser
       const audioCtx = new AudioContext()
@@ -132,6 +145,18 @@ export function AudioRecorder({ maxSecs = 15, onBlob, disabled = false, label }:
           transition: 'opacity 0.2s',
         }}
       />
+
+      {status === 'idle' && (
+        <div className="w-full max-w-[260px]">
+          <DeviceSelector
+            showCamera={false}
+            microphones={microphones}
+            selectedMicId={selectedMicId}
+            onSelectMic={selectMic}
+            disabled={disabled}
+          />
+        </div>
+      )}
 
       {/* Controls */}
       <div className="flex items-center gap-3">

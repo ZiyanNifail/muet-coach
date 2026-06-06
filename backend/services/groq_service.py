@@ -243,83 +243,94 @@ async def generate_feedback(
         + f"({'real-time coaching was active' if session_mode == 'guided' else 'no interruptions during recording'})\n"
     )
 
-    try:
-        await _rate_limiter.acquire()
+    def _call() -> object:
+        return client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_content},
+            ],
+            temperature=0.2,
+            max_tokens=1600,
+            response_format={"type": "json_object"},
+            timeout=60.0,
+        )
 
-        def _call() -> object:
-            return client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_content},
-                ],
-                temperature=0.2,
-                max_tokens=1600,
-                response_format={"type": "json_object"},
-            )
+    for attempt in range(3):
+        try:
+            await _rate_limiter.acquire()
+            chat = await asyncio.to_thread(_call)
+            raw = chat.choices[0].message.content
 
-        chat = await asyncio.to_thread(_call)
-        raw = chat.choices[0].message.content
+            # Strip markdown fences even with json_object mode (CRIT-B04 fix)
+            raw = re.sub(r'```(?:json)?\s*|\s*```', '', raw).strip()
+            data = json.loads(raw)
 
-        # Strip markdown fences even with json_object mode (CRIT-B04 fix)
-        raw = re.sub(r'```(?:json)?\s*|\s*```', '', raw).strip()
-        data = json.loads(raw)
-
-        # ── Parse and clamp per-criterion rubric bands ────────────────────────
-        raw_rubric = data.get("rubric_bands", {})
-        validated_rubric: dict = {}
-        for crit in RUBRIC_CRITERIA:
-            entry = raw_rubric.get(crit)
-            if not isinstance(entry, dict):
-                # Missing criterion — fall back to rule-based anchor
+            # ── Parse and clamp per-criterion rubric bands ────────────────────────
+            raw_rubric = data.get("rubric_bands", {})
+            validated_rubric: dict = {}
+            for crit in RUBRIC_CRITERIA:
+                entry = raw_rubric.get(crit)
+                if not isinstance(entry, dict):
+                    # Missing criterion — fall back to rule-based anchor
+                    if rule_subbands and crit in rule_subbands:
+                        validated_rubric[crit] = rule_subbands[crit].copy()
+                    continue
+                score = int(round(max(1.0, min(6.0, float(entry.get("score", 3))))))
+                justification = str(entry.get("justification", ""))[:400]
                 if rule_subbands and crit in rule_subbands:
-                    validated_rubric[crit] = rule_subbands[crit].copy()
-                continue
-            score = int(round(max(1.0, min(6.0, float(entry.get("score", 3))))))
-            justification = str(entry.get("justification", ""))[:400]
-            if rule_subbands and crit in rule_subbands:
-                anchor = rule_subbands[crit]["score"]
-                diff = score - anchor
-                if abs(diff) > 1:
-                    score = int(round(max(1.0, min(6.0, anchor + (1 if diff > 0 else -1)))))
-            validated_rubric[crit] = {"score": score, "justification": justification}
+                    anchor = rule_subbands[crit]["score"]
+                    diff = score - anchor
+                    if abs(diff) > 1:
+                        score = int(round(max(1.0, min(6.0, anchor + (1 if diff > 0 else -1)))))
+                validated_rubric[crit] = {"score": score, "justification": justification}
 
-        # ── Compute final overall band from validated sub-bands ───────────────
-        if len(validated_rubric) == len(RUBRIC_CRITERIA):
-            scores = [v["score"] for v in validated_rubric.values()]
-            final_band = int(round(max(1.0, min(6.0, sum(scores) / len(scores)))))
-        else:
-            # Partial rubric — fall back to old overall merge logic
-            llm_band = int(round(max(1.0, min(6.0, float(data.get("band_score", 0))))))
-            if rule_band is not None:
-                diff = abs(llm_band - rule_band)
-                if diff <= 1:
-                    final_band = int(round((llm_band + rule_band) / 2))
-                else:
-                    final_band = int(round(max(1.0, min(6.0, rule_band + (1 if llm_band > rule_band else -1)))))
+            # ── Compute final overall band from validated sub-bands ───────────────
+            if len(validated_rubric) == len(RUBRIC_CRITERIA):
+                scores = [v["score"] for v in validated_rubric.values()]
+                final_band = int(round(max(1.0, min(6.0, sum(scores) / len(scores)))))
             else:
-                final_band = llm_band
+                # Partial rubric — fall back to old overall merge logic
+                llm_band = int(round(max(1.0, min(6.0, float(data.get("band_score", 0))))))
+                if rule_band is not None:
+                    diff = abs(llm_band - rule_band)
+                    if diff <= 1:
+                        final_band = int(round((llm_band + rule_band) / 2))
+                    else:
+                        final_band = int(round(max(1.0, min(6.0, rule_band + (1 if llm_band > rule_band else -1)))))
+                else:
+                    final_band = llm_band
 
-        # ── Validate advice cards ─────────────────────────────────────────────
-        cards = data.get("advice_cards", [])
-        validated = []
-        for c in cards[:5]:
-            if isinstance(c, dict) and "text" in c and "impact" in c:
-                impact = c["impact"].upper()
-                if impact not in ("HIGH", "MED", "LOW"):
-                    impact = "MED"
-                validated.append({"impact": impact, "text": str(c["text"])})
-        if not validated:
-            validated = _build_fallback_advice(metrics)
+            # ── Validate advice cards ─────────────────────────────────────────────
+            cards = data.get("advice_cards", [])
+            validated = []
+            for c in cards[:5]:
+                if isinstance(c, dict) and "text" in c and "impact" in c:
+                    impact = c["impact"].upper()
+                    if impact not in ("HIGH", "MED", "LOW"):
+                        impact = "MED"
+                    validated.append({"impact": impact, "text": str(c["text"])})
+            if not validated:
+                validated = _build_fallback_advice(metrics)
 
-        return {
-            "band_score": final_band,
-            "advice_cards": validated,
-            "rubric_bands": validated_rubric if validated_rubric else rule_subbands,
-        }
-    except Exception:
-        logger.exception("Groq generate_feedback failed — falling back to rule-based advice")
-        return {"band_score": rule_band, "advice_cards": _build_fallback_advice(metrics), "rubric_bands": rule_subbands}
+            return {
+                "band_score": final_band,
+                "advice_cards": validated,
+                "rubric_bands": validated_rubric if validated_rubric else rule_subbands,
+            }
+
+        except Exception as exc:
+            if attempt < 2:
+                delay = 2.0 * (2 ** attempt)  # 2 s, then 4 s
+                logger.warning(
+                    "Groq generate_feedback attempt %d/3 failed: %s — retrying in %.0f s",
+                    attempt + 1, exc, delay,
+                )
+                await asyncio.sleep(delay)
+            else:
+                logger.exception("Groq generate_feedback failed after 3 attempts — using rule-based fallback")
+
+    return {"band_score": rule_band, "advice_cards": _build_fallback_advice(metrics), "rubric_bands": rule_subbands}
 
 
 async def generate_brainstorm_points(topic: str) -> list[str]:
@@ -345,3 +356,26 @@ async def generate_brainstorm_points(topic: str) -> list[str]:
     except Exception:
         logger.exception("generate_brainstorm_points parse failed")
         return []
+
+
+async def generate_model_answer(topic: str) -> str:
+    """
+    Generate a Band 5 ("Good") MUET Task A spoken model answer for a topic, so a
+    student can read it aloud to shadow the structure and vocabulary.
+    Returns plain text (~150 words), or "" if Groq is unavailable.
+    """
+    prompt = (
+        f'Write a model answer for the MUET (Malaysian University English Test) individual '
+        f'speaking task (Task A) on this topic:\n"{topic}"\n\n'
+        "Requirements:\n"
+        "- Target a Band 5 ('Good') performance: generally accurate and fluent, good range of vocabulary.\n"
+        "- Natural spoken register a candidate could actually say aloud in about 2 minutes (~150 words).\n"
+        "- Clear structure: a brief stance, two supporting points with examples, a short conclusion.\n"
+        "- Use discourse markers (Firstly, In addition, For example, In conclusion) and varied, "
+        "MUET-appropriate vocabulary.\n"
+        "Respond with ONLY the spoken answer as plain prose — no headings, no notes, no markdown."
+    )
+    raw = await _chat(prompt, max_tokens=320, temperature=0.6)
+    if not raw:
+        return ""
+    return re.sub(r'```(?:\w+)?\s*|\s*```', '', raw).strip()

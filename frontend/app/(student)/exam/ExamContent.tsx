@@ -8,16 +8,18 @@ import { SectionPlayer } from '../listening/components/SectionPlayer'
 import { Task1Panel } from '../writing/components/Task1Panel'
 import { Task2Panel } from '../writing/components/Task2Panel'
 import { RecordingInterface } from '@/components/RecordingInterface'
+import { SessionPrep, type PrepResult } from '@/components/SessionPrep'
 import { ExamIntro } from './components/ExamIntro'
 import { SpeakingPrepStep } from './components/SpeakingPrepStep'
 import { ExamResults } from './components/ExamResults'
+import { useNavigationGuard } from '@/lib/navGuard'
 
 type ExamStep =
   | 'intro'
   | 'listening_A' | 'listening_B' | 'listening_C'
   | 'listening_submitting' | 'listening_done'
   | 'writing_tasks' | 'writing_submitting' | 'writing_done'
-  | 'speaking_prep' | 'speaking_record' | 'speaking_uploading' | 'speaking_processing'
+  | 'speaking_prep' | 'speaking_setup' | 'speaking_record' | 'speaking_uploading' | 'speaking_processing'
   | 'results'
 
 export interface ListeningResult {
@@ -58,6 +60,7 @@ const MUET_EXAM_TOPICS = [
 
 export function ExamContent() {
   const [step, setStep] = useState<ExamStep>('intro')
+  useNavigationGuard(step !== 'intro' && step !== 'results', 'the Mock Exam')
 
   // Listening state
   const [listeningAnswers, setListeningAnswers] = useState<Record<string, string>>({})
@@ -72,6 +75,7 @@ export function ExamContent() {
   // Speaking state
   const [speakingTopic] = useState(() => MUET_EXAM_TOPICS[Math.floor(Math.random() * MUET_EXAM_TOPICS.length)])
   const [speakingResult, setSpeakingResult] = useState<SpeakingResult | null>(null)
+  const [prepResult, setPrepResult] = useState<PrepResult | null>(null)
   const [processStatus, setProcessStatus] = useState('')
 
   // Prompt selection (stable across renders)
@@ -175,6 +179,11 @@ export function ExamContent() {
       form.append('session_mode', 'exam')
       form.append('topic_text', speakingTopic)
       form.append('duration_secs', String(Math.round(durationSecs)))
+      if (prepResult) {
+        form.append('prep_passed', String(prepResult.passed))
+        form.append('ambient_db', String(prepResult.ambientDb))
+        form.append('speaking_db', String(prepResult.speakingDb))
+      }
 
       const uploadRes = await apiFetch('/api/presentations/upload', {
         method: 'POST',
@@ -319,7 +328,16 @@ export function ExamContent() {
   }
 
   if (step === 'speaking_prep') {
-    return <SpeakingPrepStep topic={speakingTopic} onReady={() => setStep('speaking_record')} />
+    return <SpeakingPrepStep topic={speakingTopic} onReady={() => setStep('speaking_setup')} />
+  }
+
+  if (step === 'speaking_setup') {
+    return (
+      <SessionPrep
+        onReady={(r) => { setPrepResult(r); setStep('speaking_record') }}
+        onSkip={() => { setPrepResult({ passed: false, speakingDb: 0, ambientDb: 0, framingOk: false }); setStep('speaking_record') }}
+      />
+    )
   }
 
   if (step === 'speaking_record') {

@@ -17,16 +17,57 @@ function parseFillerBreakdown(transcript: string): FillerBreakdown[] {
     .map(([word, count]) => ({ word, count }))
 }
 
+// Estimate the timestamp (in seconds) of each filler by its word-position in
+// the transcript. Uses the same uniform-distribution assumption as the WPM
+// timeseries — approximate but consistent with the rest of the pipeline.
+function computeFillerTimestamps(
+  transcript: string,
+  durationSecs: number,
+): Array<{ word: string; t: number }> {
+  const tokens = transcript.split(/\s+/)
+  const total = tokens.length
+  if (total === 0) return []
+  const result: Array<{ word: string; t: number }> = []
+  tokens.forEach((token, i) => {
+    if (/^\[.+\]$/.test(token)) {
+      result.push({
+        word: token.slice(1, -1).toLowerCase(),
+        t: Math.round((i / total) * durationSecs),
+      })
+    }
+  })
+  return result
+}
+
+function formatTime(secs: number): string {
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
 export function TranscriptViewer({
   transcript,
   fillerCount,
   fillerDensity,
+  durationSecs,
 }: {
   transcript: string
   fillerCount: number | null
   fillerDensity: number | null
+  durationSecs: number | null
 }) {
   const breakdown = parseFillerBreakdown(transcript)
+  const fillerTimestamps =
+    durationSecs != null && durationSecs > 0
+      ? computeFillerTimestamps(transcript, durationSecs)
+      : []
+
+  // Group timestamps by filler word
+  const timedBreakdown = breakdown.map(({ word, count }) => ({
+    word,
+    count,
+    times: fillerTimestamps.filter(ft => ft.word === word).map(ft => ft.t),
+  }))
 
   return (
     <div
@@ -63,29 +104,51 @@ export function TranscriptViewer({
         )}
       </p>
 
-      {/* Per-filler breakdown */}
-      {breakdown.length > 0 && (
-        <div className="flex flex-col gap-2">
+      {/* Per-filler breakdown with timestamps */}
+      {timedBreakdown.length > 0 && (
+        <div className="flex flex-col gap-3">
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
             FILLER BREAKDOWN
           </div>
-          <div className="flex flex-wrap gap-2">
-            {breakdown.map(({ word, count }) => (
-              <div
-                key={word}
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
-                style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}
-              >
-                <span className="text-xs font-mono" style={{ color: '#d97706' }}>"{word}"</span>
-                <span
-                  className="text-xs font-bold font-mono rounded-full px-1.5 py-0.5"
-                  style={{ background: 'rgba(245,158,11,0.18)', color: '#f59e0b' }}
+          <div className="flex flex-col gap-2">
+            {timedBreakdown.map(({ word, count, times }) => (
+              <div key={word} className="flex items-center gap-2 flex-wrap">
+                {/* Word + count badge */}
+                <div
+                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 shrink-0"
+                  style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}
                 >
-                  ×{count}
-                </span>
+                  <span className="text-xs font-mono" style={{ color: '#d97706' }}>"{word}"</span>
+                  <span
+                    className="text-xs font-bold font-mono rounded-full px-1.5 py-0.5"
+                    style={{ background: 'rgba(245,158,11,0.18)', color: '#f59e0b' }}
+                  >
+                    ×{count}
+                  </span>
+                </div>
+                {/* Per-occurrence timestamp chips */}
+                {times.map((t, i) => (
+                  <span
+                    key={i}
+                    className="font-mono text-[10px] rounded px-1.5 py-0.5"
+                    style={{
+                      background: 'rgba(180,165,148,0.08)',
+                      border: '1px solid rgba(180,165,148,0.18)',
+                      color: 'var(--text-tertiary)',
+                    }}
+                    title={`at ${formatTime(t)} (approximate)`}
+                  >
+                    {formatTime(t)}
+                  </span>
+                ))}
               </div>
             ))}
           </div>
+          {fillerTimestamps.length > 0 && (
+            <p style={{ fontSize: 9, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+              Timestamps are approximate — based on word position in the transcript.
+            </p>
+          )}
         </div>
       )}
     </div>
