@@ -71,7 +71,7 @@ async def _chat(prompt: str, max_tokens: int = 400, temperature: float = 0.4) ->
 
         def _call() -> object:
             return client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="openai/gpt-oss-120b",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
                 max_tokens=max_tokens,
@@ -245,7 +245,7 @@ async def generate_feedback(
 
     def _call() -> object:
         return client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_content},

@@ -17,6 +17,9 @@ node_modules/
 .next/
 .vercel/
 
+# Docs — kept local-only, not tracked in git (see e039864)
+*.md
+
 # Media uploads
 *.wav
 *.webm

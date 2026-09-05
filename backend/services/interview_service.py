@@ -96,14 +96,19 @@ async def evaluate_answer(question: str, transcript: str, role: str) -> dict:
 
     def _call():
         return client.chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
             temperature=0.3,
             max_tokens=256,
             response_format={"type": "json_object"},
         )
 
-    resp = await asyncio.to_thread(_call)
+    try:
+        resp = await asyncio.to_thread(_call)
+    except Exception:
+        logger.exception("evaluate_answer Groq call failed")
+        return {"score": 5.0, "feedback": "Unable to evaluate — AI service unavailable."}
+
     raw = resp.choices[0].message.content or "{}"
     try:
         data = json.loads(raw)
@@ -142,7 +147,7 @@ async def generate_overall_report(questions_answers: list, role: str) -> dict:
 
     def _call():
         return client.chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
             temperature=0.3,
             max_tokens=600,
